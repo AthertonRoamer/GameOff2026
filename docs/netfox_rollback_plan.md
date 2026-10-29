@@ -67,6 +67,32 @@ Measured (loopback plus the latency proxy, two players, one machine):
 
 Not done: projectiles (deterministic names, spawn and despawn under resimulation), respawn (position is rollback state, so it needs to go through the rollback system), `PeerVisibilityFilter`, line-of-sight blocking for shots, and hit shapes other than circles.
 
+## Phase 4 status: hardening done except real-network Noray testing; one loss problem remains
+Run everything with `powershell -File tests/run_all.ps1` (about 10 minutes, needs Python for the latency checks). Last run: all 11 checks pass.
+
+Scenarios now covered by `tests/harness/run_smoke.ps1`: 3 players (`-Clients 2`), a second game in the same lobby (`-Rounds 2`), a player leaving gracefully (`-Leave`), a player's process killed (`-Kill`; the host notices after ENet's timeout, 8 s here, and keeps running).
+
+Fixes made in this phase:
+- `RollbackPlayerSpawner.quiesce()` did nothing useful and logged an error for a peer that had already left. It now returns early when this peer is disconnected.
+- `RollbackGameManager` now waits for every member's clock to be healthy (`NetworkTime.clock_offset` within 50 ms, reported by each member every half second) before scheduling the start, not just for netfox's initial sync to be done. `rollback_sync_timeout` default raised from 5 s to 30 s, and the lobby starts anyway with a warning if it runs out.
+
+The packet-loss investigation (80 ms each way):
+- ENet is not stalling state behind reliable traffic. A probe (`tests/net/run_channel_probe.ps1`) at 5% loss: `unreliable`, `unreliable_ordered`, and `unreliable_ordered` on its own channel all arrive with median 88 ms, 95th percentile 91 ms, worst 148 ms. Only `reliable` is slow (95th percentile about 1.2 s, worst about 1.6 s, from retransmissions).
+- The cause of the failures was netfox's clock sync. A client asks the lobby for its clock with a reliable message; under loss the answer can be seconds late, the client ends up seconds behind, netfox logs "Offset ... is above panic threshold", and the client then needs about 20 s at its maximum 1.25x speed to catch up. Inputs stamped with the wrong tick are rejected as "older than 64 frames".
+- Before the clock-health wait: about 3 of 9 runs at 5% loss each way failed. After: 2 of 22 failed (1 of 10, 1 of 12).
+- The 2 remaining failures are different: the client's measured round trip climbs from 1 s to 8.7 s and the connection ends with "Peer 1 disconnected" (ENet gave up). Frame-hitch logging showed no freezes in any process, and the latency proxy logged no errors, so it is not this test machine or the proxy as far as I can tell. I could not fix it from the template.
+- At 2% loss each way: 8 of 8 passed (one of them logged 446 rejected inputs and still passed). At 0%: 6 of 6.
+- Practical reading: the template is sound up to about 2% loss at 80 ms each way. At 5% each way (a very bad connection) expect roughly 1 match in 10 to have a client whose connection collapses. This was measured with the lobby and players on one PC and a Python proxy, not on real networks.
+
+Cost (rollback demo, 60 ticks/s, one connection per player, measured over 7 s of play with some movement and shooting):
+- 2 players: host 23.8 kB/s sent and 21.5 received; client 15.9 sent and 14.5 received. Rollback loop about 1-2 ms per frame.
+- 3 players: host 35.9 / 38.2 kB/s; the other two 23.9 / 25.7 and 35.8 / 38.2. The lobby's total is the sum of every player's connection, roughly 100 kB/s (0.8 Mbit/s) for 3 players. The lobby usually runs on the host's own machine, so this is the host's upload.
+- These are numbers for this small demo (position, velocity, one cooldown value and four input values per player). A game with more state will cost more. Not measured: more than 3 players, or a bigger game.
+
+Not tested by me and needs two machines: Noray over the real internet. The same-PC attempt in Phase 0 failed (it tries to connect to the PC's own public address, then the relay timed out), so whether it works on your network is unknown. To try it: on machine A set the `Main` configuration to `rollback_demo_configuration.tres`, run the game, host with Noray and copy the Game ID; on machine B run the same build with the same configuration, choose Join, paste the Game ID, and check that both players see each other move and that shooting works. If the join fails, note whether the log says the NAT punch or the relay failed.
+
+Still not done: projectiles, respawn, `PeerVisibilityFilter`, line-of-sight for shots, non-circle hit shapes.
+
 ## Phases
 1. **Foundation** (done, see above): `RollbackGameManager` (holds `game_loaded` until time sync is done, then starts on an agreed future tick), deterministic player roster helper with authority setup, `NetInput` base, configuration group, diagnostics overlay.
 2. **Rollback demo**: new 2D demo and new configuration, `CharacterBody2D` player with `RollbackSynchronizer` and `TickInterpolator`.

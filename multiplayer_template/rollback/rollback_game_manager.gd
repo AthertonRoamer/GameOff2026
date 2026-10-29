@@ -12,7 +12,10 @@ var game : Node
 var start_tick : int = -1
 var diagnostics : RollbackDiagnostics
 
+const CLOCK_HEALTHY_OFFSET : float = 0.05 #seconds. How far a member's game clock may be from the shared clock when the game starts
+
 var _start_pending : bool = false
+var _clock_reports : Dictionary = {} #lobby only. key: member id, value: {offset: float, received_msec: int}
 
 
 func _ready() -> void:
@@ -74,20 +77,45 @@ func _schedule_start() -> void:
 
 
 func _wait_for_members_synced() -> void:
+	#A member is ready when netfox says its initial sync is done AND its clock is currently healthy. The second part matters on
+	#lossy connections: a lost clock message can leave a client seconds behind, and it then needs a long time to catch up.
+	#Starting during that time makes every input from that client arrive "too old".
 	var timeout_msec : int = int(Main.main.configuration.rollback_sync_timeout * 1000.0)
 	var deadline : int = Time.get_ticks_msec() + timeout_msec
+	var next_report : int = 0
 	while Time.get_ticks_msec() < deadline:
-		var all_synced : bool = true
+		if Time.get_ticks_msec() >= next_report:
+			_request_clock_report.rpc() #asks every member for its current clock offset
+			next_report = Time.get_ticks_msec() + 500
+		var waiting_for : Array[int] = []
 		for member in lobby.members:
-			if not NetworkTime.is_client_synced(member.id):
-				all_synced = false
-				break
-		if all_synced:
+			if not NetworkTime.is_client_synced(member.id) or not _is_clock_healthy(member.id):
+				waiting_for.append(member.id)
+		if waiting_for.is_empty():
 			return
 		await get_tree().create_timer(0.1).timeout
 		if not is_inside_tree():
 			return
-	push_warning("RollbackGameManager timed out waiting for all members to sync their clocks, starting anyway")
+	push_warning("RollbackGameManager timed out waiting for members' clocks to become healthy, starting anyway")
+
+
+func _is_clock_healthy(member_id : int) -> bool:
+	if not _clock_reports.has(member_id):
+		return false
+	var report : Dictionary = _clock_reports[member_id]
+	var fresh : bool = Time.get_ticks_msec() - report["received_msec"] < 2000
+	return fresh and absf(report["offset"]) <= CLOCK_HEALTHY_OFFSET
+
+
+@rpc("authority", "call_remote", "unreliable")
+func _request_clock_report() -> void:
+	#unreliable on purpose: it is repeated every half second, and a lost reliable message would be delayed by retransmission
+	_report_clock.rpc_id(1, NetworkTime.clock_offset)
+
+
+@rpc("any_peer", "call_remote", "unreliable")
+func _report_clock(offset : float) -> void:
+	_clock_reports[multiplayer.get_remote_sender_id()] = {"offset": offset, "received_msec": Time.get_ticks_msec()}
 
 
 @rpc("authority", "call_local", "reliable")

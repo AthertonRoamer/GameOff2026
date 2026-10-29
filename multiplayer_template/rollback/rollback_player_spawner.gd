@@ -58,6 +58,8 @@ func quiesce() -> void:
 	##Stops every player's RollbackSynchronizers from sending state and input, without freeing anything.
 	##Call this when the game is about to be unloaded (NetworkUnloader's cease step), then free the game once every peer has ceased.
 	##Freeing rollback nodes while other peers are still transmitting to them logs "Node not found" RPC errors.
+	if multiplayer.multiplayer_peer == null or multiplayer.multiplayer_peer.get_connection_status() == MultiplayerPeer.CONNECTION_DISCONNECTED:
+		return #this peer already left, so nothing of ours is being sent and the synchronizers cannot be reconfigured
 	for player in players.values():
 		if not is_instance_valid(player):
 			continue

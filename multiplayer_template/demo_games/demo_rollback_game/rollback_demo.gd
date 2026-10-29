@@ -7,6 +7,8 @@ extends Node2D
 @export var first_pos : Vector2 = Vector2(100, 100)
 @export var spacing : float = 100.0
 
+var started : bool = false #true once RollbackGameManager has called start(), on the agreed tick
+
 @onready var spawner : RollbackPlayerSpawner = $Spawner
 
 
@@ -22,6 +24,7 @@ func _ready() -> void:
 
 
 func start() -> void:
+	started = true
 	set_players_active(true)
 
 

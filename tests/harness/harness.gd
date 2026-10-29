@@ -8,6 +8,7 @@ const MAIN_SCENE : PackedScene = preload("res://multiplayer_template/main/main.t
 const LOBBY_PORT : int = 5000
 const TIMEOUT : float = 45.0
 const MOVING_HIT_RADIUS : float = 16.0
+const HITCH_SECONDS : float = 0.25
 
 var role : String = "host"
 var use_noray : bool = false
@@ -16,6 +17,12 @@ var use_demo : bool = false
 var use_moving : bool = false #shooter and target run side by side, the shooter fires at where it sees the target
 var no_lagcomp : bool = false #the lobby does not rewind targets, for comparison
 var join_port : int = LOBBY_PORT #the client can join through a latency proxy by using another port
+var players_expected : int = 2 #host waits for this many members before beginning
+var client_name : String = "ClientPlayer"
+var observer : bool = false #a client that takes no actions, it only reports what it sees
+var rounds : int = 1 #how many games are played back to back in the same lobby
+var leave_mode : bool = false #the acting client leaves gracefully shortly after the game starts
+var kill_mode : bool = false #the runner kills the client process, the host must notice it is gone
 var game_id : String = ""
 var main_node : Node
 
@@ -33,6 +40,18 @@ func _ready() -> void:
 	idx = args.find("--join-port")
 	if idx != -1 and idx + 1 < args.size():
 		join_port = int(args[idx + 1])
+	idx = args.find("--players")
+	if idx != -1 and idx + 1 < args.size():
+		players_expected = int(args[idx + 1])
+	idx = args.find("--name")
+	if idx != -1 and idx + 1 < args.size():
+		client_name = args[idx + 1]
+	idx = args.find("--rounds")
+	if idx != -1 and idx + 1 < args.size():
+		rounds = int(args[idx + 1])
+	observer = args.has("--observer")
+	leave_mode = args.has("--leave")
+	kill_mode = args.has("--kill")
 	idx = args.find("--game-id")
 	if idx != -1 and idx + 1 < args.size():
 		game_id = args[idx + 1]
@@ -46,6 +65,8 @@ func _ready() -> void:
 	await get_tree().process_frame
 	await get_tree().process_frame
 	await get_tree().process_frame
+	if OS.has_environment("HARNESS_CLOCK"):
+		clock_log_loop()
 	if role == "host":
 		await run_host()
 	elif role == "client":
@@ -71,6 +92,61 @@ func demo_positions(game : Node) -> String:
 		var p : Node2D = game.spawner.players[id]
 		entries.append("%d=%.1f,%.1f,%d" % [id, p.position.x, p.position.y, p.health])
 	return "me=%d %s" % [multiplayer.get_unique_id(), ";".join(entries)]
+
+
+func _process(delta : float) -> void:
+	#a frame that takes this long freezes the process: it delays clock replies and corrupts a time sync regardless of the network
+	if delta > HITCH_SECONDS:
+		var line : String = "HITCH %.0f ms at unix %.3f" % [delta * 1000.0, Time.get_unix_time_from_system()]
+		if role == "lobby": #the lobby instance's output is not captured, so it appends to a file the runner reads
+			var path : String = OS.get_environment("TEMP") + "/godot_smoke/lobby_hitch.log"
+			var file : FileAccess = FileAccess.open(path, FileAccess.READ_WRITE if FileAccess.file_exists(path) else FileAccess.WRITE)
+			if file != null:
+				file.seek_end()
+				file.store_line(line)
+		else:
+			print("[%s] %s" % [role.to_upper(), line])
+
+
+func wait_game_started() -> bool:
+	#the lobby reports in_game as soon as it begins, but a rollback game only starts later, on the agreed tick
+	var game : Node = Main.mode.get_game()
+	if game != null and ("started" in game or "started_at_tick" in game):
+		var started : bool = await wait_until(func():
+			var g : Node = Main.mode.get_game()
+			return g != null and (g.get("started") == true or int(g.get("started_at_tick") if "started_at_tick" in g else -1) >= 0), 90.0)
+		await get_tree().create_timer(1.0).timeout
+		return started
+	await get_tree().create_timer(2.0).timeout
+	return true
+
+
+func bandwidth_reset() -> void:
+	var peer : ENetMultiplayerPeer = multiplayer.multiplayer_peer as ENetMultiplayerPeer
+	if peer != null and peer.host != null:
+		peer.host.pop_statistic(ENetConnection.HOST_TOTAL_SENT_DATA)
+		peer.host.pop_statistic(ENetConnection.HOST_TOTAL_RECEIVED_DATA)
+
+
+func perf_line(seconds : float) -> void:
+	#what this process cost and sent since bandwidth_reset(): bytes per second on its own connection, and netfox's rollback workload
+	var sent : float = 0.0
+	var received : float = 0.0
+	var peer : ENetMultiplayerPeer = multiplayer.multiplayer_peer as ENetMultiplayerPeer
+	if peer != null and peer.host != null:
+		sent = peer.host.pop_statistic(ENetConnection.HOST_TOTAL_SENT_DATA)
+		received = peer.host.pop_statistic(ENetConnection.HOST_TOTAL_RECEIVED_DATA)
+	var rollback : String = "rollback info unavailable"
+	if NetworkPerformance.is_enabled():
+		rollback = "rollback ticks/frame %d, nodes/tick %.1f, loop %.2f ms" % [NetworkPerformance.get_rollback_ticks(), NetworkPerformance.get_rollback_nodes_simulated_per_tick(), NetworkPerformance.get_rollback_loop_duration_ms()]
+	log_line("PERF sent %.1f kB/s, received %.1f kB/s, %s" % [sent / seconds / 1000.0, received / seconds / 1000.0, rollback])
+
+
+func clock_log_loop() -> void:
+	#once a second: wall clock, netfox tick, rtt and clock offsets, so peers' clocks can be compared at the same instant
+	while is_inside_tree():
+		await get_tree().create_timer(1.0).timeout
+		print("[%s] CLOCK unix=%.3f tick=%d rtt_ms=%.0f offset_ms=%.1f remote_offset_ms=%.1f stretch=%.3f" % [role.to_upper(), Time.get_unix_time_from_system(), NetworkTime.tick, NetworkTime.remote_rtt * 1000.0, NetworkTime.clock_offset * 1000.0, NetworkTime.remote_clock_offset * 1000.0, NetworkTime.clock_stretch_factor])
 
 
 func run_lobby_tweaks() -> void:
@@ -206,25 +282,28 @@ func run_host() -> void:
 			return fail("lobby never published a noray game id")
 		log_line("GAME_ID " + mode.lobby.stats.game_id)
 	log_line("HOST_READY authority=%s" % mode.lobby.has_authority)
-	if not await wait_until(func(): return mode.lobby.members.size() >= 2):
-		return fail("client never joined")
+	if not await wait_until(func(): return mode.lobby.members.size() >= players_expected):
+		return fail("not all players joined")
 	log_line("MEMBERS " + str(mode.lobby.get_serialized_members()))
-	mode.lobby.trigger_request_begin_game()
-	if not await wait_until(func(): return mode.lobby.game_manager.in_game):
-		return fail("game never started")
-	await get_tree().create_timer(2.0).timeout
-	log_line("GAME_STARTED " + describe_game())
-	if use_moving:
-		await moving_target_run(1.7)
-		await get_tree().create_timer(3.0).timeout
-		log_line("MOVING_RESULT health=%d" % Main.mode.get_game().spawner.local_player.health)
-	elif use_demo: #the client moves for a second and settles, then compare what this peer sees
-		await get_tree().create_timer(7.0).timeout
-		log_line("DEMO_POS " + describe_game())
-	mode.lobby.trigger_request_end_game()
-	if not await wait_until(func(): return not mode.lobby.game_manager.in_game):
-		return fail("game never ended")
-	log_line("GAME_ENDED")
+	for round_number in range(1, rounds + 1):
+		if round_number > 1:
+			await get_tree().create_timer(1.5).timeout
+		mode.lobby.trigger_request_begin_game()
+		if not await wait_until(func(): return mode.lobby.game_manager.in_game):
+			return fail("game never started")
+		if not await wait_game_started():
+			return fail("game never really started")
+		if round_number > 1:
+			await get_tree().create_timer(1.0).timeout
+			log_line("ROUND_%d POS %s" % [round_number, describe_game()])
+		else:
+			log_line("GAME_STARTED " + describe_game())
+			bandwidth_reset()
+			await run_host_scenario()
+		mode.lobby.trigger_request_end_game()
+		if not await wait_until(func(): return not mode.lobby.game_manager.in_game):
+			return fail("game never ended")
+		log_line("GAME_ENDED")
 	await get_tree().create_timer(1.0).timeout
 	mode.shut_down_lobby()
 	await get_tree().create_timer(1.0).timeout
@@ -232,24 +311,45 @@ func run_host() -> void:
 	get_tree().quit(0)
 
 
-func run_client() -> void:
-	Main.open_mode(ClientMode.new())
-	var mode : ClientMode = Main.mode
-	mode.my_member_data.name = "ClientPlayer"
-	if use_noray:
-		mode.join_noray_lobby(game_id)
-	else:
-		mode.direct_join_lobby("127.0.0.1", join_port)
-	if not await wait_until(func(): return mode.state == ClientMode.CLIENT_STATE.CONNECTED_TO_LOBBY):
-		return fail("client never connected to lobby")
-	if not await wait_until(func(): return mode.lobby.members.size() >= 2):
-		return fail("client never saw membership")
-	log_line("JOINED members=" + str(mode.lobby.get_serialized_members()))
-	if not await wait_until(func(): return mode.lobby.game_manager.in_game):
-		return fail("game never started")
-	await get_tree().create_timer(2.0).timeout
-	log_line("GAME_STARTED " + describe_game())
-	if use_moving:
+func run_host_scenario() -> void:
+	if leave_mode or kill_mode:
+		#a player disappears mid-game: the host must see it go, and its own game must keep running
+		var game : Node = Main.mode.get_game()
+		var started_msec : int = Time.get_ticks_msec()
+		var gone : bool = await wait_until(func(): return game.spawner.players.size() <= players_expected - 1, 70.0)
+		log_line("DEPARTURE_RESULT ok=%s players=%d seconds=%.1f" % [gone, game.spawner.players.size(), (Time.get_ticks_msec() - started_msec) / 1000.0])
+		var me : Node2D = game.spawner.local_player
+		var start_x : float = me.position.x
+		Input.action_press("ui_right")
+		await get_tree().create_timer(0.6).timeout
+		Input.action_release("ui_right")
+		await get_tree().create_timer(0.4).timeout
+		log_line("HOST_STILL_RUNS moved=%.1f" % (me.position.x - start_x))
+	elif use_moving:
+		await moving_target_run(1.7)
+		await get_tree().create_timer(3.0).timeout
+		log_line("MOVING_RESULT health=%d" % Main.mode.get_game().spawner.local_player.health)
+	elif use_demo: #the client moves for a second and settles, then compare what this peer sees
+		await get_tree().create_timer(7.0).timeout
+		log_line("DEMO_POS " + describe_game())
+		perf_line(7.0)
+	else: #nothing to do, but let the other peers report before the game is torn down
+		await get_tree().create_timer(2.0).timeout
+
+
+func run_client_scenario(mode : ClientMode) -> void:
+	if leave_mode:
+		await get_tree().create_timer(1.0).timeout
+		mode.leave_lobby()
+		log_line("LEFT")
+	elif kill_mode:
+		await get_tree().create_timer(300.0).timeout #the runner kills this process
+	elif observer:
+		if use_demo:
+			await get_tree().create_timer(7.0).timeout
+			log_line("DEMO_POS " + describe_game())
+			perf_line(7.0)
+	elif use_moving:
 		await moving_target_run(1.7)
 		await get_tree().create_timer(3.0).timeout
 	elif use_demo:
@@ -260,9 +360,42 @@ func run_client() -> void:
 		await hold_move_right_and_measure()
 		await get_tree().create_timer(2.0).timeout
 		log_line("DEMO_POS " + describe_game())
-	if not await wait_until(func(): return not mode.lobby.game_manager.in_game):
-		return fail("game never ended")
-	log_line("GAME_ENDED")
+		perf_line(7.0)
+
+
+func run_client() -> void:
+	Main.open_mode(ClientMode.new())
+	var mode : ClientMode = Main.mode
+	mode.my_member_data.name = client_name
+	if use_noray:
+		mode.join_noray_lobby(game_id)
+	else:
+		mode.direct_join_lobby("127.0.0.1", join_port)
+	if not await wait_until(func(): return mode.state == ClientMode.CLIENT_STATE.CONNECTED_TO_LOBBY):
+		return fail("client never connected to lobby")
+	if not await wait_until(func(): return mode.lobby.members.size() >= players_expected):
+		return fail("client never saw all members")
+	log_line("JOINED members=" + str(mode.lobby.get_serialized_members()))
+	for round_number in range(1, rounds + 1):
+		if not await wait_until(func(): return mode.lobby.game_manager.in_game, 90.0):
+			return fail("game never started")
+		if not await wait_game_started():
+			return fail("game never really started")
+		if round_number > 1:
+			await get_tree().create_timer(1.0).timeout
+			log_line("ROUND_%d POS %s" % [round_number, describe_game()])
+		else:
+			log_line("GAME_STARTED " + describe_game())
+			bandwidth_reset()
+			await run_client_scenario(mode)
+			if leave_mode:
+				await get_tree().create_timer(1.0).timeout
+				log_line("DONE")
+				get_tree().quit(0)
+				return
+		if not await wait_until(func(): return not mode.lobby.game_manager.in_game):
+			return fail("game never ended")
+		log_line("GAME_ENDED")
 	await get_tree().create_timer(1.0).timeout
 	log_line("DONE")
 	get_tree().quit(0)
