@@ -1,7 +1,8 @@
 param(
 	[string]$Godot = "C:\Users\yello\Downloads\Godot_v4.7.1-stable_win64.exe\Godot_v4.7.1-stable_win64_console.exe",
 	[int]$TimeoutSeconds = 90,
-	[switch]$Noray
+	[switch]$Noray,
+	[switch]$Rollback #use RollbackGameManager and the probe game, and check both peers start on the scheduled tick
 )
 
 # Launches a host and a client harness process, waits for both, prints their output and a PASS/FAIL line.
@@ -15,6 +16,7 @@ Remove-Item $hostOut, $hostErr, $clientOut, $clientErr -ErrorAction SilentlyCont
 $scene = "res://tests/harness/harness.tscn"
 $hostArgs = @("--path", "`"$project`"", $scene, "--", "--role", "host")
 if ($Noray) { $hostArgs += "--noray" }
+if ($Rollback) { $hostArgs += "--rollback" }
 $hostProc = Start-Process $Godot -WorkingDirectory $project -PassThru -NoNewWindow `
 	-ArgumentList $hostArgs `
 	-RedirectStandardOutput $hostOut -RedirectStandardError $hostErr
@@ -29,6 +31,7 @@ if ($Noray) {
 	$gameId = (Select-String -Path $hostOut -Pattern "\[HOST\] GAME_ID (\S+)").Matches.Groups[1].Value
 	$clientArgs += @("--noray", "--game-id", $gameId)
 }
+if ($Rollback) { $clientArgs += "--rollback" }
 $clientProc = Start-Process $Godot -WorkingDirectory $project -PassThru -NoNewWindow `
 	-ArgumentList $clientArgs `
 	-RedirectStandardOutput $clientOut -RedirectStandardError $clientErr
@@ -45,4 +48,16 @@ Start-Sleep -Seconds 1
 "----- STDERR (host/client) -----"; Get-Content $hostErr, $clientErr -ErrorAction SilentlyContinue | Select-Object -First 20
 
 $ok = (Select-String -Path $hostOut -Pattern "\[HOST\] DONE" -Quiet) -and (Select-String -Path $clientOut -Pattern "\[CLIENT\] DONE" -Quiet)
+if ($Rollback) {
+	$pattern = "scheduled_tick=(\d+) started_at_tick=(-?\d+)"
+	$h = (Select-String -Path $hostOut -Pattern $pattern).Matches
+	$c = (Select-String -Path $clientOut -Pattern $pattern).Matches
+	if ($h.Count -eq 0 -or $c.Count -eq 0) {
+		"ROLLBACK START: no start report found"; $ok = $false
+	} else {
+		$hs = $h[0].Groups[1].Value; $ha = $h[0].Groups[2].Value; $cs = $c[0].Groups[1].Value; $ca = $c[0].Groups[2].Value
+		"ROLLBACK START: host scheduled=$hs started=$ha | client scheduled=$cs started=$ca"
+		if ($hs -ne $cs -or $hs -ne $ha -or $cs -ne $ca) { "ROLLBACK START: MISALIGNED"; $ok = $false } else { "ROLLBACK START: aligned" }
+	}
+}
 if ($ok) { "SMOKE: PASS" } else { "SMOKE: FAIL" }

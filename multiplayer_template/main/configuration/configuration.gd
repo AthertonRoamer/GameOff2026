@@ -32,6 +32,11 @@ extends Resource
 @export var game_manager_scene : PackedScene = preload("res://multiplayer_template/game_manager/basic_game_manager/basic_game_manager.tscn")
 @export var game_scene : PackedScene
 
+@export_group("Rollback") #only used when game_manager_scene is a RollbackGameManager
+@export var rollback_start_delay_ticks : int = 30 #how far in the future the lobby schedules the game start, in network ticks
+@export var rollback_sync_timeout : float = 5.0 #how long the lobby waits for members to sync their clocks before starting anyway
+@export var rollback_diagnostics : bool = false #show the RollbackDiagnostics overlay on players (F3 toggles it)
+
 @export_group("Dynamic")
 @export var dynamic_config_script : Script #allows you to run code if necessary during config step
 

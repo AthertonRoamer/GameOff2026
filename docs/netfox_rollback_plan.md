@@ -25,8 +25,21 @@ Defaults to the Godot console exe at `C:\Users\yello\Downloads\Godot_v4.7.1-stab
 - Pre-existing, harmless: `player.tscn` references an invalid UID for `icon.svg` and falls back to the path.
 - netfox API notes: `RollbackSynchronizer` needs `process_settings()` after authority is set. `RewindableAction` is marked experimental. There is no built-in hitscan lag-compensation service. `NetworkRollback.mutate()` re-simulates affected nodes from a tick.
 
+## Phase 1 status: done
+Added in `multiplayer_template/rollback/`:
+- `RollbackGameManager` (+ `.tscn`): same contract as `BasicGameManager` (`game_scene` from the configuration, game root has `start()` / `end()`). Holds `game_loaded` until `NetworkTime` has synced. On start, the lobby waits until every member's clock is synced (`rollback_sync_timeout`), picks `NetworkTime.tick + rollback_start_delay_ticks` and sends it to everyone, so all peers call `start()` on the same tick.
+- `RollbackPlayerSpawner`: one player per lobby member under the spawner node, named by peer id. Body authority is the lobby (peer 1), the child `Input` node's authority is the member's peer. `player_spawned` fires before the player enters the tree (set start position there). Removes players on `member_left`.
+- `NetInput`: base class for the input node, `_gather()` runs once per frame before the tick loop, only on the owning peer. (`BaseNetInput` comes from `netfox.extras`, which is not installed.)
+- `RollbackDiagnostics`: F3 overlay with tick, rtt, clock offset, rollback cost. Enabled by `Configuration.rollback_diagnostics`.
+- `Configuration`: new "Rollback" export group (`rollback_start_delay_ticks` = 30, `rollback_sync_timeout` = 5.0, `rollback_diagnostics` = false). Defaults leave existing behavior unchanged.
+- `project.godot`: `netfox/time/tickrate = 60`, `netfox/time/sync_to_physics = true`.
+
+How to opt in: set `game_manager_scene` on the configuration to `rollback_game_manager.tscn`, and `game_scene` to your game.
+
+Verification: `run_smoke.ps1` (original demo) passes unchanged; `run_smoke.ps1 -Rollback` passes with host and client both starting on the scheduled tick (`tests/harness/probe/` is a throwaway game used only for this check).
+
 ## Phases
-1. **Foundation**: `RollbackGameManager` (holds `game_loaded` until time sync is done, then starts on an agreed future tick), deterministic player roster helper with authority setup, `NetInput` base, configuration group, diagnostics overlay.
+1. **Foundation** (done, see above): `RollbackGameManager` (holds `game_loaded` until time sync is done, then starts on an agreed future tick), deterministic player roster helper with authority setup, `NetInput` base, configuration group, diagnostics overlay.
 2. **Rollback demo**: new 2D demo and new configuration, `CharacterBody2D` player with `RollbackSynchronizer` and `TickInterpolator`.
 3. **Actions**: `RewindableAction` shooting, projectile spawner with deterministic names, server-side lag-compensated hitscan, `StateSynchronizer` for server-owned state, optional `PeerVisibilityFilter`.
 4. **Hardening**: mid-game leave/disconnect, return-to-lobby, packet-loss tests, bandwidth and rollback cost, two-machine Noray run, template README.

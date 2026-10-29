@@ -10,6 +10,7 @@ const TIMEOUT : float = 45.0
 
 var role : String = "host"
 var use_noray : bool = false
+var use_rollback : bool = false
 var game_id : String = ""
 var main_node : Node
 
@@ -20,18 +21,30 @@ func _ready() -> void:
 	if idx != -1 and idx + 1 < args.size():
 		role = args[idx + 1]
 	use_noray = args.has("--noray")
+	use_rollback = args.has("--rollback")
 	idx = args.find("--game-id")
 	if idx != -1 and idx + 1 < args.size():
 		game_id = args[idx + 1]
+	if OS.get_cmdline_args().has("--harness-lobby"): #this process is the lobby instance launched by a rollback host
+		role = "lobby"
+		use_rollback = true
 	main_node = MAIN_SCENE.instantiate()
+	if use_rollback:
+		apply_rollback_overrides(main_node.configuration)
 	get_tree().root.add_child.call_deferred(main_node) #must be /root/Main so RPC node paths match the lobby instance
 	await get_tree().process_frame
 	await get_tree().process_frame
 	await get_tree().process_frame
 	if role == "host":
 		await run_host()
-	else:
+	elif role == "client":
 		await run_client()
+
+
+func apply_rollback_overrides(config : Configuration) -> void:
+	#swaps in RollbackGameManager and the probe game without touching main.tscn. Every process must do this, the lobby instance included
+	config.game_manager_scene = load("res://multiplayer_template/rollback/rollback_game_manager.tscn")
+	config.game_scene = load("res://tests/harness/probe/probe_game.tscn")
 
 
 func log_line(msg : String) -> void:
@@ -57,6 +70,8 @@ func describe_game() -> String:
 	var game : Node = Main.mode.get_game()
 	if game == null:
 		return "no game"
+	if game.has_method("describe"):
+		return game.describe()
 	var info : Array = []
 	for p in game.players:
 		if is_instance_valid(p):
@@ -69,6 +84,10 @@ func run_host() -> void:
 		var lobby_args : Array[String] = Main.main.configuration.lobby_args
 		lobby_args.erase("--mode lobby")
 		lobby_args.append("--mode noray_lobby")
+	if use_rollback: #the lobby instance has to run the harness scene too so it gets the same overrides
+		var lobby_args : Array[String] = Main.main.configuration.lobby_args
+		lobby_args.insert(0, "res://tests/harness/harness.tscn")
+		lobby_args.append("--harness-lobby")
 	Main.open_mode(P2PHostMode.new())
 	var mode : P2PHostMode = Main.mode
 	mode.my_member_data.name = "HostPlayer"
