@@ -9,6 +9,8 @@ const LOBBY_PORT : int = 5000
 const TIMEOUT : float = 45.0
 
 var role : String = "host"
+var use_noray : bool = false
+var game_id : String = ""
 var main_node : Node
 
 
@@ -17,6 +19,10 @@ func _ready() -> void:
 	var idx : int = args.find("--role")
 	if idx != -1 and idx + 1 < args.size():
 		role = args[idx + 1]
+	use_noray = args.has("--noray")
+	idx = args.find("--game-id")
+	if idx != -1 and idx + 1 < args.size():
+		game_id = args[idx + 1]
 	main_node = MAIN_SCENE.instantiate()
 	get_tree().root.add_child.call_deferred(main_node) #must be /root/Main so RPC node paths match the lobby instance
 	await get_tree().process_frame
@@ -59,6 +65,10 @@ func describe_game() -> String:
 
 
 func run_host() -> void:
+	if use_noray: #same switch the host menu makes
+		var lobby_args : Array[String] = Main.main.configuration.lobby_args
+		lobby_args.erase("--mode lobby")
+		lobby_args.append("--mode noray_lobby")
 	Main.open_mode(P2PHostMode.new())
 	var mode : P2PHostMode = Main.mode
 	mode.my_member_data.name = "HostPlayer"
@@ -68,6 +78,10 @@ func run_host() -> void:
 		return fail("host never connected to its lobby")
 	if not await wait_until(func(): return mode.lobby.has_authority):
 		return fail("host never got authority")
+	if use_noray:
+		if not await wait_until(func(): return mode.lobby.stats.game_id != ""):
+			return fail("lobby never published a noray game id")
+		log_line("GAME_ID " + mode.lobby.stats.game_id)
 	log_line("HOST_READY authority=%s" % mode.lobby.has_authority)
 	if not await wait_until(func(): return mode.lobby.members.size() >= 2):
 		return fail("client never joined")
@@ -92,7 +106,10 @@ func run_client() -> void:
 	Main.open_mode(ClientMode.new())
 	var mode : ClientMode = Main.mode
 	mode.my_member_data.name = "ClientPlayer"
-	mode.direct_join_lobby("127.0.0.1", LOBBY_PORT)
+	if use_noray:
+		mode.join_noray_lobby(game_id)
+	else:
+		mode.direct_join_lobby("127.0.0.1", LOBBY_PORT)
 	if not await wait_until(func(): return mode.state == ClientMode.CLIENT_STATE.CONNECTED_TO_LOBBY):
 		return fail("client never connected to lobby")
 	if not await wait_until(func(): return mode.lobby.members.size() >= 2):

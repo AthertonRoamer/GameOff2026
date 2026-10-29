@@ -1,6 +1,7 @@
 param(
 	[string]$Godot = "C:\Users\yello\Downloads\Godot_v4.7.1-stable_win64.exe\Godot_v4.7.1-stable_win64_console.exe",
-	[int]$TimeoutSeconds = 90
+	[int]$TimeoutSeconds = 90,
+	[switch]$Noray
 )
 
 # Launches a host and a client harness process, waits for both, prints their output and a PASS/FAIL line.
@@ -12,8 +13,10 @@ $clientOut = Join-Path $logDir "client.out"; $clientErr = Join-Path $logDir "cli
 Remove-Item $hostOut, $hostErr, $clientOut, $clientErr -ErrorAction SilentlyContinue
 
 $scene = "res://tests/harness/harness.tscn"
+$hostArgs = @("--path", "`"$project`"", $scene, "--", "--role", "host")
+if ($Noray) { $hostArgs += "--noray" }
 $hostProc = Start-Process $Godot -WorkingDirectory $project -PassThru -NoNewWindow `
-	-ArgumentList "--path", "`"$project`"", $scene, "--", "--role", "host" `
+	-ArgumentList $hostArgs `
 	-RedirectStandardOutput $hostOut -RedirectStandardError $hostErr
 
 $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
@@ -21,8 +24,13 @@ while ((Get-Date) -lt $deadline -and -not ((Test-Path $hostOut) -and (Select-Str
 	Start-Sleep -Milliseconds 500
 }
 
+$clientArgs = @("--path", "`"$project`"", $scene, "--", "--role", "client")
+if ($Noray) {
+	$gameId = (Select-String -Path $hostOut -Pattern "\[HOST\] GAME_ID (\S+)").Matches.Groups[1].Value
+	$clientArgs += @("--noray", "--game-id", $gameId)
+}
 $clientProc = Start-Process $Godot -WorkingDirectory $project -PassThru -NoNewWindow `
-	-ArgumentList "--path", "`"$project`"", $scene, "--", "--role", "client" `
+	-ArgumentList $clientArgs `
 	-RedirectStandardOutput $clientOut -RedirectStandardError $clientErr
 
 while ((Get-Date) -lt $deadline -and -not ($hostProc.HasExited -and $clientProc.HasExited)) {
