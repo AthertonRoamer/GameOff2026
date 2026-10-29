@@ -1,0 +1,65 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://multiplayer_template/demo_games/demo_rollback_game/rollback_demo.gd" id="1_demo"]
+[ext_resource type="Script" path="res://multiplayer_template/rollback/rollback_player_spawner.gd" id="2_spawner"]
+[ext_resource type="PackedScene" path="res://multiplayer_template/demo_games/demo_rollback_game/player/rollback_demo_player.tscn" id="3_player"]
+[ext_resource type="Script" path="res://multiplayer_template/network/network_unloader/network_unloader.gd" id="4_unloader"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_horizontal"]
+size = Vector2(1352, 40)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_vertical"]
+size = Vector2(40, 848)
+
+[node name="RollbackDemo" type="Node2D"]
+script = ExtResource("1_demo")
+
+[node name="Terrain" type="Node2D" parent="."]
+
+[node name="Background" type="Polygon2D" parent="Terrain"]
+color = Color(0.25, 0.28, 0.45, 1)
+polygon = PackedVector2Array(-100, -100, 1252, -100, 1252, 748, -100, 748)
+
+[node name="WallTop" type="StaticBody2D" parent="Terrain"]
+position = Vector2(576, -20)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Terrain/WallTop"]
+shape = SubResource("RectangleShape2D_horizontal")
+
+[node name="WallBottom" type="StaticBody2D" parent="Terrain"]
+position = Vector2(576, 668)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Terrain/WallBottom"]
+shape = SubResource("RectangleShape2D_horizontal")
+
+[node name="WallLeft" type="StaticBody2D" parent="Terrain"]
+position = Vector2(-20, 324)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Terrain/WallLeft"]
+shape = SubResource("RectangleShape2D_vertical")
+
+[node name="WallRight" type="StaticBody2D" parent="Terrain"]
+position = Vector2(1172, 324)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Terrain/WallRight"]
+shape = SubResource("RectangleShape2D_vertical")
+
+[node name="Spawner" type="Node" parent="."]
+script = ExtResource("2_spawner")
+player_scene = ExtResource("3_player")
+
+[node name="NetworkUnloader" type="Node" parent="."]
+script = ExtResource("4_unloader")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="Quit Game" type="Button" parent="CanvasLayer"]
+anchors_preset = -1
+anchor_left = 0.822
+anchor_top = 0.057
+anchor_right = 0.955
+anchor_bottom = 0.114
+text = "Quit Game"
+
+[connection signal="cease_rpcs_request_received" from="NetworkUnloader" to="." method="_on_network_unloader_cease_rpcs_request_received"]
+[connection signal="pressed" from="CanvasLayer/Quit Game" to="." method="_on_quit_game_pressed"]

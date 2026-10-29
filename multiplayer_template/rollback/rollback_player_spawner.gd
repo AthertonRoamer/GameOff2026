@@ -54,6 +54,19 @@ func spawn_player(member : LobbyMember, index : int = 0) -> Node:
 	return player
 
 
+func quiesce() -> void:
+	##Stops every player's RollbackSynchronizers from sending state and input, without freeing anything.
+	##Call this when the game is about to be unloaded (NetworkUnloader's cease step), then free the game once every peer has ceased.
+	##Freeing rollback nodes while other peers are still transmitting to them logs "Node not found" RPC errors.
+	for player in players.values():
+		if not is_instance_valid(player):
+			continue
+		for synchronizer in player.find_children("*", "RollbackSynchronizer", true, false):
+			synchronizer.state_properties = [] as Array[String]
+			synchronizer.input_properties = [] as Array[String]
+			synchronizer.process_settings()
+
+
 func remove_player(member_id : int) -> void:
 	if not players.has(member_id):
 		return

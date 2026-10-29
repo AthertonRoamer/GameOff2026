@@ -1,0 +1,46 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://multiplayer_template/demo_games/demo_rollback_game/player/rollback_demo_player.gd" id="1_player"]
+[ext_resource type="Script" path="res://multiplayer_template/demo_games/demo_rollback_game/player/rollback_demo_input.gd" id="2_input"]
+[ext_resource type="Texture2D" path="res://icon.svg" id="3_icon"]
+[ext_resource type="Script" path="res://addons/netfox/rollback/rollback-synchronizer.gd" id="4_rollback"]
+[ext_resource type="Script" path="res://addons/netfox/tick-interpolator.gd" id="5_interp"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
+size = Vector2(64, 64)
+
+[node name="RollbackDemoPlayer" type="CharacterBody2D" node_paths=PackedStringArray("name_display", "sprite")]
+motion_mode = 1
+script = ExtResource("1_player")
+name_display = NodePath("NameDisplay")
+sprite = NodePath("Sprite2D")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+scale = Vector2(0.5, 0.5)
+texture = ExtResource("3_icon")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_body")
+
+[node name="NameDisplay" type="Label" parent="."]
+offset_left = -33.0
+offset_top = -66.0
+offset_right = 31.0
+offset_bottom = -43.0
+text = "Player"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Input" type="Node" parent="."]
+script = ExtResource("2_input")
+
+[node name="RollbackSynchronizer" type="Node" parent="." node_paths=PackedStringArray("root")]
+script = ExtResource("4_rollback")
+root = NodePath("..")
+state_properties = Array[String]([":position", ":velocity"])
+input_properties = Array[String](["Input:movement"])
+
+[node name="TickInterpolator" type="Node" parent="." node_paths=PackedStringArray("root")]
+script = ExtResource("5_interp")
+root = NodePath("..")
+properties = Array[String]([":position"])

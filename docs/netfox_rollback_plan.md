@@ -38,6 +38,19 @@ How to opt in: set `game_manager_scene` on the configuration to `rollback_game_m
 
 Verification: `run_smoke.ps1` (original demo) passes unchanged; `run_smoke.ps1 -Rollback` passes with host and client both starting on the scheduled tick (`tests/harness/probe/` is a throwaway game used only for this check).
 
+## Phase 2 status: done
+Added `multiplayer_template/demo_games/demo_rollback_game/`:
+- `rollback_demo.tscn` / `.gd`: 2D arena, spawns players with `RollbackPlayerSpawner`, same quit/unload flow as `DemoOne`.
+- `player/rollback_demo_player.tscn`: `CharacterBody2D` that simulates in `_rollback_tick`, with `RollbackSynchronizer` (state: `:position`, `:velocity`; input: `Input:movement`) and `TickInterpolator` (`:position`). The local player is tinted green.
+- `rollback_demo_configuration.tres`: the same setup as the inline configuration in `main.tscn`, but with `RollbackGameManager`, the rollback demo and the diagnostics overlay on. `main.tscn` is untouched.
+- `RollbackPlayerSpawner.quiesce()`: stops the players' synchronizers sending before the game is unloaded. Without it, every game end logs "Node not found" RPC errors from packets that were in flight while the other side had already freed its nodes.
+
+To try it by hand: open `main.tscn`, select the `Main` node, set its Configuration to `rollback_demo_configuration.tres`, run two instances, host in one and join in the other. Arrow keys move, F3 toggles the overlay.
+
+Verification (`run_smoke.ps1 -Demo`): the client holds "move right" for a second; its player moved about 250-260 px, responded within 2 frames, and the host's and client's final positions of every player match exactly. `run_smoke.ps1` (original demo) and `-Rollback` (probe) still pass.
+
+Not covered yet: loopback has no latency, so this run does not prove that prediction hides real latency or that reconciliation corrects mismatches. That needs the latency and packet-loss testing in Phase 4. Only two players were tested, and the lobby process's own log is not captured.
+
 ## Phases
 1. **Foundation** (done, see above): `RollbackGameManager` (holds `game_loaded` until time sync is done, then starts on an agreed future tick), deterministic player roster helper with authority setup, `NetInput` base, configuration group, diagnostics overlay.
 2. **Rollback demo**: new 2D demo and new configuration, `CharacterBody2D` player with `RollbackSynchronizer` and `TickInterpolator`.

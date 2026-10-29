@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="Configuration" format=3]
+
+[ext_resource type="Script" path="res://multiplayer_template/main/configuration/configuration.gd" id="1_cfg"]
+[ext_resource type="PackedScene" path="res://multiplayer_template/menu/p2p_host_noray_menu/p2p_host_noray_menu.tscn" id="2_menu"]
+[ext_resource type="PackedScene" path="res://multiplayer_template/lobby_system/lobby/late_load_lobby/late_load_lobby.tscn" id="3_lobby"]
+[ext_resource type="PackedScene" path="res://multiplayer_template/rollback/rollback_game_manager.tscn" id="4_manager"]
+[ext_resource type="PackedScene" path="res://multiplayer_template/demo_games/demo_rollback_game/rollback_demo.tscn" id="5_game"]
+
+[resource]
+script = ExtResource("1_cfg")
+menu_scene = ExtResource("2_menu")
+lobby_scene = ExtResource("3_lobby")
+lobby_args = Array[String](["--mode lobby", "--debug-menu", "--headless"])
+game_manager_scene = ExtResource("4_manager")
+game_scene = ExtResource("5_game")
+rollback_diagnostics = true

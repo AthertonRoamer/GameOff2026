@@ -11,6 +11,7 @@ const TIMEOUT : float = 45.0
 var role : String = "host"
 var use_noray : bool = false
 var use_rollback : bool = false
+var use_demo : bool = false
 var game_id : String = ""
 var main_node : Node
 
@@ -21,7 +22,8 @@ func _ready() -> void:
 	if idx != -1 and idx + 1 < args.size():
 		role = args[idx + 1]
 	use_noray = args.has("--noray")
-	use_rollback = args.has("--rollback")
+	use_demo = args.has("--demo") or OS.get_cmdline_args().has("--harness-demo")
+	use_rollback = args.has("--rollback") or use_demo
 	idx = args.find("--game-id")
 	if idx != -1 and idx + 1 < args.size():
 		game_id = args[idx + 1]
@@ -30,7 +32,7 @@ func _ready() -> void:
 		use_rollback = true
 	main_node = MAIN_SCENE.instantiate()
 	if use_rollback:
-		apply_rollback_overrides(main_node.configuration)
+		apply_rollback_overrides(main_node)
 	get_tree().root.add_child.call_deferred(main_node) #must be /root/Main so RPC node paths match the lobby instance
 	await get_tree().process_frame
 	await get_tree().process_frame
@@ -41,14 +43,44 @@ func _ready() -> void:
 		await run_client()
 
 
-func apply_rollback_overrides(config : Configuration) -> void:
-	#swaps in RollbackGameManager and the probe game without touching main.tscn. Every process must do this, the lobby instance included
-	config.game_manager_scene = load("res://multiplayer_template/rollback/rollback_game_manager.tscn")
-	config.game_scene = load("res://tests/harness/probe/probe_game.tscn")
+func apply_rollback_overrides(main : Node) -> void:
+	#swaps in RollbackGameManager and either the probe game or the rollback demo configuration, without touching main.tscn.
+	#Every process must do this, the lobby instance included
+	if use_demo:
+		main.configuration = load("res://multiplayer_template/demo_games/demo_rollback_game/rollback_demo_configuration.tres")
+		main.configuration.rollback_diagnostics = false #keep the overlay out of the way of the automated run
+	else:
+		main.configuration.game_manager_scene = load("res://multiplayer_template/rollback/rollback_game_manager.tscn")
+		main.configuration.game_scene = load("res://tests/harness/probe/probe_game.tscn")
+
+
+func demo_positions(game : Node) -> String:
+	var entries : Array = []
+	for id in game.spawner.players:
+		var p : Node2D = game.spawner.players[id]
+		entries.append("%d=%.1f,%.1f" % [id, p.position.x, p.position.y])
+	return "me=%d %s" % [multiplayer.get_unique_id(), ";".join(entries)]
+
+
+func hold_move_right_and_measure() -> void:
+	#the client presses right for one second. Reports how many frames passed before its own player visibly moved
+	var game : Node = Main.mode.get_game()
+	var me : Node2D = game.spawner.local_player
+	var start_x : float = me.position.x
+	Input.action_press("ui_right")
+	var frames : int = 0
+	while frames < 120 and me.position.x <= start_x:
+		await get_tree().process_frame
+		frames += 1
+	log_line("LOCAL_RESPONSE frames=%d" % frames)
+	await get_tree().create_timer(1.0).timeout
+	Input.action_release("ui_right")
 
 
 func log_line(msg : String) -> void:
 	print("[%s] %s" % [role.to_upper(), msg])
+	if OS.has_environment("HARNESS_MARK_STDERR"): #lets you see where engine errors fall relative to the test phases
+		printerr("MARK [%s] %s" % [role.to_upper(), msg.left(40)])
 
 
 func wait_until(condition : Callable, timeout : float = TIMEOUT) -> bool:
@@ -72,6 +104,8 @@ func describe_game() -> String:
 		return "no game"
 	if game.has_method("describe"):
 		return game.describe()
+	if "spawner" in game:
+		return demo_positions(game)
 	var info : Array = []
 	for p in game.players:
 		if is_instance_valid(p):
@@ -88,6 +122,8 @@ func run_host() -> void:
 		var lobby_args : Array[String] = Main.main.configuration.lobby_args
 		lobby_args.insert(0, "res://tests/harness/harness.tscn")
 		lobby_args.append("--harness-lobby")
+		if use_demo:
+			lobby_args.append("--harness-demo")
 	Main.open_mode(P2PHostMode.new())
 	var mode : P2PHostMode = Main.mode
 	mode.my_member_data.name = "HostPlayer"
@@ -110,6 +146,9 @@ func run_host() -> void:
 		return fail("game never started")
 	await get_tree().create_timer(2.0).timeout
 	log_line("GAME_STARTED " + describe_game())
+	if use_demo: #the client moves for a second and settles, then compare what this peer sees
+		await get_tree().create_timer(4.5).timeout
+		log_line("DEMO_POS " + describe_game())
 	mode.lobby.trigger_request_end_game()
 	if not await wait_until(func(): return not mode.lobby.game_manager.in_game):
 		return fail("game never ended")
@@ -138,6 +177,10 @@ func run_client() -> void:
 		return fail("game never started")
 	await get_tree().create_timer(2.0).timeout
 	log_line("GAME_STARTED " + describe_game())
+	if use_demo:
+		await hold_move_right_and_measure()
+		await get_tree().create_timer(2.0).timeout
+		log_line("DEMO_POS " + describe_game())
 	if not await wait_until(func(): return not mode.lobby.game_manager.in_game):
 		return fail("game never ended")
 	log_line("GAME_ENDED")
