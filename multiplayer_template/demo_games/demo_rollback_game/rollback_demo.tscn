@@ -4,6 +4,7 @@
 [ext_resource type="Script" path="res://multiplayer_template/rollback/rollback_player_spawner.gd" id="2_spawner"]
 [ext_resource type="PackedScene" path="res://multiplayer_template/demo_games/demo_rollback_game/player/rollback_demo_player.tscn" id="3_player"]
 [ext_resource type="Script" path="res://multiplayer_template/network/network_unloader/network_unloader.gd" id="4_unloader"]
+[ext_resource type="Script" path="res://multiplayer_template/rollback/lag_compensator.gd" id="5_lagcomp"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_horizontal"]
 size = Vector2(1352, 40)
@@ -47,6 +48,9 @@ shape = SubResource("RectangleShape2D_vertical")
 [node name="Spawner" type="Node" parent="."]
 script = ExtResource("2_spawner")
 player_scene = ExtResource("3_player")
+
+[node name="LagCompensator" type="Node" parent="."]
+script = ExtResource("5_lagcomp")
 
 [node name="NetworkUnloader" type="Node" parent="."]
 script = ExtResource("4_unloader")

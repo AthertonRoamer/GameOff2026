@@ -51,6 +51,22 @@ Verification (`run_smoke.ps1 -Demo`): the client holds "move right" for a second
 
 Not covered yet: loopback has no latency, so this run does not prove that prediction hides real latency or that reconciliation corrects mismatches. That needs the latency and packet-loss testing in Phase 4. Only two players were tested, and the lobby process's own log is not captured.
 
+## Phase 3 status: hitscan shooting done, projectiles and visibility filtering not done
+Added:
+- `multiplayer_template/rollback/lag_compensator.gd` (`LagCompensator`): server-side position history per rollback tick plus `raycast()` against circles as the shooter saw them. The shooter reports its view lag (ticks) as an input property, the lobby clamps it (`max_rewind_ticks`, default 12 = 200 ms) and rewinds targets by it. 2D only. Netfox does not provide this.
+- Demo weapon (`rollback_demo_player.gd`, `rollback_demo_input.gd`): `RewindableAction` for the shot; input properties `fire`, `aim`, `view_lag`; `last_fire_tick` is rollback state (cooldown); health is not rollback state, the lobby owns it and a `StateSynchronizer` sends it. Hit resolution runs only on the lobby, on the action's `CONFIRMING` status. The shooter predicts the tracer immediately.
+- `RollbackPlayerSpawner.quiesce()` now also quiets `StateSynchronizer`s.
+- Tests: `tests/unit/test_lag_compensator.tscn` (22 checks, offline, run as a scene because `--script` mode has no autoloads), `tests/harness/latency_proxy.py` (local UDP proxy with delay, jitter and loss for the client's connection), `run_smoke.ps1 -Moving -LatencyMs N [-NoLagComp] [-LossPercent N]`, and `run_lagcomp_check.ps1`.
+
+Pattern worth keeping: a one-shot server effect (damage) must be deduplicated per shot. A late input makes the server resimulate, and the same shot can then be confirmed on a different tick than before. The demo ignores a second damaging shot within `fire_cooldown_ticks / 2` of an earlier one.
+
+Measured (loopback plus the latency proxy, two players, one machine):
+- Prediction hides latency: the local player moves within 2 frames at 260 ms round trip.
+- Lag compensation, shooter and target running side by side, 16 px hit radius, about 8 shots: 120 ms each way (about 260 ms RTT): 7-8 hits with it, 1 without. 200 ms each way (440 ms RTT, past the 200 ms rewind cap): 8 with, 1 without. 40 ms each way: all shots hit either way, so it only matters at higher latency. Shot counts are the client's own estimate and can be off by one.
+- Loss at 80 ms each way: 0%, 1% and 2% each way pass every check. At 5% each way it breaks: netfox rejects thousands of inputs as "older than 64 frames" and the host never sees the client's player move. Suspected cause (not confirmed): ENet holds unreliable packets behind a lost reliable one on the same channel. This is the first item of Phase 4.
+
+Not done: projectiles (deterministic names, spawn and despawn under resimulation), respawn (position is rollback state, so it needs to go through the rollback system), `PeerVisibilityFilter`, line-of-sight blocking for shots, and hit shapes other than circles.
+
 ## Phases
 1. **Foundation** (done, see above): `RollbackGameManager` (holds `game_loaded` until time sync is done, then starts on an agreed future tick), deterministic player roster helper with authority setup, `NetInput` base, configuration group, diagnostics overlay.
 2. **Rollback demo**: new 2D demo and new configuration, `CharacterBody2D` player with `RollbackSynchronizer` and `TickInterpolator`.

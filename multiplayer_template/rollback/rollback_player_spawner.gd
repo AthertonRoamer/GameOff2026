@@ -65,6 +65,9 @@ func quiesce() -> void:
 			synchronizer.state_properties = [] as Array[String]
 			synchronizer.input_properties = [] as Array[String]
 			synchronizer.process_settings()
+		for synchronizer in player.find_children("*", "StateSynchronizer", true, false):
+			synchronizer.properties = [] as Array[String]
+			synchronizer.process_settings()
 
 
 func remove_player(member_id : int) -> void:

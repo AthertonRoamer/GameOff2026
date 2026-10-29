@@ -38,6 +38,8 @@ func set_players_active(active : bool) -> void:
 func _on_player_spawned(player : RollbackDemoPlayer, member : LobbyMember, index : int) -> void:
 	player.id = member.id
 	player.player_name = member.name
+	player.lag_compensator = $LagCompensator
+	$LagCompensator.track(player, &"position", 32.0)
 	player.position = Vector2(first_pos.x + spacing * index, first_pos.y)
 
 

@@ -5,6 +5,8 @@
 [ext_resource type="Texture2D" path="res://icon.svg" id="3_icon"]
 [ext_resource type="Script" path="res://addons/netfox/rollback/rollback-synchronizer.gd" id="4_rollback"]
 [ext_resource type="Script" path="res://addons/netfox/tick-interpolator.gd" id="5_interp"]
+[ext_resource type="Script" path="res://addons/netfox/rewindable-action.gd" id="6_action"]
+[ext_resource type="Script" path="res://addons/netfox/state-synchronizer.gd" id="7_state"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
 size = Vector2(64, 64)
@@ -37,8 +39,16 @@ script = ExtResource("2_input")
 [node name="RollbackSynchronizer" type="Node" parent="." node_paths=PackedStringArray("root")]
 script = ExtResource("4_rollback")
 root = NodePath("..")
-state_properties = Array[String]([":position", ":velocity"])
-input_properties = Array[String](["Input:movement"])
+state_properties = Array[String]([":position", ":velocity", ":last_fire_tick"])
+input_properties = Array[String](["Input:movement", "Input:fire", "Input:aim", "Input:view_lag"])
+
+[node name="FireAction" type="Node" parent="."]
+script = ExtResource("6_action")
+
+[node name="HealthSynchronizer" type="Node" parent="." node_paths=PackedStringArray("root")]
+script = ExtResource("7_state")
+root = NodePath("..")
+properties = Array[String]([":health"])
 
 [node name="TickInterpolator" type="Node" parent="." node_paths=PackedStringArray("root")]
 script = ExtResource("5_interp")
