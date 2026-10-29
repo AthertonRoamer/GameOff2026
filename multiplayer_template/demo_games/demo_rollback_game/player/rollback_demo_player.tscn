@@ -39,10 +39,13 @@ script = ExtResource("2_input")
 [node name="RollbackSynchronizer" type="Node" parent="." node_paths=PackedStringArray("root")]
 script = ExtResource("4_rollback")
 root = NodePath("..")
-state_properties = Array[String]([":position", ":velocity", ":last_fire_tick"])
-input_properties = Array[String](["Input:movement", "Input:fire", "Input:aim", "Input:view_lag"])
+state_properties = Array[String]([":position", ":velocity", ":last_fire_tick", ":last_alt_tick", ":dead_since"])
+input_properties = Array[String](["Input:movement", "Input:fire", "Input:fire_alt", "Input:aim", "Input:view_lag"])
 
 [node name="FireAction" type="Node" parent="."]
+script = ExtResource("6_action")
+
+[node name="AltFireAction" type="Node" parent="."]
 script = ExtResource("6_action")
 
 [node name="HealthSynchronizer" type="Node" parent="." node_paths=PackedStringArray("root")]

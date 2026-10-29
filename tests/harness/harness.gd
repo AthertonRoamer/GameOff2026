@@ -15,6 +15,7 @@ var use_noray : bool = false
 var use_rollback : bool = false
 var use_demo : bool = false
 var use_moving : bool = false #shooter and target run side by side, the shooter fires at where it sees the target
+var use_combat : bool = false #the acting client kills the host's player with projectiles, then everyone checks the respawn
 var no_lagcomp : bool = false #the lobby does not rewind targets, for comparison
 var join_port : int = LOBBY_PORT #the client can join through a latency proxy by using another port
 var players_expected : int = 2 #host waits for this many members before beginning
@@ -35,7 +36,8 @@ func _ready() -> void:
 	use_noray = args.has("--noray")
 	use_moving = args.has("--moving")
 	no_lagcomp = args.has("--no-lagcomp")
-	use_demo = args.has("--demo") or use_moving or OS.get_cmdline_args().has("--harness-demo")
+	use_combat = args.has("--combat")
+	use_demo = args.has("--demo") or use_moving or use_combat or OS.get_cmdline_args().has("--harness-demo")
 	use_rollback = args.has("--rollback") or use_demo
 	idx = args.find("--join-port")
 	if idx != -1 and idx + 1 < args.size():
@@ -202,6 +204,32 @@ func fire_pulse(aim : Vector2) -> void:
 	Input.action_release("ui_accept")
 
 
+func alt_pulse(aim : Vector2) -> void:
+	#one projectile: the tap is shorter than the cooldown
+	var game : Node = Main.mode.get_game()
+	game.spawner.local_player.input.test_aim = aim
+	Input.action_press("ui_focus_next")
+	await get_tree().create_timer(0.15).timeout
+	Input.action_release("ui_focus_next")
+
+
+func combat_report() -> void:
+	#every peer reports two moments as it sees them (peers start a moment apart on a bad connection, so no fixed times):
+	#the victim (the host's player, who respawns at 400,400) is dead, then it is alive again. A peer that never sees it gives up after 20 s.
+	var game : Node = Main.mode.get_game()
+	var victim : Node = null
+	for player in game.spawner.players.values():
+		if player.spawn_position == Vector2(400, 400):
+			victim = player
+	await wait_until(func(): return victim.health <= 0, 20.0)
+	await get_tree().create_timer(0.5).timeout
+	log_line("COMBAT_DEAD " + describe_game())
+	await wait_until(func(): return victim.is_alive() and victim.health > 0, 20.0)
+	await get_tree().create_timer(1.0).timeout
+	log_line("COMBAT_RESPAWNED " + describe_game())
+	await get_tree().create_timer(1.0).timeout
+
+
 func hold_move_right_and_measure() -> void:
 	#the client presses right for one second. Reports how many frames passed before its own player visibly moved
 	var game : Node = Main.mode.get_game()
@@ -325,6 +353,8 @@ func run_host_scenario() -> void:
 		Input.action_release("ui_right")
 		await get_tree().create_timer(0.4).timeout
 		log_line("HOST_STILL_RUNS moved=%.1f" % (me.position.x - start_x))
+	elif use_combat:
+		await combat_report()
 	elif use_moving:
 		await moving_target_run(1.7)
 		await get_tree().create_timer(3.0).timeout
@@ -344,6 +374,12 @@ func run_client_scenario(mode : ClientMode) -> void:
 		log_line("LEFT")
 	elif kill_mode:
 		await get_tree().create_timer(300.0).timeout #the runner kills this process
+	elif use_combat:
+		if not observer:
+			for shot in 3: #40 damage each: two shots hurt, the third kills
+				await alt_pulse(Vector2.LEFT)
+				await get_tree().create_timer(0.7).timeout
+		await combat_report()
 	elif observer:
 		if use_demo:
 			await get_tree().create_timer(7.0).timeout

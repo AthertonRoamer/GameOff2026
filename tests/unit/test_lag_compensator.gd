@@ -43,6 +43,17 @@ func _ready() -> void:
 	check(LagCompensator.ray_circle_distance(Vector2(100, 0), Vector2.RIGHT, Vector2(100, 0), 32.0) == 0.0, "ray starting inside the circle hits at 0")
 	check(LagCompensator.ray_circle_distance(Vector2.ZERO, Vector2.ZERO, Vector2(100, 0), 32.0) < 0.0, "zero direction misses")
 
+	print("sweeping circles")
+	check(is_equal_approx(LagCompensator.segment_circle_fraction(Vector2.ZERO, Vector2(100, 0), 8.0, Vector2(100, 0), 32.0), 0.6), "sweep touches at distance minus both radii")
+	check(LagCompensator.segment_circle_fraction(Vector2.ZERO, Vector2(30, 0), 8.0, Vector2(100, 0), 32.0) < 0.0, "a move that stops short misses")
+	check(LagCompensator.segment_circle_fraction(Vector2.ZERO, Vector2(100, 0), 8.0, Vector2(100, 45), 32.0) < 0.0, "passing outside both radii misses")
+	check(LagCompensator.segment_circle_fraction(Vector2(100, 0), Vector2(200, 0), 8.0, Vector2(100, 0), 32.0) == 0.0, "a move starting inside hits at 0")
+	check(LagCompensator.segment_circle_fraction(Vector2.ZERO, Vector2(-100, 0), 8.0, Vector2(100, 0), 32.0) < 0.0, "moving away misses")
+	check(LagCompensator.segment_circle_fraction(Vector2.ZERO, Vector2.ZERO, 8.0, Vector2(100, 0), 32.0) < 0.0, "no movement far away misses")
+	var swept : Dictionary = comp.sweep(Vector2.ZERO, Vector2(200, 0), 8.0, 20, shooter)
+	check(swept.get("node") == target and is_equal_approx(swept["position"].x, 160.0), "sweep finds the tracked target and reports where it touched (target at x=200)")
+	check(comp.sweep(Vector2.ZERO, Vector2(200, 0), 8.0, 20, shooter, func(n : Node) -> bool: return false).is_empty(), "a filter that refuses everything gives no hit")
+
 	print("lag compensated raycast (shooter at x=500 firing left along the row, target now at x=200)")
 	var now_hit : Dictionary = comp.raycast(Vector2(500, 0), Vector2.LEFT, 1000.0, 20, shooter)
 	check(now_hit.get("node") == target, "shot at the current tick hits the target")

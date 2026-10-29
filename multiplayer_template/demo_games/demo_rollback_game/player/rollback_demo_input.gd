@@ -6,6 +6,7 @@ extends NetInput
 
 var movement : Vector2 = Vector2.ZERO
 var fire : bool = false
+var fire_alt : bool = false #projectile weapon: right mouse button or Tab
 var aim : Vector2 = Vector2.RIGHT
 var view_lag : int = 0 #how many ticks behind the server this player is looking at the other players, used for lag compensation
 var active : bool = false #input is ignored until the game has started
@@ -17,9 +18,11 @@ func _gather() -> void:
 	if not active:
 		movement = Vector2.ZERO
 		fire = false
+		fire_alt = false
 		return
 	movement = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
 	fire = Input.is_action_pressed("ui_accept") or Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)
+	fire_alt = Input.is_action_pressed("ui_focus_next") or Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT)
 	var body : Node2D = get_parent()
 	if test_aim != null:
 		aim = test_aim

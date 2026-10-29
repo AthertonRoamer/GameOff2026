@@ -74,17 +74,53 @@ func get_position_at(node : Node, tick : int) -> Vector2:
 
 ##Fires a ray against the tracked nodes as they were on the given tick. Returns {} on a miss, otherwise
 ##{"node": Node, "position": Vector2 (where the ray enters the target), "distance": float}.
-func raycast(origin : Vector2, direction : Vector2, max_range : float, tick : int, exclude : Node = null) -> Dictionary:
+##An optional filter (node -> bool) skips nodes that cannot be hit, for example dead players.
+func raycast(origin : Vector2, direction : Vector2, max_range : float, tick : int, exclude : Node = null, filter : Callable = Callable()) -> Dictionary:
 	var best : Dictionary = {}
 	var best_distance : float = max_range
 	for node in _tracked:
-		if node == exclude or not is_instance_valid(node):
+		if node == exclude or not is_instance_valid(node) or (filter.is_valid() and not filter.call(node)):
 			continue
 		var distance : float = ray_circle_distance(origin, direction, get_position_at(node, tick), _tracked[node]["radius"])
 		if distance >= 0.0 and distance <= best_distance:
 			best_distance = distance
 			best = {"node": node, "position": origin + direction.normalized() * distance, "distance": distance}
 	return best
+
+
+##Moves a circle of sweep_radius from `from` to `to` against the tracked nodes as they were on the given tick, for projectiles.
+##Returns {} on a miss, otherwise {"node": Node, "position": Vector2 (where the sweep first touches), "fraction": float (0 to 1 along the move)}.
+func sweep(from : Vector2, to : Vector2, sweep_radius : float, tick : int, exclude : Node = null, filter : Callable = Callable()) -> Dictionary:
+	var best : Dictionary = {}
+	var best_fraction : float = 2.0
+	for node in _tracked:
+		if node == exclude or not is_instance_valid(node) or (filter.is_valid() and not filter.call(node)):
+			continue
+		var fraction : float = segment_circle_fraction(from, to, sweep_radius, get_position_at(node, tick), _tracked[node]["radius"])
+		if fraction >= 0.0 and fraction < best_fraction:
+			best_fraction = fraction
+			best = {"node": node, "position": from.lerp(to, fraction), "fraction": fraction}
+	return best
+
+
+##How far along the move from `from` to `to` (0 to 1) a circle of sweep_radius first touches the circle at `center`, or -1.0 if it never does.
+##A move that starts already touching returns 0.
+static func segment_circle_fraction(from : Vector2, to : Vector2, sweep_radius : float, center : Vector2, radius : float) -> float:
+	var reach : float = sweep_radius + radius
+	var start : Vector2 = from - center
+	var move : Vector2 = to - from
+	var c : float = start.length_squared() - reach * reach
+	if c <= 0.0:
+		return 0.0
+	var a : float = move.length_squared()
+	if a < 0.000001:
+		return -1.0
+	var b : float = 2.0 * start.dot(move)
+	var discriminant : float = b * b - 4.0 * a * c
+	if discriminant < 0.0:
+		return -1.0
+	var fraction : float = (-b - sqrt(discriminant)) / (2.0 * a)
+	return fraction if fraction >= 0.0 and fraction <= 1.0 else -1.0
 
 
 ##Distance along the ray to where it first touches the circle, or -1.0 if it does not. A ray starting inside the circle returns 0.

@@ -5,6 +5,7 @@
 [ext_resource type="PackedScene" path="res://multiplayer_template/demo_games/demo_rollback_game/player/rollback_demo_player.tscn" id="3_player"]
 [ext_resource type="Script" path="res://multiplayer_template/network/network_unloader/network_unloader.gd" id="4_unloader"]
 [ext_resource type="Script" path="res://multiplayer_template/rollback/lag_compensator.gd" id="5_lagcomp"]
+[ext_resource type="Script" path="res://multiplayer_template/rollback/projectile_manager.gd" id="6_projectiles"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_horizontal"]
 size = Vector2(1352, 40)
@@ -23,24 +24,28 @@ polygon = PackedVector2Array(-100, -100, 1252, -100, 1252, 748, -100, 748)
 
 [node name="WallTop" type="StaticBody2D" parent="Terrain"]
 position = Vector2(576, -20)
+collision_layer = 3
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Terrain/WallTop"]
 shape = SubResource("RectangleShape2D_horizontal")
 
 [node name="WallBottom" type="StaticBody2D" parent="Terrain"]
 position = Vector2(576, 668)
+collision_layer = 3
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Terrain/WallBottom"]
 shape = SubResource("RectangleShape2D_horizontal")
 
 [node name="WallLeft" type="StaticBody2D" parent="Terrain"]
 position = Vector2(-20, 324)
+collision_layer = 3
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Terrain/WallLeft"]
 shape = SubResource("RectangleShape2D_vertical")
 
 [node name="WallRight" type="StaticBody2D" parent="Terrain"]
 position = Vector2(1172, 324)
+collision_layer = 3
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Terrain/WallRight"]
 shape = SubResource("RectangleShape2D_vertical")
@@ -51,6 +56,10 @@ player_scene = ExtResource("3_player")
 
 [node name="LagCompensator" type="Node" parent="."]
 script = ExtResource("5_lagcomp")
+
+[node name="ProjectileManager" type="Node2D" parent="."]
+script = ExtResource("6_projectiles")
+world_collision_mask = 2
 
 [node name="NetworkUnloader" type="Node" parent="."]
 script = ExtResource("4_unloader")

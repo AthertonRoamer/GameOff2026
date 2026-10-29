@@ -15,6 +15,7 @@ var diagnostics : RollbackDiagnostics
 const CLOCK_HEALTHY_OFFSET : float = 0.05 #seconds. How far a member's game clock may be from the shared clock when the game starts
 
 var _start_pending : bool = false
+var _saved_netfox_log_level : Variant = null #set while netfox's own logging is muted, see _mute_netfox_logs()
 var _clock_reports : Dictionary = {} #lobby only. key: member id, value: {offset: float, received_msec: int}
 
 
@@ -26,7 +27,27 @@ func get_game() -> Node:
 	return game
 
 
+func _exit_tree() -> void:
+	_restore_netfox_logs()
+
+
+##Until the game starts, a client whose clock is still catching up gets thousands of "older than 64 frames" messages a second from
+##netfox. Writing them stalls the process for seconds, which breaks its clock sync further (seen on lossy connections). They carry no
+##information while the clock is catching up, so netfox's own logging is muted from loading until the game starts.
+func _mute_netfox_logs() -> void:
+	if Main.main.configuration.rollback_quiet_loading and _saved_netfox_log_level == null:
+		_saved_netfox_log_level = NetfoxLogger.module_log_level.get("netfox", NetfoxLogger.DEFAULT_LOG_LEVEL)
+		NetfoxLogger.module_log_level["netfox"] = NetfoxLogger.LOG_NONE
+
+
+func _restore_netfox_logs() -> void:
+	if _saved_netfox_log_level != null:
+		NetfoxLogger.module_log_level["netfox"] = _saved_netfox_log_level
+		_saved_netfox_log_level = null
+
+
 func load_game() -> void:
+	_mute_netfox_logs()
 	if game_scene != null:
 		game = game_scene.instantiate()
 		add_child(game, true)
@@ -53,6 +74,7 @@ func start_game() -> void:
 
 func end_game() -> void:
 	_cancel_pending_start()
+	_restore_netfox_logs()
 	in_game = false
 	is_game_loaded = false
 	start_tick = -1
@@ -132,6 +154,7 @@ func _on_network_tick(_delta : float, tick : int) -> void:
 	if tick > start_tick:
 		push_warning("RollbackGameManager is late for the start tick (%d, now %d), start delay may be too short" % [start_tick, tick])
 	_cancel_pending_start()
+	_restore_netfox_logs()
 	Main.output("Rollback: game starting on tick %d" % tick)
 	starting_game.emit()
 	if is_instance_valid(game) and game.has_method("start"):

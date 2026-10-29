@@ -4,6 +4,7 @@ param(
 	[switch]$Noray,
 	[switch]$Rollback, #use RollbackGameManager and the probe game, and check every peer starts on the scheduled tick
 	[switch]$Demo, #run the rollback demo: the first client shoots and moves, then every peer's view of every player must agree
+	[switch]$Combat, #the first client kills the host's player with projectiles; every peer must see it die and respawn at the same place
 	[switch]$Moving, #shooter and target run side by side and the shooter fires at where it sees the target; reports how many shots hit
 	[switch]$NoLagComp, #with -Moving: the lobby does not rewind targets, for comparison
 	[switch]$Leave, #with -Demo: the first client leaves the game gracefully; the host must notice and keep running
@@ -26,8 +27,9 @@ $scene = "res://tests/harness/harness.tscn"
 $common = @()
 if ($Noray) { $common += "--noray" }
 if ($Rollback) { $common += "--rollback" }
-if ($Demo -or $Leave -or $Kill) { $common += "--demo" }
+if ($Demo -or $Leave -or $Kill -or $Combat) { $common += "--demo" }
 if ($Moving) { $common += "--moving" }
+if ($Combat) { $common += "--combat" }
 if ($Leave) { $common += "--leave" }
 if ($Kill) { $common += "--kill" }
 $common += @("--players", ($Clients + 1), "--rounds", $Rounds)
@@ -118,8 +120,23 @@ function Get-Positions($file, $label) {
 	return $result
 }
 
-if ($Moving) {
-	$m = (Select-String -Path $hostOut -Pattern "MOVING_RESULT health=(\d+)").Matches
+if ($Combat) {
+	foreach ($file in (@($hostOut) + $clientOuts)) {
+		$name = Split-Path $file -Leaf
+		$dead = Get-Positions $file "COMBAT_DEAD"
+		$back = Get-Positions $file "COMBAT_RESPAWNED"
+		if ($null -eq $dead -or $null -eq $back) { "COMBAT: $name sent no report"; $ok = $false; continue }
+		$victims = @($dead.players.Keys | Where-Object { $dead.players[$_][2] -eq 0 })
+		$survivors = @($dead.players.Keys | Where-Object { $dead.players[$_][2] -ne 0 })
+		"COMBAT: $name saw dead: $($victims -join ',') (hp 0), survivors at hp $(($survivors | ForEach-Object { $dead.players[$_][2] }) -join ',')"
+		if ($victims.Count -ne 1) { "COMBAT: expected exactly one dead player"; $ok = $false; continue }
+		if (@($survivors | Where-Object { $dead.players[$_][2] -ne 100 }).Count -gt 0) { "COMBAT: a survivor was hurt"; $ok = $false }
+		$v = $back.players[$victims[0]]
+		"COMBAT: $name saw the victim respawn at ($($v[0]), $($v[1])) hp $($v[2]) (expected 400, 400, 100)"
+		if ([math]::Abs($v[0] - 400.0) -gt 2.0 -or [math]::Abs($v[1] - 400.0) -gt 2.0 -or $v[2] -ne 100) { "COMBAT: respawn wrong"; $ok = $false }
+	}
+} elseif ($Moving) {
+	$m =(Select-String -Path $hostOut -Pattern "MOVING_RESULT health=(\d+)").Matches
 	if ($m.Count -eq 0) {
 		"MOVING: no result found"; $ok = $false
 	} else {

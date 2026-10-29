@@ -6,6 +6,7 @@ extends Node2D
 
 @export var first_pos : Vector2 = Vector2(100, 100)
 @export var spacing : float = 100.0
+@export var respawn_first_pos : Vector2 = Vector2(400, 400) #where dead players come back, spread out by spacing like first_pos
 
 var started : bool = false #true once RollbackGameManager has called start(), on the agreed tick
 
@@ -21,6 +22,9 @@ func _ready() -> void:
 		if lobby.is_master: #the lobby process is a headless referee, it only simulates
 			visible = false
 			$"CanvasLayer/Quit Game".visible = false
+	$ProjectileManager.lag_compensator = $LagCompensator
+	$ProjectileManager.can_hit = func(target : Node) -> bool: return target.is_alive()
+	$ProjectileManager.projectile_hit.connect(_on_projectile_hit) #only the lobby emits it
 
 
 func start() -> void:
@@ -44,9 +48,16 @@ func _on_player_spawned(player : RollbackDemoPlayer, member : LobbyMember, index
 	player.lag_compensator = $LagCompensator
 	$LagCompensator.track(player, &"position", 32.0)
 	player.position = Vector2(first_pos.x + spacing * index, first_pos.y)
+	player.spawn_position = Vector2(respawn_first_pos.x + spacing * index, respawn_first_pos.y)
+	player.projectile_manager = $ProjectileManager
+
+
+func _on_projectile_hit(projectile : Dictionary, target : Node) -> void:
+	target.take_damage(projectile["damage"])
 
 
 func _on_network_unloader_cease_rpcs_request_received() -> void:
+	$ProjectileManager.quiesce()
 	set_players_active(false)
 	spawner.quiesce()
 	($NetworkUnloader as NetworkUnloader).register_as_ceased()

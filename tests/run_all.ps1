@@ -30,11 +30,14 @@ Add-SmokeResult "all peers start on the same tick (2 players)" (& $smoke -Godot 
 Add-SmokeResult "all peers start on the same tick (3 players)" (& $smoke -Godot $Godot -Rollback -Clients 2 -TimeoutSeconds 120)
 Add-SmokeResult "rollback demo: movement and shooting agree (2 players)" (& $smoke -Godot $Godot -Demo -TimeoutSeconds 120)
 Add-SmokeResult "rollback demo: movement and shooting agree (3 players)" (& $smoke -Godot $Godot -Demo -Clients 2 -TimeoutSeconds 150)
+Add-SmokeResult "rollback demo: projectiles kill, player respawns (2 players)" (& $smoke -Godot $Godot -Combat -TimeoutSeconds 150)
+Add-SmokeResult "rollback demo: projectiles kill, player respawns (3 players)" (& $smoke -Godot $Godot -Combat -Clients 2 -TimeoutSeconds 150)
 Add-SmokeResult "rollback demo: second game in the same lobby" (& $smoke -Godot $Godot -Demo -Rounds 2 -TimeoutSeconds 150)
 Add-SmokeResult "rollback demo: a player leaves mid-game" (& $smoke -Godot $Godot -Leave -TimeoutSeconds 150)
 if (-not $SkipSlow) {
 	Add-SmokeResult "rollback demo: a player's process is killed mid-game" (& $smoke -Godot $Godot -Kill -TimeoutSeconds 200)
 	Add-SmokeResult "rollback demo: 80 ms each way, 2% loss" (& $smoke -Godot $Godot -Demo -LatencyMs 80 -LossPercent 2 -TimeoutSeconds 150)
+	Add-SmokeResult "rollback demo: projectiles and respawn, 80 ms each way, 2% loss" (& $smoke -Godot $Godot -Combat -LatencyMs 80 -LossPercent 2 -TimeoutSeconds 150)
 	$lag = & (Join-Path $here "harness\run_lagcomp_check.ps1") -LatencyMs 120
 	$lagPass = ($lag | Select-String -Pattern "LAGCOMP CHECK: PASS" -Quiet)
 	$results["lag compensation helps at 120 ms each way"] = $lagPass
