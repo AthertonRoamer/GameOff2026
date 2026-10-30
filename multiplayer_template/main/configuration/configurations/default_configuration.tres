@@ -1,26 +1,20 @@
-[gd_resource type="Resource" script_class="Configuration" load_steps=9 format=3 uid="uid://crv6v03st6lul"]
+[gd_resource type="Resource" script_class="Configuration" format=3 uid="uid://crv6v03st6lul"]
 
 [ext_resource type="PackedScene" uid="uid://cdjakowaa7si1" path="res://multiplayer_template/menu/debug_menu/debug_menu.tscn" id="1_12aqr"]
 [ext_resource type="PackedScene" uid="uid://bj5csl8cew8re" path="res://multiplayer_template/game_manager/basic_game_manager/basic_game_manager.tscn" id="1_l3boe"]
 [ext_resource type="PackedScene" uid="uid://b0dta0o2snoho" path="res://multiplayer_template/lobby_system/lobby_database/lobby_database.tscn" id="1_svfp7"]
 [ext_resource type="PackedScene" uid="uid://ctn47px6wv5sq" path="res://multiplayer_template/lobby_system/lobby_manager/lobby_manager.tscn" id="2_6gvdv"]
+[ext_resource type="PackedScene" uid="uid://ye22u6x1her8" path="res://multiplayer_template/demo_games/demo_late_load_lobby_game/demo_one.tscn" id="3_e6oiv"]
 [ext_resource type="PackedScene" uid="uid://w45wdv05n7pq" path="res://multiplayer_template/lobby_system/lobby/lobby.tscn" id="3_ilt07"]
+[ext_resource type="Script" uid="uid://dt0cqi6f3viku" path="res://multiplayer_template/lobby_system/lobby_data/lobby_data.gd" id="3_yy7bh"]
 [ext_resource type="PackedScene" uid="uid://fbv2gaggq1mq" path="res://multiplayer_template/lobby_system/matchmaker/matchmaker.tscn" id="4_sxxh5"]
 [ext_resource type="PackedScene" uid="uid://cwenqtdpvtw5d" path="res://multiplayer_template/menu/main_menu/main_menu.tscn" id="5_q72ms"]
 [ext_resource type="Script" uid="uid://btxn2vsukni76" path="res://multiplayer_template/main/configuration/configuration.gd" id="6_5ytir"]
+[ext_resource type="Script" uid="uid://dpf4etlm4xb7m" path="res://multiplayer_template/lobby_system/lobby_member/lobby_member.gd" id="6_e6oiv"]
+[ext_resource type="Script" uid="uid://bpq6rwiimydr6" path="res://multiplayer_template/lobby_system/lobby_stats/lobby_stats_game.gd" id="8_r2o1c"]
 
 [resource]
 script = ExtResource("6_5ytir")
-server_port = 3000
-lobby_manager_port = 4000
-starting_lobby_port = 5000
-listen_port = 3001
-broadcast_port = 3002
 menu_scene = ExtResource("5_q72ms")
-debug_menu_scene = ExtResource("1_12aqr")
-lobby_scene = ExtResource("3_ilt07")
-lobby_manager_scene = ExtResource("2_6gvdv")
-lobby_database_scene = ExtResource("1_svfp7")
-matchmaker_scene = ExtResource("4_sxxh5")
-lobby_args = Array[String](["--mode lobby"])
-game_manager_scene = ExtResource("1_l3boe")
+lobby_args = Array[String](["--mode lobby", "--debug-menu"])
+game_scene = ExtResource("3_e6oiv")

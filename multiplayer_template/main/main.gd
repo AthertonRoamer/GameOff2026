@@ -79,7 +79,10 @@ func _ready() -> void:
 	configuration.configure(self)
 	
 	#load components from configuration
-	menu_scene = configuration.menu_scene
+	if configuration.use_debug_menu:
+		menu_scene = configuration.debug_menu_scene
+	else:
+		menu_scene = configuration.menu_scene
 	lobby_manager_scene = configuration.lobby_manager_scene
 	lobby_scene = configuration.lobby_scene
 	lobby_database_scene = configuration.lobby_database_scene
