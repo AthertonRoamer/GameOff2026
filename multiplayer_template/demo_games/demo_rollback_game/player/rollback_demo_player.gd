@@ -33,6 +33,8 @@ var projectile_manager : ProjectileManager #set by the game on every peer
 
 var _damaging_shot_ticks : Array[int] = [] #lobby only, not rollback state: ticks of shots that already did damage
 var _was_dead : bool = false
+var fire_events : Array[int] = [] #ticks of every CONFIRMING instant shot this peer saw (tests read it, repeats show up here)
+var alt_events : Array[int] = [] #same for the projectile weapon
 
 @onready var input : RollbackDemoInput = $Input
 @onready var fire_action : RewindableAction = $FireAction
@@ -98,12 +100,15 @@ func _update_weapon(tick : int) -> void:
 	if fire_action.is_active():
 		last_fire_tick = tick #also on resimulation, where the status is ACTIVE rather than CONFIRMING
 	if fire_action.get_status() == RewindableAction.CONFIRMING:
+		fire_events.append(tick)
 		_show_tracer()
 		_resolve_shot(tick)
 	var wants_alt : bool = is_alive() and input.fire_alt and tick - last_alt_tick >= alt_cooldown_ticks
 	alt_fire_action.set_active(wants_alt)
 	if alt_fire_action.is_active():
 		last_alt_tick = tick
+	if alt_fire_action.get_status() == RewindableAction.CONFIRMING:
+		alt_events.append(tick)
 	if alt_fire_action.get_status() == RewindableAction.CONFIRMING and projectile_manager != null:
 		projectile_manager.spawn(self, id, position + input.aim.normalized() * 40.0, input.aim, tick, projectile_damage)
 
