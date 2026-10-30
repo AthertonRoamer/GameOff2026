@@ -11,6 +11,7 @@ extends Resource
 @export var broadcast_port : int = 3002
 
 @export_group("Menu")
+@export var use_debug_menu : bool = false
 @export var menu_scene : PackedScene #= preload("res://multiplayer_template/menu/p2p_host_noray_menu/p2p_host_noray_menu.tscn")
 @export var debug_menu_scene : PackedScene = preload("res://multiplayer_template/menu/debug_menu/debug_menu.tscn")
 

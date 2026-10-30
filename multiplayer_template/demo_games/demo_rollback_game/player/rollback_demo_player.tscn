@@ -1,30 +1,30 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://nobfqbgrm233"]
 
-[ext_resource type="Script" path="res://multiplayer_template/demo_games/demo_rollback_game/player/rollback_demo_player.gd" id="1_player"]
-[ext_resource type="Script" path="res://multiplayer_template/demo_games/demo_rollback_game/player/rollback_demo_input.gd" id="2_input"]
-[ext_resource type="Texture2D" path="res://icon.svg" id="3_icon"]
-[ext_resource type="Script" path="res://addons/netfox/rollback/rollback-synchronizer.gd" id="4_rollback"]
-[ext_resource type="Script" path="res://addons/netfox/tick-interpolator.gd" id="5_interp"]
-[ext_resource type="Script" path="res://addons/netfox/rewindable-action.gd" id="6_action"]
-[ext_resource type="Script" path="res://addons/netfox/state-synchronizer.gd" id="7_state"]
+[ext_resource type="Script" uid="uid://mpttxhlso6r4" path="res://multiplayer_template/demo_games/demo_rollback_game/player/rollback_demo_player.gd" id="1_player"]
+[ext_resource type="Script" uid="uid://trgtbgac4hem" path="res://multiplayer_template/demo_games/demo_rollback_game/player/rollback_demo_input.gd" id="2_input"]
+[ext_resource type="Texture2D" uid="uid://ckxs3fsktcc1o" path="res://icon.svg" id="3_icon"]
+[ext_resource type="Script" uid="uid://d350u8evihs1u" path="res://addons/netfox/rollback/rollback-synchronizer.gd" id="4_rollback"]
+[ext_resource type="Script" uid="uid://dour8fehaaugp" path="res://addons/netfox/tick-interpolator.gd" id="5_interp"]
+[ext_resource type="Script" uid="uid://chr4omg2hy3yu" path="res://addons/netfox/rewindable-action.gd" id="6_action"]
+[ext_resource type="Script" uid="uid://3lbngqcexe0l" path="res://addons/netfox/state-synchronizer.gd" id="7_state"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
 size = Vector2(64, 64)
 
-[node name="RollbackDemoPlayer" type="CharacterBody2D" node_paths=PackedStringArray("name_display", "sprite")]
+[node name="RollbackDemoPlayer" type="CharacterBody2D" unique_id=558915912 node_paths=PackedStringArray("name_display", "sprite")]
 motion_mode = 1
 script = ExtResource("1_player")
 name_display = NodePath("NameDisplay")
 sprite = NodePath("Sprite2D")
 
-[node name="Sprite2D" type="Sprite2D" parent="."]
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=207240931]
 scale = Vector2(0.5, 0.5)
 texture = ExtResource("3_icon")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1366878066]
 shape = SubResource("RectangleShape2D_body")
 
-[node name="NameDisplay" type="Label" parent="."]
+[node name="NameDisplay" type="Label" parent="." unique_id=1550839335]
 offset_left = -33.0
 offset_top = -66.0
 offset_right = 31.0
@@ -33,27 +33,27 @@ text = "Player"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="Input" type="Node" parent="."]
+[node name="Input" type="Node" parent="." unique_id=1967847166]
 script = ExtResource("2_input")
 
-[node name="RollbackSynchronizer" type="Node" parent="." node_paths=PackedStringArray("root")]
+[node name="RollbackSynchronizer" type="Node" parent="." unique_id=803824289 node_paths=PackedStringArray("root")]
 script = ExtResource("4_rollback")
 root = NodePath("..")
 state_properties = Array[String]([":position", ":velocity", ":last_fire_tick", ":last_alt_tick", ":dead_since"])
 input_properties = Array[String](["Input:movement", "Input:fire", "Input:fire_alt", "Input:aim", "Input:view_lag"])
 
-[node name="FireAction" type="Node" parent="."]
+[node name="FireAction" type="Node" parent="." unique_id=105298785]
 script = ExtResource("6_action")
 
-[node name="AltFireAction" type="Node" parent="."]
+[node name="AltFireAction" type="Node" parent="." unique_id=1820775813]
 script = ExtResource("6_action")
 
-[node name="HealthSynchronizer" type="Node" parent="." node_paths=PackedStringArray("root")]
+[node name="HealthSynchronizer" type="Node" parent="." unique_id=623720108 node_paths=PackedStringArray("root")]
 script = ExtResource("7_state")
 root = NodePath("..")
 properties = Array[String]([":health"])
 
-[node name="TickInterpolator" type="Node" parent="." node_paths=PackedStringArray("root")]
+[node name="TickInterpolator" type="Node" parent="." unique_id=276971092 node_paths=PackedStringArray("root")]
 script = ExtResource("5_interp")
 root = NodePath("..")
 properties = Array[String]([":position"])

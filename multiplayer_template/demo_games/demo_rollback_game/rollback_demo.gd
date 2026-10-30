@@ -20,7 +20,7 @@ func _ready() -> void:
 		spawner.setup(lobby)
 		spawner.spawn_all()
 		if lobby.is_master: #the lobby process is a headless referee, it only simulates
-			visible = false
+			#visible = false
 			$"CanvasLayer/Quit Game".visible = false
 	$ProjectileManager.lag_compensator = $LagCompensator
 	$ProjectileManager.can_hit = func(target : Node) -> bool: return target.is_alive()
