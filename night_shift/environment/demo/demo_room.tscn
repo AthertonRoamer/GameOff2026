@@ -1,0 +1,22 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://night_shift/environment/demo/demo_room.gd" id="1_demo"]
+
+[node name="DemoRoom" type="Node2D"]
+texture_filter = 1
+script = ExtResource("1_demo")
+
+[node name="Ambient" type="CanvasModulate" parent="."]
+color = Color(0.42, 0.47, 0.62, 1)
+
+[node name="Floors" type="TileMapLayer" parent="."]
+
+[node name="Decals" type="TileMapLayer" parent="."]
+
+[node name="Walls" type="TileMapLayer" parent="."]
+
+[node name="Doors" type="Node2D" parent="."]
+
+[node name="Lamps" type="Node2D" parent="."]
+
+[node name="Camera2D" type="Camera2D" parent="."]

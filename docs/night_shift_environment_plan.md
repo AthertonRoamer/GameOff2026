@@ -76,6 +76,23 @@ Mains power is out, so the world is dark and lit only by what the generator feed
 - Flashlights: warm white cone, shadows from walls and closed doors.
 - All lamp and flashlight textures are banded (no smooth falloff). Everything uses nearest-neighbour filtering (set on the map root).
 
+## Look update: the art demo (replaces the first pass once approved)
+The first generated art (flat top-down tiles, 22 px) was too plain. The demo in `night_shift/environment/demo/` redraws it after the
+user's reference image, in Palette A:
+- **44 px tile = 1 m.** The reference's door is exactly one tile wide, and the character sprites are about 35 px across, so a one-metre door
+  and one-metre tile fit them. This supersedes the 22 px grid above; the facility map and layout still use 22 px until the look is approved,
+  then the layout is halved to tiles of 1 m (doors 1 cell, corridors 3 cells, walls 1 cell).
+- **Walls are seen slightly from the front.** A wall with floor to its south shows its face: pale `metal` panel with seams and rivets over a
+  strip of machinery (vents, `item` cyan and `backup` amber status lights, cable runs). Any other wall shows its roof: dark with pipe runs.
+  Every edge that borders floor gets a 1 px `void` outline and a 2 px rim in `accent` on lit sides (top, left) or `uniform_light` on shaded sides.
+- **Floors** are panels: 1 px grout, a framed panel with rounded corners, corner rivets, a lit top-left and shaded bottom-right bevel, 4 variants.
+  A vent grille tile and amber/black hazard stripes for thresholds and edges.
+- **Door** (one metre, two leaves, `item` cyan lights, `alarm` red when locked, open state shows the floor) and a **console** (cyan readout,
+  amber keyboard strip).
+- The reference's teal and lavender are not in Palette A, so floors are `tile` / `wall` slate, wall faces `metal`, accents `accent` / `uniform_light`.
+- Regenerate with `py -3 tools/art/make_demo_art.py`; look at it with `night_shift/environment/demo/demo_room.tscn`
+  (keys listed at the top of `demo_room.gd`). `docs/night_shift/demo_*.png` are screenshots with a guard sprite beside the door for scale.
+
 ## Status
 Done in the first slice: scale decisions, art generator, tileset, layout and checker, map builder, doors, vent grates, lamps,
 flashlight, fly-around viewer, screenshots (`docs/night_shift/`).
