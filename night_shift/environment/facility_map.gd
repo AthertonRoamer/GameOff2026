@@ -1,11 +1,11 @@
-class_name FacilityMap
+﻿class_name FacilityMap
 extends Node2D
 
-##Facility 9, built at runtime from facility_layout.json: floors, walls (derived from the floors), doors, vents and
-##ceiling lamps. Edit the layout file and run the scene, there is nothing to repaint.
+##Facility 9, built at runtime from facility_layout.json: floors, walls (derived from the floors), doors and vents.
+##Edit the layout file and run the scene, there is nothing to repaint. There is no lighting yet.
 ##
-##Nodes in facility_map.tscn: Floors, Walls (tile layers), Doors, Props, Lamps, and Actors, the node players and other moving
-##things are added to (y-sorted). Ambient is the CanvasModulate that makes everything dark except where a lamp or flashlight reaches.
+##Nodes in facility_map.tscn: Floors, Walls (tile layers), Doors, Props and Actors, the node players and other moving
+##things are added to (y-sorted).
 ##
 ##Physics layers: walls are on layer 2 (FacilityTileSet.WORLD_LAYER), closed doors on layer 4 (DOOR_LAYER). A player body should have
 ##a collision mask of 2 | 8 = 10 so walls and doors stop it, and a projectile's world mask should be 2 so only walls stop a bullet.
@@ -19,10 +19,9 @@ const TILE : int = FacilityTileSet.TILE
 @export_file("*.json") var layout_path : String = LAYOUT_PATH
 @export var build_on_ready : bool = true
 @export var doors_start : FacilityDoor.State = FacilityDoor.State.CLOSED
-@export var lamps_enabled : bool = true
 @export var void_color : Color = Color("#07090c") #what shows outside the building. Palette A "void"
 
-var rooms : Dictionary = {} #room id -> {name, kind, function, floor, lamp, rects: Array[Rect2i], exterior: bool}
+var rooms : Dictionary = {} #room id -> {name, kind, function, floor, rects: Array[Rect2i], exterior: bool}
 var floor_cells : Dictionary = {} #Vector2i -> room id
 var wall_cells : Dictionary = {} #Vector2i -> true
 var doors : Array[FacilityDoor] = []
@@ -32,9 +31,7 @@ var vents : Array[Vector2i] = []
 @onready var walls : TileMapLayer = $Walls
 @onready var doors_node : Node2D = $Doors
 @onready var props_node : Node2D = $Props
-@onready var lamps_node : Node2D = $Lamps
 @onready var actors : Node2D = $Actors
-@onready var ambient : CanvasModulate = $Ambient
 
 
 func _ready() -> void:
@@ -59,8 +56,6 @@ func build() -> void:
 	_paint_walls()
 	_place_doors(layout)
 	_place_vents(layout)
-	if lamps_enabled:
-		_place_lamps()
 	built.emit()
 
 
@@ -140,7 +135,7 @@ func _read_rooms(layout : Dictionary) -> void:
 				for x in range(rect.position.x, rect.end.x):
 					floor_cells[Vector2i(x, y)] = room["id"]
 		rooms[room["id"]] = {"name": room["name"], "kind": room["kind"], "function": room.get("function", ""),
-			"floor": room["floor"], "lamp": room.get("lamp", ""), "rects": rects, "exterior": false}
+			"floor": room["floor"], "rects": rects, "exterior": false}
 
 
 func _read_doors(layout : Dictionary) -> void:
@@ -215,28 +210,3 @@ func _place_vents(layout : Dictionary) -> void:
 		sprite.scale = Vector2.ONE * FacilityTileSet.ART_SCALE
 		sprite.name = "Vent_%d_%d" % [cell.x, cell.y]
 		props_node.add_child(sprite)
-
-
-func _place_lamps() -> void:
-	for node in lamps_node.get_children():
-		node.queue_free()
-	for id : String in rooms:
-		var room : Dictionary = rooms[id]
-		if room["lamp"] == "":
-			continue
-		var color : Color = Color("#e07b2a") if room["lamp"] == "warm" else Color("#f2b544")
-		var rect_index : int = 0
-		for rect : Rect2i in room["rects"]:
-			#one lamp per 7 m of room, spread evenly; a long corridor gets a lamp every few metres
-			var nx : int = maxi(1, roundi(rect.size.x / 14.0))
-			var ny : int = maxi(1, roundi(rect.size.y / 14.0))
-			for iy in ny:
-				for ix in nx:
-					var cell : Vector2 = Vector2(rect.position) + Vector2((ix + 0.5) * rect.size.x / nx, (iy + 0.5) * rect.size.y / ny)
-					var lamp : FacilityLamp = FacilityLamp.new()
-					lamp.color = color
-					lamp.radius_m = clampf(maxf(rect.size.x / nx, rect.size.y / ny) * 0.5 * 0.5 + 2.0, 4.0, 8.0)
-					lamp.position = cell * TILE
-					lamp.name = "Lamp_%s_%d_%d_%d" % [id, rect_index, ix, iy]
-					lamps_node.add_child(lamp)
-			rect_index += 1

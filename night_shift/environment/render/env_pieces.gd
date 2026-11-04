@@ -1,4 +1,4 @@
-class_name EnvPieces
+﻿class_name EnvPieces
 extends RefCounted
 
 ##The environment pieces, modelled in 3D from the building blocks in EnvMesh and photographed from straight above by env_render.gd.
@@ -21,54 +21,31 @@ static func floor_tile(kind : String, variant : int) -> Node3D:
 	var r : RandomNumberGenerator = RandomNumberGenerator.new()
 	r.seed = hash(kind) + variant * 7919
 	match kind:
-		"room": #vinyl-topped steel panels, bolted down at the corners
+		"room": #steel panels
 			root.add_child(EnvMesh.quad(full, 0.0, EnvMesh.cel("floor")))
-			if variant == 1: #two half panels
-				var pw : float = (CELL - 0.03 - 0.012) / 2.0
-				root.add_child(EnvMesh.plate(Rect2(-h + 0.015, -h + 0.015, pw, CELL - 0.03), 0.0, 0.03, EnvMesh.cel("tile")))
-				root.add_child(EnvMesh.plate(Rect2(0.006, -h + 0.015, pw, CELL - 0.03), 0.0, 0.03, EnvMesh.cel("tile")))
-			else:
-				root.add_child(EnvMesh.plate(Rect2(-h + 0.015, -h + 0.015, CELL - 0.03, CELL - 0.03), 0.0, 0.03, EnvMesh.cel("tile")))
-			if variant != 1:
-				_bolts(root, 0.03, h - 0.055, "wall_top", 0.017)
-			if variant == 2:
-				root.add_child(EnvMesh.stud(Vector2.ZERO, 0.03, 0.02, 0.012, 0.012, EnvMesh.cel("wall_top")))
-		"corridor": #poured concrete slabs
+			_panels(root, "tile", 0.015, 0.03, false)
+		"corridor": #concrete slabs
 			root.add_child(EnvMesh.quad(full, 0.0, EnvMesh.cel("deep")))
-			match variant:
-				1:
-					root.add_child(EnvMesh.plate(Rect2(-h + 0.01, -h + 0.01, CELL - 0.02, (CELL - 0.026) / 2.0), 0.0, 0.025, EnvMesh.cel("floor"), 0.02))
-					root.add_child(EnvMesh.plate(Rect2(-h + 0.01, 0.008, CELL - 0.02, (CELL - 0.026) / 2.0), 0.0, 0.025, EnvMesh.cel("floor"), 0.02))
-				_:
-					root.add_child(EnvMesh.plate(Rect2(-h + 0.01, -h + 0.01, CELL - 0.02, CELL - 0.02), 0.0, 0.025, EnvMesh.cel("floor"), 0.02))
-			if variant == 3:
-				for i in 5:
-					root.add_child(EnvMesh.stud(Vector2(r.randf_range(-0.2, 0.2), r.randf_range(-0.2, 0.2)), 0.025, r.randf_range(0.015, 0.03), 0.01, 0.008, EnvMesh.cel("tile"), 7))
-		"utility": #diamond plate
+			_panels(root, "floor", 0.01, 0.025, false)
+		"utility": #plain plate with a few raised diamonds
 			root.add_child(EnvMesh.quad(full, 0.0, EnvMesh.cel("tile")))
-			for j in 4:
-				for i in 4:
-					var p : Vector2 = Vector2(-0.15 + i * 0.1 + (0.05 if j % 2 == 1 else 0.0) - (0.025 if j % 2 == 1 else 0.0), -0.15 + j * 0.1)
-					root.add_child(EnvMesh.stud(p, 0.0, 0.034, 0.014, 0.014, EnvMesh.cel("wall"), 4, 45.0 if variant % 2 == 1 else 0.0))
-		"vault": #dark riveted steel
+			_panels(root, "tile", 0.015, 0.03, false)
+			var flip : float = 1.0 if variant % 2 == 0 else -1.0
+			for p : Vector2 in PackedVector2Array([Vector2(-0.1 * flip, -0.1), Vector2(0.1 * flip, 0.1)]):
+				root.add_child(EnvMesh.stud(p, 0.03, 0.05, 0.022, 0.016, EnvMesh.cel("wall"), 4))
+		"vault": #dark steel
 			root.add_child(EnvMesh.quad(full, 0.0, EnvMesh.cel("shadow")))
-			root.add_child(EnvMesh.plate(Rect2(-h + 0.012, -h + 0.012, CELL - 0.024, CELL - 0.024), 0.0, 0.03, EnvMesh.cel("deep")))
-			for sx in [-1.0, 1.0]:
-				for sz in [-1.0, 1.0]:
-					root.add_child(EnvMesh.stud(Vector2(sx * 0.17, sz * 0.17), 0.03, 0.028, 0.016, 0.018, EnvMesh.cel("wall")))
-			if variant == 1:
-				root.add_child(EnvMesh.plate(Rect2(-0.2, -0.018, 0.4, 0.036), 0.03, 0.014, EnvMesh.cel("floor"), 0.01))
-		"outdoor": #asphalt with grit
+			_panels(root, "deep", 0.012, 0.03, false)
+		"outdoor": #asphalt, a few darker and lighter patches
 			root.add_child(EnvMesh.quad(full, 0.0, EnvMesh.cel("deep")))
-			for i in 16:
-				var rad : float = r.randf_range(0.02, 0.045)
-				root.add_child(EnvMesh.stud(Vector2(r.randf_range(-0.21, 0.21), r.randf_range(-0.21, 0.21)), 0.0, rad, rad * 0.55,
-					r.randf_range(0.008, 0.018), EnvMesh.cel("floor" if r.randf() < 0.65 else "tile"), 7, r.randf_range(0.0, 60.0)))
+			for i in 3:
+				var rad : float = r.randf_range(0.04, 0.07)
+				root.add_child(EnvMesh.stud(Vector2(r.randf_range(-0.16, 0.16), r.randf_range(-0.16, 0.16)), 0.0, rad, rad * 0.6,
+					0.012, EnvMesh.cel("floor"), 8))
 		"vent": #floor grille
 			root.add_child(EnvMesh.quad(full, 0.0, EnvMesh.cel("shadow")))
-			for i in 5:
-				root.add_child(EnvMesh.plate(Rect2(-0.2, -0.2 + i * 0.085, 0.4, 0.045), 0.0, 0.03, EnvMesh.cel("wall")))
-			_bolts(root, 0.0, h - 0.04, "wall_top", 0.016)
+			for i in 4:
+				root.add_child(EnvMesh.plate(Rect2(-0.2, -0.19 + i * 0.1, 0.4, 0.05), 0.0, 0.03, EnvMesh.cel("wall")))
 	return root
 
 
@@ -106,19 +83,6 @@ static func wall_tile(mask : int) -> Node3D:
 			var rx : float = h - patch if corner[3] > 0.0 else -h
 			var rz : float = h - patch if corner[4] > 0.0 else -h
 			root.add_child(EnvMesh.quad(Rect2(rx, rz, patch, patch), top + 0.005, EnvMesh.cel("wall")))
-	#on top: a conduit along a straight run, bolts on corners and ends
-	var run_x : bool = e and w
-	var run_z : bool = n and s
-	if run_x != run_z:
-		var along_x : bool = run_x
-		root.add_child(EnvMesh.pipe(Vector2.ZERO, top, CELL, 0.045, along_x, EnvMesh.cel("uniform")))
-		for t in [-0.15, 0.15]:
-			var clamp_rect : Rect2 = Rect2(t - 0.018, -0.07, 0.036, 0.14) if along_x else Rect2(-0.07, t - 0.018, 0.14, 0.036)
-			root.add_child(EnvMesh.plate(clamp_rect, top, 0.03, EnvMesh.cel("wall"), 0.01))
-	else:
-		for corner : Array in [[n, w, -1.0, -1.0], [n, e, 1.0, -1.0], [s, e, 1.0, 1.0], [s, w, -1.0, 1.0]]:
-			if not corner[0] and not corner[1]:
-				root.add_child(EnvMesh.stud(Vector2(corner[2] * 0.15, corner[3] * 0.15), top, 0.018, 0.01, 0.014, EnvMesh.cel("metal")))
 	return root
 
 
@@ -144,12 +108,7 @@ static func door(state : String, exterior : bool, vertical : bool) -> Node3D:
 	for side in [-1.0, 1.0]:
 		var u0 : float = -0.5 if side < 0.0 else 0.012
 		var u1 : float = -0.012 if side < 0.0 else 0.5
-		root.add_child(EnvMesh.plate(uv.call(u0, -leaf_v, u1, leaf_v), sill, leaf_h, EnvMesh.cel("uniform"), 0.03))
-		root.add_child(EnvMesh.plate(uv.call(u0 + 0.05, -leaf_v + 0.05, u1 - 0.05, leaf_v - 0.05), sill + leaf_h, 0.02, EnvMesh.cel("uniform_light"), 0.012))
-		if exterior: #hazard stripes across the leaf, nearest the seam
-			for k in 3:
-				var su : float = (0.09 + k * 0.045) * side
-				root.add_child(EnvMesh.plate(uv.call(su - 0.012, -leaf_v + 0.07, su + 0.012, leaf_v - 0.07), sill + leaf_h + 0.02, 0.012, EnvMesh.cel("backup"), 0.008))
+		root.add_child(EnvMesh.plate(uv.call(u0, -leaf_v, u1, leaf_v), sill, leaf_h, EnvMesh.cel("armor" if exterior else "uniform"), 0.03))
 	var light : String = "alarm" if state == "locked" else "item"
 	for side in [-1.0, 1.0]:
 		var c : Vector2 = pt.call(0.045 * side, 0.0)
@@ -164,17 +123,17 @@ static func console() -> Node3D:
 	root.add_child(EnvMesh.plate(Rect2(-0.44, -0.18, 0.88, 0.36), 0.30, 0.03, EnvMesh.cel("wall_top"), 0.02))
 	root.add_child(EnvMesh.plate(Rect2(-0.30, -0.17, 0.60, 0.12), 0.33, 0.09, EnvMesh.cel("shadow"), 0.03))
 	root.add_child(EnvMesh.quad(Rect2(-0.27, -0.148, 0.54, 0.075), 0.425, EnvMesh.flat("item")))
-	for i in 3:
-		root.add_child(EnvMesh.quad(Rect2(-0.25, -0.138 + i * 0.022, 0.2 + i * 0.07, 0.008), 0.426, EnvMesh.flat("shadow")))
 	root.add_child(EnvMesh.plate(Rect2(-0.22, 0.02, 0.44, 0.11), 0.33, 0.025, EnvMesh.cel("wall"), 0.012))
-	for i in 2:
-		root.add_child(EnvMesh.quad(Rect2(-0.19, 0.04 + i * 0.04, 0.38, 0.022), 0.356, EnvMesh.flat("backup")))
-	root.add_child(EnvMesh.stud(Vector2(-0.35, 0.05), 0.33, 0.022, 0.014, 0.015, EnvMesh.cel("alarm")))
-	root.add_child(EnvMesh.stud(Vector2(0.35, 0.05), 0.33, 0.022, 0.014, 0.015, EnvMesh.cel("item")))
 	return root
 
 
-static func _bolts(root : Node3D, y_base : float, inset : float, color : String, radius : float) -> void:
-	for sx in [-1.0, 1.0]:
-		for sz in [-1.0, 1.0]:
-			root.add_child(EnvMesh.stud(Vector2(sx * inset, sz * inset), y_base, radius, radius * 0.55, 0.014, EnvMesh.cel(color)))
+##One framed floor panel, or two half panels side by side when split.
+static func _panels(root : Node3D, color : String, margin : float, height : float, split : bool) -> void:
+	var h : float = CELL / 2.0
+	var inner : float = CELL - margin * 2.0
+	if split:
+		var pw : float = (inner - 0.012) / 2.0
+		root.add_child(EnvMesh.plate(Rect2(-h + margin, -h + margin, pw, inner), 0.0, height, EnvMesh.cel(color)))
+		root.add_child(EnvMesh.plate(Rect2(0.006, -h + margin, pw, inner), 0.0, height, EnvMesh.cel(color)))
+	else:
+		root.add_child(EnvMesh.plate(Rect2(-h + margin, -h + margin, inner, inner), 0.0, height, EnvMesh.cel(color)))
