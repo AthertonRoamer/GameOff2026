@@ -196,5 +196,41 @@
   "fps": 16,
   "loop": false,
   "px_per_m": 176.55
+ },
+ "legs_strafe_walk": {
+  "file": "legs_strafe_walk.png",
+  "frames": 12,
+  "hframes": 4,
+  "vframes": 3,
+  "frame_size": 353,
+  "pivot_px": [
+   176.5,
+   197.7
+  ],
+  "godot_offset": [
+   0.0,
+   -21.2
+  ],
+  "fps": 10,
+  "loop": true,
+  "px_per_m": 176.5
+ },
+ "legs_strafe_run": {
+  "file": "legs_strafe_run.png",
+  "frames": 12,
+  "hframes": 4,
+  "vframes": 3,
+  "frame_size": 353,
+  "pivot_px": [
+   176.5,
+   197.7
+  ],
+  "godot_offset": [
+   0.0,
+   -21.2
+  ],
+  "fps": 15,
+  "loop": true,
+  "px_per_m": 176.5
  }
 }

@@ -33,6 +33,9 @@ extends Node2D
 @export var turn_clip_time := 1.0 #how long the legs_turn sheet takes at its natural pace (96 degrees in 1 s)
 ## The turn clip plays at the pace the player is turning at (the torso's turn speed, smoothed), between these multiples of its natural pace:
 ## a slow turn gives an unhurried step, a fast flick a quick one.
+## Moving sideways relative to the torso (within this cosine of straight sideways, 0.5 = 60 degrees either side of it) plays the strafe sheets
+## instead of the forward or backward walk and run.
+@export var strafe_cone := 0.5
 @export var turn_clip_min_scale := 0.8
 @export var turn_clip_max_scale := 3.5
 ## Playback speed of the idle cycle, which is the breathing (the sheets' idle is 8 frames at 8 fps, a bit quick for a breath).
@@ -120,21 +123,36 @@ func update_visual(move_vel: Vector2, aim_dir: Vector2, aiming: bool, running: b
 
 	var legs_anim := "legs_idle"
 	if moving:
-		legs_anim = "legs_run" if running else "legs_walk"
-		var backwards := move_vel.dot(Vector2.from_angle(torso.rotation - PI / 2)) < 0.0
-		var leg_dir := -move_vel if backwards else move_vel
-		legs.rotation = leg_dir.angle() + PI / 2
-		legs.speed_scale = -1.0 if backwards else 1.0  # backpedal = walk cycle in reverse
+		# which way the player moves relative to where the torso faces: forward and back follow the movement (back plays the walk in reverse),
+		# sideways is a strafe: the legs face the torso and the strafe sheet (a right strafe, mirrored for left) plays
+		var facing := Vector2.from_angle(torso.rotation - PI / 2)
+		var heading := move_vel.normalized()
+		var forward_amount := heading.dot(facing)
+		var side_amount := heading.dot(facing.rotated(PI / 2)) #positive: moving to the character's right
+		var strafing := absf(forward_amount) < strafe_cone and meta.has("legs_strafe_walk")
+		var target_rotation : float
+		if strafing:
+			legs_anim = "legs_strafe_run" if running and meta.has("legs_strafe_run") else "legs_strafe_walk"
+			target_rotation = torso.rotation
+			legs.flip_h = side_amount < 0.0
+			legs.speed_scale = 1.0
+		else:
+			legs_anim = "legs_run" if running else "legs_walk"
+			var backwards := forward_amount < 0.0
+			target_rotation = (-move_vel if backwards else move_vel).angle() + PI / 2
+			legs.flip_h = false
+			legs.speed_scale = -1.0 if backwards else 1.0  # backpedal = walk cycle in reverse
+		legs.rotation += angle_difference(legs.rotation, target_rotation) * (1.0 - exp(-dt * 24.0)) #the legs swing round to a new heading rather than snapping
+		_stepping = false
+		_stepping_now = false
 	else:
 		# standing still: the feet stay planted while the torso turns, and take a stepping turn once the twist gets too large
+		if not _stepping:
+			legs.flip_h = false
 		_stepping_now = _update_step_turn(get_process_delta_time())
 		legs.speed_scale = idle_breath_speed
 
 	torso.speed_scale = idle_breath_speed if torso_anim in ["torso_idle", "torso_idle_aim"] else 1.0 # breathing is a slow idle cycle
-	if moving:
-		_stepping = false
-		_stepping_now = false
-		legs.flip_h = false
 	if not _stepping_now: #mid-step the legs hold their own frozen pose
 		_play(legs, legs_anim)
 	_play(torso, torso_anim)

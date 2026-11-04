@@ -159,8 +159,8 @@ func _run_check() -> void:
 	get_viewport().get_texture().get_image().save_png(String(_args["shot"]))
 	var door_states : Array = facility.doors.map(func(d : FacilityDoor) -> String: return FacilityDoor.State.keys()[d.state].substr(0, 1))
 	print("PLAYGROUND doors=%s shots_fired=%d projectiles_in_flight=%d aim=%s aiming=%s use=%s" % ["".join(door_states), _shots, projectiles.get_projectiles().size(), player.input.aim - player.global_position, player.input.aiming, player.input.use_item])
-	print("PLAYGROUND start=%s end=%s moved=%.1f legs=%s torso=%s" % [start, player.position, player.position.distance_to(start),
-		player.skin.legs.animation, player.skin.torso.animation])
+	print("PLAYGROUND start=%s end=%s moved=%.1f legs=%s flip=%s speed_scale=%.1f torso=%s" % [start, player.position, player.position.distance_to(start),
+		player.skin.legs.animation, player.skin.legs.flip_h, player.skin.legs.speed_scale, player.skin.torso.animation])
 	for each : String in action.split(","):
 		if each != "":
 			Input.action_release(each)

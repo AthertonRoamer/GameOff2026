@@ -60,6 +60,11 @@ STATES = [
     # a turn on the spot, from a Mixamo clip: a right turn of about 96 degrees that starts and ends in the standing stance, with the body's
     # yaw baked into the frames. The game leaves the legs node alone while the sheet plays, turns it by 96 degrees at the end, and mirrors the sheet for a left turn.
     dict(name='legs_turn', layer='legs', action='turn', n=16, mode='free', clip='Right Turn.fbx', yaw_offset=-6),
+    # strafing to the character's right while facing forward (the game mirrors the sheet for a left strafe). Both clips travel along the way they
+    # strafe and loop (the last frame is the first again); the travel itself is cancelled by recenter(), the game moves the player.
+    # (a wider frame than the other leg sheets: a strafing run reaches nearly a metre to the side, which the 1.45 m frame cuts off)
+    dict(name='legs_strafe_walk', layer='legs', action='strafe_walk', n=12, mode='free', clip='Walk Strafe Right.fbx', loop=True, ortho=2.0),
+    dict(name='legs_strafe_run', layer='legs', action='strafe_run', n=12, mode='free', clip='Right Strafe.fbx', loop=True, ortho=2.0),
 ]
 IDLE_SPINE = Vector((0.0, 0.0, 1.323))
 
@@ -592,7 +597,7 @@ def build(role):
         if full:
             cam.ortho_scale = 2.9 if w == 'rifle' else 2.6
         else:
-            cam.ortho_scale = layered_scale
+            cam.ortho_scale = st.get('ortho', layered_scale)
         sc.render.resolution_x = sc.render.resolution_y = int(round(cam.ortho_scale * PPU))
         if st['mode'] == 'fall':
             co.location = (0, -0.8 * st['dir'], 6)
@@ -604,7 +609,7 @@ def build(role):
             arm.rotation_euler = (0, 0, 0)
             arm.location = (0, 0, 0)
             sx.animation_data.action = act
-            sc.frame_set(int(round(r0 + (r1 - r0) * i / (n - 1 if clip else n))))  # a clip plays once, so its last frame is the last sample
+            sc.frame_set(int(round(r0 + (r1 - r0) * i / (n - 1 if clip and not st.get('loop') else n))))  # a clip that plays once ends on its last frame; a looping one stops a frame short of its start
             retarget(sx, arm, rx)
             if st.get('blend'):
                 b = st['blend']
