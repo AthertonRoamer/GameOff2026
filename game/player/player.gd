@@ -13,8 +13,10 @@ extends CharacterBody2D
 @onready var input : PlayerInput = $Input
 @onready var interpolator : TickInterpolator = $TickInterpolator
 @onready var camera : Camera2D = $Camera2D
+@onready var skin : NightShiftCharacter = $Skin
 
 var lag_compensator : LagCompensator
+var interacting : bool = false #a local visual flag: plays the torso's interact animation while true
 
 var player_name : String = "":
 	set(value):
@@ -42,12 +44,16 @@ func _ready() -> void:
 	if set_acceleration_from_time:
 		acceleration = speed / acceleration_time
 	camera.enabled = input.is_multiplayer_authority()
+	died.connect(skin.die)
+
+
+func _process(_delta : float) -> void:
+	#The body no longer turns to face the mouse: the skin turns its own legs (to the way it moves) and torso (to the aim). The gun stays out.
+	var aim_direction : Vector2 = (input.aim - global_position).normalized() if input.aim != Vector2.ZERO else Vector2.ZERO
+	skin.update_visual(velocity, aim_direction, true, false, interacting)
 
 
 func _rollback_tick(delta : float, _tick : int, _is_fresh : bool) -> void:
-	if input.aim != global_position:
-		rotation = (input.aim - global_position).angle() + PI / 2
-
 	var speed_now : float = velocity.length()
 	if speed_now > 0.0:
 		speed_now = max(speed_now - friction * delta, 0.0)

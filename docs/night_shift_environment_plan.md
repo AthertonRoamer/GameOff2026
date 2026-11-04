@@ -100,3 +100,14 @@ Next, in this order (each is one more piece in `env_pieces.gd`):
 3. **Lighting**: from scratch, once the art is settled (ambient, room lights, flashlights, alarm mode, per-room power).
 4. **Vents**: the vent network the Vent Rat travels.
 5. **Wall and floor detail**: add back only what is wanted (seams, hazard plates), one element at a time.
+
+## Playground map and the player skin
+- `game/playground/playground_map.tscn` is a single-player test scene: the facility with one `Player` (your friend's scene) in the guard skin. netfox's clock is started
+  offline, so the player's rollback tick, input and interpolation work as in a game. WASD moves, the mouse aims, E opens or closes the nearest gate.
+  Checks from the command line: `godot --path . res://game/playground/playground_map.tscn -- --shot=out.png [--press=player_down --hold=1.4 --at=484,372 --open=1 --aim=1,0 --zoom=4]`.
+- The skin is `game/player/skin/player_skin.tscn`: the kit's `night_shift_character.gd` (class `NightShiftCharacter`) with the smooth cel guard sheets from the kit's `cel/` folder
+  (`pixel_art` off), scaled 0.25 to 44 px per metre, linear filtering with mipmaps, plus a soft drop shadow. The sheets' import has mipmaps on.
+- Changes to the friend's player: the Sprite2D icon is replaced by the Skin; the body no longer rotates to face the mouse (the skin turns the legs to the movement and the torso to the
+  aim, so `rotation` stays 0); the collision shape is a 12 px circle (the old 64 px square could not pass a 1 m gate) and `collision_mask` is 11 (players 1, walls 2, gates 8).
+  `Player.interacting` plays the torso's interact animation, `died` plays the downed pose.
+- Other roles: copy the role's `cel/<role>` folder next to `guard/` and set `role` on the skin node.

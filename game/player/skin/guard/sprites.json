@@ -1,0 +1,182 @@
+{
+ "legs_idle": {
+  "file": "legs_idle.png",
+  "frames": 8,
+  "hframes": 4,
+  "vframes": 2,
+  "frame_size": 256,
+  "pivot_px": [
+   128.0,
+   149.2
+  ],
+  "godot_offset": [
+   0.0,
+   -21.2
+  ],
+  "fps": 8,
+  "loop": true,
+  "px_per_m": 176.55
+ },
+ "legs_walk": {
+  "file": "legs_walk.png",
+  "frames": 12,
+  "hframes": 4,
+  "vframes": 3,
+  "frame_size": 256,
+  "pivot_px": [
+   128.0,
+   149.2
+  ],
+  "godot_offset": [
+   0.0,
+   -21.2
+  ],
+  "fps": 10,
+  "loop": true,
+  "px_per_m": 176.55
+ },
+ "legs_run": {
+  "file": "legs_run.png",
+  "frames": 12,
+  "hframes": 4,
+  "vframes": 3,
+  "frame_size": 256,
+  "pivot_px": [
+   128.0,
+   149.2
+  ],
+  "godot_offset": [
+   0.0,
+   -21.2
+  ],
+  "fps": 15,
+  "loop": true,
+  "px_per_m": 176.55
+ },
+ "torso_idle": {
+  "file": "torso_idle.png",
+  "frames": 8,
+  "hframes": 4,
+  "vframes": 2,
+  "frame_size": 256,
+  "pivot_px": [
+   128.0,
+   149.2
+  ],
+  "godot_offset": [
+   0.0,
+   -21.2
+  ],
+  "fps": 8,
+  "loop": true,
+  "px_per_m": 176.55
+ },
+ "torso_idle_aim": {
+  "file": "torso_idle_aim.png",
+  "frames": 8,
+  "hframes": 4,
+  "vframes": 2,
+  "frame_size": 256,
+  "pivot_px": [
+   128.0,
+   149.2
+  ],
+  "godot_offset": [
+   0.0,
+   -21.2
+  ],
+  "fps": 8,
+  "loop": true,
+  "px_per_m": 176.55
+ },
+ "torso_walk": {
+  "file": "torso_walk.png",
+  "frames": 12,
+  "hframes": 4,
+  "vframes": 3,
+  "frame_size": 256,
+  "pivot_px": [
+   128.0,
+   149.2
+  ],
+  "godot_offset": [
+   0.0,
+   -21.2
+  ],
+  "fps": 10,
+  "loop": true,
+  "px_per_m": 176.55
+ },
+ "torso_walk_aim": {
+  "file": "torso_walk_aim.png",
+  "frames": 12,
+  "hframes": 4,
+  "vframes": 3,
+  "frame_size": 256,
+  "pivot_px": [
+   128.0,
+   149.2
+  ],
+  "godot_offset": [
+   0.0,
+   -21.2
+  ],
+  "fps": 10,
+  "loop": true,
+  "px_per_m": 176.55
+ },
+ "torso_run": {
+  "file": "torso_run.png",
+  "frames": 12,
+  "hframes": 4,
+  "vframes": 3,
+  "frame_size": 256,
+  "pivot_px": [
+   128.0,
+   149.2
+  ],
+  "godot_offset": [
+   0.0,
+   -21.2
+  ],
+  "fps": 15,
+  "loop": true,
+  "px_per_m": 176.55
+ },
+ "torso_interact": {
+  "file": "torso_interact.png",
+  "frames": 12,
+  "hframes": 4,
+  "vframes": 3,
+  "frame_size": 256,
+  "pivot_px": [
+   128.0,
+   149.2
+  ],
+  "godot_offset": [
+   0.0,
+   -21.2
+  ],
+  "fps": 10,
+  "loop": true,
+  "px_per_m": 176.55
+ },
+ "downed": {
+  "file": "downed.png",
+  "frames": 8,
+  "hframes": 4,
+  "vframes": 2,
+  "frame_size": 459,
+  "pivot_px": [
+   229.5,
+   379.6
+  ],
+  "godot_offset": [
+   0.0,
+   -150.1
+  ],
+  "fps": 6,
+  "loop": true,
+  "px_per_m": 176.54
+ }
+}

@@ -2,24 +2,23 @@
 
 [ext_resource type="Script" uid="uid://ckrhpcd5yy1sg" path="res://game/player/player.gd" id="1_player"]
 [ext_resource type="Script" uid="uid://v8yulraat58n" path="res://game/player/player_input.gd" id="2_input"]
-[ext_resource type="Texture2D" uid="uid://ckxs3fsktcc1o" path="res://icon.svg" id="3_icon"]
+[ext_resource type="PackedScene" path="res://game/player/skin/player_skin.tscn" id="3_skin"]
 [ext_resource type="Script" uid="uid://d350u8evihs1u" path="res://addons/netfox/rollback/rollback-synchronizer.gd" id="4_rollback"]
 [ext_resource type="Script" uid="uid://dour8fehaaugp" path="res://addons/netfox/tick-interpolator.gd" id="5_interp"]
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
-size = Vector2(64, 64)
+[sub_resource type="CircleShape2D" id="CircleShape2D_body"]
+radius = 12.0
 
 [node name="Player" type="CharacterBody2D" unique_id=1961820754 node_paths=PackedStringArray("name_display")]
+collision_mask = 11
 motion_mode = 1
 script = ExtResource("1_player")
 name_display = NodePath("NameDisplay")
 
-[node name="Sprite2D" type="Sprite2D" parent="." unique_id=629595761]
-scale = Vector2(0.5, 0.5)
-texture = ExtResource("3_icon")
+[node name="Skin" parent="." instance=ExtResource("3_skin")]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=730710891]
-shape = SubResource("RectangleShape2D_body")
+shape = SubResource("CircleShape2D_body")
 
 [node name="NameDisplay" type="Label" parent="." unique_id=1103005571]
 offset_left = -33.0
