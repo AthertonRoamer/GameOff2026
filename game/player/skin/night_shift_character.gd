@@ -22,10 +22,12 @@ extends Node2D
 @export var recoil_back_time := 0.18
 
 ## Drawing and holstering the gun: the sheets have no frames between the arms-down and arms-up poses, so the old pose fades out over the new one
-## while swelling slightly (draw) or shrinking slightly (holster), and the shoulder lamp slides between its two positions.
+## while swelling slightly (draw) or shrinking slightly (holster).
+## The shoulder lamp follows the right shoulder through every animation: the sheets' sprites.json carry the shoulder positions per frame (measured from
+## the rig, see tools/rig), and the lamp sits this far out from the joint, on the shoulder's surface. In a mirrored torso (a left strafe) it uses the mirrored left shoulder.
 @export var draw_time := 0.16
-@export var lamp_holstered_pos := Vector2(42, -2)
-@export var lamp_drawn_pos := Vector2(34, -12)
+@export var lamp_outward_px := 11.0
+@export var lamp_forward_px := -4.0
 
 ## Standing still, turning on the spot: the feet stay put until the upper body is this far round, then step to catch up at this speed.
 @export var turn_threshold_deg := 70.0
@@ -59,7 +61,6 @@ var _recoil_tween: Tween
 var _was_aiming := false
 var _ghost: AnimatedSprite2D
 var _lamp: Node2D
-var _lamp_tween: Tween
 
 
 func _ready() -> void:
@@ -86,8 +87,6 @@ func _ready() -> void:
 			s.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	full.visible = false
 	_lamp = torso.get_node_or_null("Lamp") as Node2D
-	if _lamp:
-		_lamp.position = lamp_holstered_pos
 	_play(legs, "legs_idle")
 	_play(torso, "torso_idle")
 	_ready_done = true
@@ -232,6 +231,19 @@ func _fade_copy(sprite: AnimatedSprite2D, time: float) -> void:
 	tween.tween_callback(copy.queue_free)
 
 
+## Keeps the lamp on the shoulder, whatever the torso is doing.
+func _process(delta: float) -> void:
+	if _lamp == null or not torso.visible or not meta.has(torso.animation):
+		return
+	var rows: Array = meta[torso.animation].get("shoulders", [])
+	if rows.is_empty():
+		return
+	var row: Array = rows[clampi(torso.frame, 0, rows.size() - 1)]
+	var shoulder := Vector2(-float(row[0]), float(row[1])) if torso.flip_h else Vector2(float(row[2]), float(row[3])) #[left x, left y, right x, right y]
+	var target := shoulder + Vector2(lamp_outward_px, lamp_forward_px)
+	_lamp.position = _lamp.position.lerp(target, 1.0 - exp(-delta * 30.0))
+
+
 ## Called the moment the gun is drawn or put away, before the torso switches to its new animation.
 func _start_draw_transition(drawing: bool) -> void:
 	if _ghost:
@@ -253,11 +265,7 @@ func _start_draw_transition(drawing: bool) -> void:
 		tween.tween_property(ghost, "modulate:a", 0.0, draw_time).set_ease(Tween.EASE_OUT)
 		tween.tween_property(ghost, "scale", Vector2.ONE * (1.07 if drawing else 0.94), draw_time).set_ease(Tween.EASE_OUT)
 		tween.chain().tween_callback(ghost.queue_free)
-	if _lamp:
-		if _lamp_tween:
-			_lamp_tween.kill()
-		_lamp_tween = create_tween()
-		_lamp_tween.tween_property(_lamp, "position", lamp_drawn_pos if drawing else lamp_holstered_pos, draw_time * 1.2).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+
 
 
 ## The shot animation, which the sheets do not have: the torso (and the flashlight on it) kicks back along the barrel and eases forward again,

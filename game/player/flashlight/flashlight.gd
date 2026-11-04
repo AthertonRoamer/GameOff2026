@@ -8,9 +8,9 @@ extends Node2D
 
 @export var on : bool = false : set = set_on
 @export var range_m : float = 11.0
-@export var cone_energy : float = 1.3
+@export var cone_energy : float = 1.7
 @export var halo_radius_m : float = 1.6
-@export var halo_energy : float = 0.45
+@export var halo_energy : float = 0.55
 @export var color : Color = Color("#fff3c4")
 
 const WORLD_PX_PER_M : float = 44.0

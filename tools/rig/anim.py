@@ -17,6 +17,8 @@ OUT = args[1] if len(args) > 1 else 'anim'
 ONLY = set(args[2].split(',')) if len(args) > 2 else None
 HERE = os.path.dirname(os.path.abspath(__file__))
 SMOOTH = os.environ.get('SHADE') == 'smooth'   # soft shading for the pixel-art pass
+SHOULDERS = os.environ.get('SHOULDERS') == '1'  # no pictures: only write where the shoulders are in every frame (shoulders.json), for the game's shoulder lamp
+SHOULDER_POS = {}
 INK = os.environ.get('INK', '1') != '0'         # 3D ink hull; the pixel pass draws its own outline
 
 # ------------------------------------------------------------------ palette A
@@ -664,6 +666,11 @@ def build(role):
                           'Right': Vector((-0.1, -0.27 - 0.02 * math.sin(t), shz - 0.38 - 0.02 * math.cos(t))) + dl}
                     pose_arms(arm, tg, lambda s: (s * 1.0, 0.2, -0.8), lambda s: (0.0, -0.1, -0.03))
             bpy.context.view_layer.update()
+            if SHOULDERS:  # offsets from the sprite's pivot, in sprite pixels (x right, y down), for the left and right shoulder joints
+                k = sc.render.resolution_x / cam.ortho_scale
+                lsh_w, rsh_w = wpos(arm, 'LeftArm'), wpos(arm, 'RightArm')
+                SHOULDER_POS.setdefault(st['name'], []).append([round(-lsh_w.x * k, 1), round(lsh_w.y * k, 1), round(-rsh_w.x * k, 1), round(rsh_w.y * k, 1)])
+                continue
             sc.render.filepath = os.path.join(OUT, role, f"{st['name']}_{i:02d}.png")
             bpy.ops.render.render(write_still=True)
         # where the character's position sits inside this sprite (pixels from top-left)
@@ -672,7 +679,10 @@ def build(role):
         meta[st['name']] = dict(frames=n, size=res, pivot=[res / 2, res / 2 - co.location.y * ppu], px_per_m=round(ppu, 2))
         print('done', role, st['name'], flush=True)
     import json
-    json.dump(meta, open(os.path.join(OUT, role, 'sprites.json'), 'w'), indent=1)
+    if SHOULDERS:
+        json.dump(SHOULDER_POS, open(os.path.join(OUT, role, 'shoulders.json'), 'w'))
+    else:
+        json.dump(meta, open(os.path.join(OUT, role, 'sprites.json'), 'w'), indent=1)
 
 
 if __name__ == '__main__':
