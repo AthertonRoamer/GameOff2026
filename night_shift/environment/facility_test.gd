@@ -1,4 +1,4 @@
-﻿extends Node2D
+extends Node2D
 
 ##Fly-around viewer for the facility, so the art and scale can be checked without a player scene.
 ##  WASD / arrows  move the camera (hold Shift for fast)      1, 2, 3  camera zoom      M  map overview

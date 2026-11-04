@@ -14,6 +14,7 @@ extends CharacterBody2D
 @onready var interpolator : TickInterpolator = $TickInterpolator
 @onready var camera : Camera2D = $Camera2D
 @onready var skin : NightShiftCharacter = $Skin
+@onready var flashlight : Flashlight = $Skin/Torso/Flashlight #comes out of the front of the torso, so it follows the aim
 
 var lag_compensator : LagCompensator
 var interacting : bool = false #a local visual flag: plays the torso's interact animation while true

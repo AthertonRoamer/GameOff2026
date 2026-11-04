@@ -1,6 +1,7 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://game/player/skin/night_shift_character.gd" id="1_skin"]
+[ext_resource type="Script" path="res://game/player/flashlight/flashlight.gd" id="2_flashlight"]
 
 [sub_resource type="Gradient" id="Gradient_shadow"]
 offsets = PackedFloat32Array(0, 1)
@@ -27,5 +28,10 @@ texture = SubResource("GradientTexture2D_shadow")
 [node name="Legs" type="AnimatedSprite2D" parent="."]
 
 [node name="Torso" type="AnimatedSprite2D" parent="."]
+
+[node name="Flashlight" type="Node2D" parent="Torso"]
+position = Vector2(0, -70)
+rotation = -1.5707964
+script = ExtResource("2_flashlight")
 
 [node name="Full" type="AnimatedSprite2D" parent="."]

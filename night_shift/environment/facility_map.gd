@@ -1,4 +1,4 @@
-﻿class_name FacilityMap
+class_name FacilityMap
 extends Node2D
 
 ##Facility 9, built at runtime from facility_layout.json: floors, walls (derived from the floors), doors and vents.
@@ -13,7 +13,6 @@ extends Node2D
 signal built
 
 const LAYOUT_PATH : String = "res://night_shift/environment/facility_layout.json"
-const VENT_TEXTURE : String = "res://night_shift/environment/art/vent_grate.png"
 const TILE : int = FacilityTileSet.TILE
 
 @export_file("*.json") var layout_path : String = LAYOUT_PATH
@@ -28,6 +27,7 @@ var doors : Array[FacilityDoor] = []
 var vents : Array[Vector2i] = []
 
 @onready var floors : TileMapLayer = $Floors
+@onready var shadows : TileMapLayer = $Shadows
 @onready var walls : TileMapLayer = $Walls
 @onready var doors_node : Node2D = $Doors
 @onready var props_node : Node2D = $Props
@@ -45,7 +45,7 @@ func build() -> void:
 	if layout.is_empty():
 		return
 	var tile_set : TileSet = FacilityTileSet.build()
-	for layer : TileMapLayer in [floors, walls]:
+	for layer : TileMapLayer in [floors, shadows, walls]:
 		layer.tile_set = tile_set
 		layer.scale = Vector2.ONE * FacilityTileSet.ART_SCALE #the tiles are drawn at 4x resolution, like the character sprites
 		layer.clear()
@@ -158,19 +158,16 @@ func _compute_walls() -> void:
 
 
 func _paint_floors() -> void:
-	#One floor everywhere: 0.5 m concrete slabs, two cells square. A slab's wear variant is picked per slab (not per cell, so a slab stays whole),
-	#mostly plain with the odd drain, stain or scuffed one, and each cell shows the quarter of the slab it is part of.
+	#one plain floor everywhere; the shading comes from the soft shadows beside the walls
 	for cell : Vector2i in floor_cells:
-		var slab : Vector2i = Vector2i(floori(cell.x / 2.0), floori(cell.y / 2.0))
-		var pick : float = float(((slab.x * 73856093) ^ (slab.y * 19349663)) & 0xFFFF) / 65535.0
-		var variant : int = 0
-		if pick >= 0.55:
-			variant = [1, 6, 2, 3, 3, 4, 5, 7][mini(int((pick - 0.55) / 0.05625), 7)]
-		floors.set_cell(cell, FacilityTileSet.SOURCE_FLOORS, Vector2i(variant * 2 + posmod(cell.x, 2), posmod(cell.y, 2)))
+		floors.set_cell(cell, FacilityTileSet.SOURCE_FLOORS, Vector2i.ZERO)
+		var mask : int = FacilityTileSet.neighbour_mask(cell, wall_cells)
+		if mask != 0:
+			shadows.set_cell(cell, FacilityTileSet.SOURCE_SHADOWS, FacilityTileSet.mask_to_atlas(mask))
 
 func _paint_walls() -> void:
 	for cell : Vector2i in wall_cells:
-		walls.set_cell(cell, FacilityTileSet.SOURCE_WALLS, FacilityTileSet.mask_to_atlas(FacilityTileSet.neighbour_mask(cell, wall_cells), posmod(cell.x + cell.y, 2)))
+		walls.set_cell(cell, FacilityTileSet.SOURCE_WALLS, FacilityTileSet.mask_to_atlas(FacilityTileSet.neighbour_mask(cell, wall_cells)))
 
 
 func _place_doors(layout : Dictionary) -> void:
@@ -197,14 +194,7 @@ func _place_doors(layout : Dictionary) -> void:
 
 
 func _place_vents(layout : Dictionary) -> void:
+	#only the positions: there is no vent art in the smooth look
 	vents.clear()
-	var texture : Texture2D = load(VENT_TEXTURE)
 	for v : Array in layout.get("vents", []):
-		var cell : Vector2i = Vector2i(int(v[0]), int(v[1]))
-		vents.append(cell)
-		var sprite : Sprite2D = Sprite2D.new()
-		sprite.texture = texture
-		sprite.position = Vector2((cell + Vector2i.ONE) * TILE) #a vent grille is 0.5 m, 2 x 2 cells, and the vent is its top left cell
-		sprite.scale = Vector2.ONE * FacilityTileSet.ART_SCALE
-		sprite.name = "Vent_%d_%d" % [cell.x, cell.y]
-		props_node.add_child(sprite)
+		vents.append(Vector2i(int(v[0]), int(v[1])))

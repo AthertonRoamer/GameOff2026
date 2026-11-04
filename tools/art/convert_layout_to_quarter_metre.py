@@ -1,4 +1,4 @@
-﻿"""One-off: converts night_shift/environment/facility_layout.json from 0.5 m cells to 0.25 m cells so that walls are 0.25 m thin.
+"""One-off: converts night_shift/environment/facility_layout.json from 0.5 m cells to 0.25 m cells so that walls are 0.25 m thin.
 Every old floor cell becomes 2 x 2 new cells, an old wall cell (between two rooms) becomes ONE new cell, and a door (2 old cells, 1 m)
 becomes 4 new cells (still 1 m). A rect that has a wall on its left or top grows one new cell that way, which is what turns the old 2 cell gap
 into a 1 cell wall. Run from the repository root:  py -3 tools/art/convert_layout_to_quarter_metre.py"""

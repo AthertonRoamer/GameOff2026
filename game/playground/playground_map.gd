@@ -1,10 +1,11 @@
-﻿class_name PlaygroundMap
+class_name PlaygroundMap
 extends Node2D
 
 ##A single-player testing ground: the facility map with one player in the guard skin. No lobby and no network: netfox's clock is started
 ##offline, so the player's rollback tick, input and interpolation run exactly as they do in a game.
-##  WASD move, the mouse aims (the torso follows the mouse, the legs follow the movement), E opens and closes the nearest gate.
-##Command line (after --), for screenshots and checks:  --shot=<png> [--press=<action>] [--hold=<seconds>] [--aim=dx,dy] [--at=x,y]
+##  WASD move, the mouse aims (the torso follows the mouse, the legs follow the movement), E opens and closes the nearest gate,
+##  F turns the flashlight on and off, N turns the darkness (the CanvasModulate over the whole map, players included) on and off.
+##Command line (after --), for screenshots and checks:  --shot=<png> [--press=<action>] [--hold=<seconds>] [--aim=dx,dy] [--at=x,y] [--flash=off] [--dark=off]
 ##  presses an input action for a while, aims at a point on screen, takes a screenshot and prints what the player did.
 
 const PLAYER_SCENE : PackedScene = preload("res://game/player/player.tscn")
@@ -15,6 +16,7 @@ const INTERACT_TIME : float = 0.6
 @export var camera_zoom : float = 2.0
 
 @onready var facility : FacilityMap = $FacilityMap
+@onready var darkness : CanvasModulate = $Darkness
 
 var player : Player
 var _interact_left : float = 0.0
@@ -33,6 +35,8 @@ func _ready() -> void:
 		var at : PackedStringArray = String(_args["at"]).split(",")
 		player.position = Vector2(float(at[0]), float(at[1]))
 	player.set_active(true)
+	player.flashlight.on = String(_args.get("flash", "on")) != "off"
+	darkness.visible = String(_args.get("dark", "on")) != "off"
 	player.camera.zoom = Vector2.ONE * float(_args.get("zoom", camera_zoom))
 	if _args.has("shot"):
 		_run_check()
@@ -44,6 +48,16 @@ func _process(delta : float) -> void:
 		player.interacting = _interact_left > 0.0
 	if Input.is_action_just_pressed("player_interact"):
 		_use_nearest_gate()
+
+
+func _unhandled_key_input(event : InputEvent) -> void:
+	if not event.is_pressed() or event.is_echo():
+		return
+	match (event as InputEventKey).keycode:
+		KEY_F:
+			player.flashlight.toggle()
+		KEY_N:
+			darkness.visible = not darkness.visible
 
 
 func _use_nearest_gate() -> void:

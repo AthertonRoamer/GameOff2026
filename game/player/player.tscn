@@ -13,9 +13,10 @@ radius = 12.0
 collision_mask = 11
 motion_mode = 1
 script = ExtResource("1_player")
+speed = 200.0
 name_display = NodePath("NameDisplay")
 
-[node name="Skin" parent="." instance=ExtResource("3_skin")]
+[node name="Skin" parent="." unique_id=669583553 instance=ExtResource("3_skin")]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=730710891]
 shape = SubResource("CircleShape2D_body")
@@ -43,5 +44,6 @@ script = ExtResource("5_interp")
 root = NodePath("..")
 properties = Array[String]([":position"])
 
-[node name="Camera2D" type="Camera2D" parent="."]
+[node name="Camera2D" type="Camera2D" parent="." unique_id=328652029]
 enabled = false
+zoom = Vector2(2, 2)

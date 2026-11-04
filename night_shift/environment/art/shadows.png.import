@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cu2bod2yx7maf"
-path="res://.godot/imported/vent_grate.png-c6194b489f78e9b779a9222a81748116.ctex"
+uid="uid://dbqyiyust84sj"
+path="res://.godot/imported/shadows.png-7464656c65cd3e23da041dad4fb89ee0.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://night_shift/environment/art/vent_grate.png"
-dest_files=["res://.godot/imported/vent_grate.png-c6194b489f78e9b779a9222a81748116.ctex"]
+source_file="res://night_shift/environment/art/shadows.png"
+dest_files=["res://.godot/imported/shadows.png-7464656c65cd3e23da041dad4fb89ee0.ctex"]
 
 [params]
 
