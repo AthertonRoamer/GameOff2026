@@ -1,5 +1,5 @@
 class_name LagCompensator
-extends Node
+extends Node2D
 
 ##Server-side lag compensation for instant (hitscan) weapons in 2D.
 ##Records where tracked nodes were on every rollback tick, so a shot can be checked against the world as the shooter saw it
@@ -12,6 +12,7 @@ extends Node
 
 @export var max_rewind_ticks : int = 12 #60 ticks/s: 12 ticks = 200 ms. Raise it to compensate for more latency, at the cost of fairness to the target
 @export var server_only : bool = true #recording is only needed where shots are resolved
+@export var debug_draw_hit_circles : bool = false #draws each tracked node's current detection circle (its hit radius)
 
 var _tracked : Dictionary = {} #key: node, value: {property: StringName, radius: float, history: Dictionary (tick -> Vector2)}
 
@@ -23,6 +24,23 @@ func _ready() -> void:
 func _exit_tree() -> void:
 	if NetworkRollback.on_record_tick.is_connected(_on_record_tick):
 		NetworkRollback.on_record_tick.disconnect(_on_record_tick)
+
+
+func _process(_delta : float) -> void:
+	if debug_draw_hit_circles:
+		queue_redraw()
+
+
+func _draw() -> void:
+	if not debug_draw_hit_circles:
+		return
+	for node in _tracked:
+		if not is_instance_valid(node):
+			continue
+		var entry : Dictionary = _tracked[node]
+		var pos : Vector2 = node.get(entry["property"])
+		draw_circle(pos - global_position, entry["radius"], Color(1.0, 0.0, 0.0, 0.35))
+		draw_arc(pos - global_position, entry["radius"], 0.0, TAU, 32, Color.RED, 2.0)
 
 
 func track(node : Node, property : StringName = &"position", radius : float = 32.0) -> void:

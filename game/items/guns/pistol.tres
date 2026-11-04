@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="Gun" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://game/items/gun.gd" id="1_gun"]
+[ext_resource type="Texture2D" uid="uid://ckxs3fsktcc1o" path="res://icon.svg" id="2_icon"]
+
+[resource]
+script = ExtResource("1_gun")
+damage = 10.0
+bullet_speed = 700.0
+bullet_color = Color(0.3, 0.6, 1, 1)
+item_name = "Pistol"
+icon = ExtResource("2_icon")
+cooldown_ticks = 20

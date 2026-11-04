@@ -9,12 +9,14 @@ extends CharacterBody2D
 @export var slow_down_time : float = .1
 @export var set_friction_from_slow_down_time : bool = true
 @export var name_display : Label
+@export var starting_items : Array[Item] = []
 
 @onready var input : PlayerInput = $Input
 @onready var interpolator : TickInterpolator = $TickInterpolator
 @onready var camera : Camera2D = $Camera2D
 
 var lag_compensator : LagCompensator
+var projectile_manager : ProjectileManager
 
 var player_name : String = "":
 	set(value):
@@ -75,3 +77,7 @@ func take_damage(dmg : float) -> void:
 func die() -> void:
 	died.emit()
 	set_active(false)
+
+
+func is_alive() -> bool:
+	return health > 0
