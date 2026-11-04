@@ -3,7 +3,7 @@ extends Node2D
 
 ##A single-player testing ground: the facility map with one player in the guard skin. No lobby and no network: netfox's clock is started
 ##offline, so the player's rollback tick, input and interpolation run exactly as they do in a game.
-##  WASD move, the mouse aims (the torso follows the mouse, the legs follow the movement), E opens and closes the nearest gate,
+##  WASD move, the mouse aims (the torso follows the mouse, the legs follow the movement), left mouse fires the equipped gun (1-4 or the wheel pick the slot), E opens and closes the nearest gate,
 ##  F turns the flashlight on and off, N turns the darkness (the CanvasModulate over the whole map, players included) on and off.
 ##Command line (after --), for screenshots and checks:  --shot=<png> [--press=<action>] [--hold=<seconds>] [--aim=dx,dy] [--at=x,y] [--flash=off] [--dark=off]
 ##  presses an input action for a while, aims at a point on screen, takes a screenshot and prints what the player did.
@@ -17,6 +17,7 @@ const INTERACT_TIME : float = 0.6
 
 @onready var facility : FacilityMap = $FacilityMap
 @onready var darkness : CanvasModulate = $Darkness
+@onready var projectiles : ProjectileManager = $ProjectileManager
 
 var player : Player
 var _interact_left : float = 0.0
@@ -34,6 +35,7 @@ func _ready() -> void:
 	if _args.has("at"):
 		var at : PackedStringArray = String(_args["at"]).split(",")
 		player.position = Vector2(float(at[0]), float(at[1]))
+	player.projectile_manager = projectiles #the gun spawns its bullets here; walls (physics layer 2) stop them
 	player.set_active(true)
 	player.flashlight.on = String(_args.get("flash", "on")) != "off"
 	darkness.visible = String(_args.get("dark", "on")) != "off"
@@ -91,7 +93,7 @@ func _run_check() -> void:
 		await get_tree().create_timer(float(_args.get("hold", 1.0))).timeout
 	get_viewport().get_texture().get_image().save_png(String(_args["shot"]))
 	var gate_states : Array = facility.doors.filter(func(d : FacilityDoor) -> bool: return d.global_position.distance_to(start) < INTERACT_RANGE).map(func(d : FacilityDoor) -> String: return FacilityDoor.State.keys()[d.state])
-	print("PLAYGROUND gates_near_start=%s" % [gate_states])
+	print("PLAYGROUND gates_near_start=%s projectiles_in_flight=%d" % [gate_states, projectiles.get_projectiles().size()])
 	print("PLAYGROUND start=%s end=%s moved=%.1f legs=%s torso=%s" % [start, player.position, player.position.distance_to(start),
 		player.skin.legs.animation, player.skin.torso.animation])
 	if action != "":
