@@ -1,50 +1,56 @@
 # Night Shift environment plan
 
-Facility 9: map, tileset, props and lighting for the heist game. Everything here is built to the sprite kit's scale and Palette A
-(https://claude.ai/artifact/3vjw1tkGREJeaXT8mbr5Mc). Characters and the player scene are not part of this work.
+Facility 9: map, tileset, props and lighting for the heist game, drawn to match the cel-shaded characters of the sprite kit
+(https://claude.ai/artifact/3vjw1tkGREJeaXT8mbr5Mc). The characters and the player scene are the teammate's work and are not in this repo yet.
 
-## Scale, from the sprite kit
+## The look: true top-down, cel shaded, made in 3D
+The characters were modelled in 3D and photographed from straight above with three flat shading bands and an ink outline (`source/anim.py`
+in the kit). The environment is made the same way, so it cannot drift from them:
+- Every piece is a 3D model (`render/env_mesh.gd` blocks, `render/env_pieces.gd` pieces) photographed by an orthographic camera looking straight
+  down (`render/env_render.gd`). Pure top-down: a wall shows its top, never its front.
+- **Same cel material** as the characters (`render/cel.gdshader`): shade = dot(world normal, light), cut into shadow / base / highlight at
+  0.38 and 0.9, with the kit's light direction (up and to the left of the picture). Shadow and highlight tones are derived from the base
+  colour with the same `tone()` (0.62 and 1.22). Bevels are tilted (28 degrees on lit sides, 47 on shaded sides) so they land in the highlight
+  and shadow bands the way the characters' curved forms do.
+- **Ink outline** in `void` #07090c, 1 px at 176 px per metre, drawn where a surface steps up from the one beside it (found from a height pass),
+  so props outline against the floor and a wall block against open ground.
+- **176 px per metre**, the same as the cel character sheets (their `px_per_m` is 176.55). In the game both are drawn at scale 0.25, so the
+  world is 44 px per metre. Tile layers are scaled 0.25 and use linear filtering with mipmaps (the images have mipmaps turned on).
+- No pixel pass. If one is wanted later it is a post-process on the finished picture, as `pixelate.py` is for the characters.
+
+Rendering is done with Godot, not Blender: there is no Blender here and `bpy` has no build for Python 3.14. The pieces are Godot meshes and
+primitives, so Blender models could be dropped in later without changing the cel material or the ink.
+
+## Characters: reverting the pixel look
+The kit's pixel sheets are the cel renders run through `pixelate_all.py` (shrink 4x, snap to palette, 1 px outline). To go back to the smooth
+cel look: use the kit's `cel/` folder instead of `pixel/` (256 px frames, `px_per_m` 176.55, same `sprites.json` layout) and set
+`pixel_art = false` on `night_shift_character.gd` (that only controls nearest-neighbour filtering). Scale the character node by 0.25 to get
+44 px per metre, and use linear filtering with mipmaps. The characters are not imported in this repo yet, so nothing needed reverting here.
+
+## Scale
 | Fact | Value |
 |---|---|
-| Pixels per metre | 44 (the kit measures 44.1) |
-| Character frame | 64 px (88 px for the gunner), shoulders about 22 px wide |
-| **Tile** | **22 px = 0.5 m** |
-| Wall thickness | 1 tile = 0.5 m |
+| World scale | 44 px per metre (render 176 px per metre, drawn at 0.25) |
+| Tile | 22 px world, 88 px in the image = 0.5 m |
+| Wall | 1 tile = 0.5 m thick |
 | Door | 2 tiles = 1 m wide |
-| Corridor | 4 tiles = 2 m wide (two players can pass with a flashlight each) |
+| Corridor | 4 tiles = 2 m wide |
 | Room | 7 to 12 m on a side |
-| Camera zoom | whole numbers only (2x recommended: a 1152 x 648 view then shows 13 x 7.4 m) |
+| Camera zoom | 2x suggested: a 1152 x 648 view then shows 13 x 7.4 m |
 
-A 44 px tile would also be one metre, but a 22 px grid lets walls be thin and doors one metre wide without exceptions.
-Change `T` in `tools/art/make_facility_art.py` and `TILE` in `facility_tileset.gd` together if a different grid is wanted.
-
-## Palette mapping
-| Surface | Palette A colour |
-|---|---|
-| Void, outside the building | `void` #07090c |
-| Outdoor asphalt, vault steel | `deep` #151920 |
-| Corridor concrete, room tile (dark) | `floor` #1a1f27 |
-| Room tile (light), utility plate | `tile` #222833 |
-| Wall face | `wall` #2a313d |
-| Wall edge lit from the top left | `wall_top` #3a4352 |
-| Door panel, vent bolts | `metal` #5a6475 |
-| Lamps, unlocked door lights, hazard stripes | `backup` #f2b544 |
-| Generator room lamp | `warm` #e07b2a |
-| Locked door light, alarms | `alarm` #e5484d |
-| Flashlight | `flashlight` #fff3c4 |
-
-All environment pixels come from these colours; the generator is deterministic. The light stays at the kit's fixed top-left direction:
-walls throw a long contact shadow to their bottom right and a thin one to their top left. 1 px ink outline (`void`) on every open wall edge.
+## Palette
+All piece colours are Palette A names (`env_mesh.gd` `PAL`, copied from the kit): floors `floor` #1a1f27 / `tile` #222833 / `deep` #151920,
+walls `wall` #2a313d with a `wall_top` #3a4352 cap, pipes `uniform` #2b3a55, bolts `wall_top` / `metal` #5a6475, door lights `item` #6fd3e8 or
+`alarm` #e5484d, hazard stripes `backup` #f2b544. Screens and lights are flat colours with no shading. Because the cel bands are derived from
+the base colour (as for the characters), the finished pixels sit slightly outside the 25 named colours.
 
 ## The facility
 42 x 28 m, 21 rooms, 24 doors (`night_shift/environment/facility_layout.json`, checked by `py -3 tools/art/check_layout.py`).
-
 - **Main Corridor**: a 2 m wide ring around the interior block.
 - **Utility rooms** (the generator-power gameplay): Camera Room, Door Control, Lighting Control, Generator Room, Turret Control, Breaker Room.
-  Each has a `function` in the layout so game code can find it (`cameras`, `doors`, `lights`, `generator`, `turrets`, `power`).
+  Each has a `function` in the layout (`cameras`, `doors`, `lights`, `generator`, `turrets`, `power`).
 - **Item rooms** (what the intruder steals): Archive, Vault, Locker Room, Records.
-- **Exterior rooms** (intruder entries and exits): Roof Stairwell (north), Loading Dock (south), Maintenance Bay (west), Cafeteria (east).
-  Each has a heavy exterior door onto a small outdoor pad.
+- **Exterior rooms** (intruder entries and exits): Roof Stairwell, Loading Dock, Maintenance Bay, Cafeteria, each with a heavy exterior door.
 - **Offices**: Break Room, Offices. 13 vent grates are listed for the Vent Rat.
 
 Walls are not drawn by hand: every cell touching a floor cell becomes a wall and picks its tile from an 8-neighbour bitmask, so
@@ -53,63 +59,47 @@ editing the rect list is the whole workflow.
 ## How it is built
 | File | Job |
 |---|---|
-| `tools/art/make_facility_art.py` | Draws floors (5 kinds x 4 variants), walls (256 neighbour masks), contact shadows, 6 door sheets x 2 orientations, vent grate, banded light textures into `night_shift/environment/art/` |
-| `facility_tileset.gd` | Builds the TileSet in code: floors, walls (collision layer 2 and light occluder), shadows |
-| `facility_map.gd/.tscn` | Reads the layout; paints floors, walls, shadows; places doors, vents and lamps; room queries (`room_at`, `rooms_of_kind`, `doors_of_room`, `room_rects_px`) |
+| `render/env_render.gd/.tscn` | Photographs the pieces from above and writes the images to `art/` (needs a window). Rendering everything takes about 20 s |
+| `render/env_pieces.gd` | The pieces: floor kinds (5 x 4 variants), vent grille, 256 wall tiles, doors (interior / exterior x closed / locked / open x horizontal / vertical), console |
+| `render/env_mesh.gd` | Building blocks: beveled plates, studs, pipes, flat quads, cel and flat materials |
+| `render/*.gdshader` | `cel` (the character material), `flat` (glowing parts), `height` (for the ink) |
+| `facility_tileset.gd` | Builds the TileSet in code from `floors.png` and `walls.png`; walls get collision (layer 2) and a light occluder |
+| `facility_map.gd/.tscn` | Reads the layout; paints floors and walls; places doors, vents and lamps; room queries (`room_at`, `rooms_of_kind`, `doors_of_room`, `room_rects_px`) |
 | `facility_door.gd` | Sliding door, `State.OPEN / CLOSED / LOCKED`, blocks movement (layer 4) and light |
 | `facility_lamp.gd` | Amber banded ceiling lamp with shadows, `set_powered()`, optional flicker |
-| `flashlight.gd` | Banded 56 degree cone, 11.6 m, plus a small halo; add to a player and rotate to aim |
-| `facility_test.tscn` | Fly-around viewer: WASD, 1/2/3 zoom, F flashlight, L lamps, R doors, M overview, B 1 m reference box |
+| `flashlight.gd` | Banded 56 degree cone, 11.6 m, plus a small halo |
+| `facility_test.tscn` | Fly-around viewer: WASD, 1/2/3 zoom, F flashlight, L lamps, R doors, M overview, B 1 m box; `--ref=` draws a cel character for scale |
+| `tools/art/make_facility_art.py` | The two banded light textures |
+
+Re-render after changing a piece:
+```
+godot --path . res://night_shift/environment/render/env_render.tscn -- [--only=floors,walls,doors,console]
+godot --headless --path . --import        # then keep mipmaps on: mipmaps/generate=true in each art/*.png.import
+```
 
 ## Hooking up the player (for whoever builds the player scene)
-- Add players under `FacilityMap/Actors` (y-sorted).
-- Player body collision mask: `2 | 8 = 10` (walls and closed doors).
-- Projectile world mask: `2` (walls only), the same value the rollback demo already uses.
+- Add players under `FacilityMap/Actors` (y-sorted); scale the character node by 0.25.
+- Player body collision mask: `2 | 8 = 10` (walls and closed doors). Projectile world mask: `2` (walls only).
 - `Flashlight` goes under the player node, `flashlight.aim_at(world_point)` or `rotation = aim.angle()`.
 - Drop shadow under the character, as the kit asks.
 
 ## Lighting
 Mains power is out, so the world is dark and lit only by what the generator feeds.
-- `Ambient` (CanvasModulate, `#4d5775`-ish) keeps layout readable; lit areas show the true palette colours.
+- `Ambient` (CanvasModulate) keeps the layout readable.
 - Ceiling lamps: amber, one per 7 m, four flat brightness steps to match the cel shading, hard shadows so no light crosses a wall.
-  Generator room is orange (`warm`).
 - Flashlights: warm white cone, shadows from walls and closed doors.
-- All lamp and flashlight textures are banded (no smooth falloff). Everything uses nearest-neighbour filtering (set on the map root).
-
-## Look update: the art demo (replaces the first pass once approved)
-The first generated art (flat top-down tiles, 22 px) was too plain. The demo in `night_shift/environment/demo/` redraws it after the
-user's reference image, in Palette A:
-- **44 px tile = 1 m.** The reference's door is exactly one tile wide, and the character sprites are about 35 px across, so a one-metre door
-  and one-metre tile fit them. This supersedes the 22 px grid above; the facility map and layout still use 22 px until the look is approved,
-  then the layout is halved to tiles of 1 m (doors 1 cell, corridors 3 cells, walls 1 cell).
-- **Walls are seen slightly from the front.** A wall with floor to its south shows its face: pale `metal` panel with seams and rivets over a
-  strip of machinery (vents, `item` cyan and `backup` amber status lights, cable runs). Any other wall shows its roof: dark with pipe runs.
-  Every edge that borders floor gets a 1 px `void` outline and a 2 px rim in `accent` on lit sides (top, left) or `uniform_light` on shaded sides.
-- **Floors** are panels: 1 px grout, a framed panel with rounded corners, corner rivets, a lit top-left and shaded bottom-right bevel, 4 variants.
-  A vent grille tile and amber/black hazard stripes for thresholds and edges.
-- **Door** (one metre, two leaves, `item` cyan lights, `alarm` red when locked, open state shows the floor) and a **console** (cyan readout,
-  amber keyboard strip).
-- The reference's teal and lavender are not in Palette A, so floors are `tile` / `wall` slate, wall faces `metal`, accents `accent` / `uniform_light`.
-- Regenerate with `py -3 tools/art/make_demo_art.py`; look at it with `night_shift/environment/demo/demo_room.tscn`
-  (keys listed at the top of `demo_room.gd`). `docs/night_shift/demo_*.png` are screenshots with a guard sprite beside the door for scale.
+- Contact shadows on the floor next to walls are not in this pass; the lamps' and flashlights' dynamic shadows do the job. A baked version can be
+  rendered from the same 3D pieces with a shadow-casting light if wanted.
 
 ## Status
-Done in the first slice: scale decisions, art generator, tileset, layout and checker, map builder, doors, vent grates, lamps,
-flashlight, fly-around viewer, screenshots (`docs/night_shift/`).
+Done: renderer, floors, walls, doors, vent grille, console, tileset and map builder on the new art, lamps, flashlight, viewer, screenshots in
+`docs/night_shift/`. Replaced: the first flat tiles and the oblique demo, both abandoned.
 
-Next, in this order:
-1. **Utility-room props**: generator (2 x 1 m, with a power gauge that can show amber or red), breaker panel (wall), camera monitor desk,
-   door/light/turret control consoles, server racks, turret mount, wall-mounted camera. Same generator pipeline, 22 px grid, 1 px ink outline.
-2. **Item-room props**: archive shelves, vault safe, lockers, records cabinets, desks, crates, cafeteria tables, break-room couch and
-   vending machine, loading-dock pallets. Solid props get collision (layer 2) and a light occluder; low cover gets layer 3 (blocks bodies, not bullets).
-3. **Lighting states**: alarm mode (flashing `alarm` red), per-room power (`set_powered` from the light control room), dark rooms by default,
-   light-switch props. Optional palette-snap post-process so lit colours stay inside Palette A.
-4. **Vents**: the vent network the Vent Rat travels (needs a decision on how it is drawn and navigated).
-5. **Hand polish**: the generated art is deliberately simple and consistent; swap in hand-drawn tiles over the same atlas layout whenever wanted.
-
-## Decisions to confirm
-- 22 px tile (recommended) versus 44 px.
-- Camera zoom 2x with the template's 1152 x 648 viewport, or a different base resolution.
-- Project-wide nearest filtering (`rendering/textures/canvas_textures/default_texture_filter`). Not changed yet, so the character
-  teammate's work is untouched; the map sets nearest on its own root node.
-- Map size and room list above (it is a first pass, the layout file makes changes cheap).
+Next, in this order (each is one more piece in `env_pieces.gd`):
+1. **Utility-room props**: generator (2 x 1 m, power gauge), breaker panel, camera monitor desk, door/light/turret consoles, server racks,
+   turret mount, wall camera.
+2. **Item-room props**: archive shelves, vault safe, lockers, records cabinets, desks, crates, cafeteria tables, vending machine, pallets.
+   Solid props get collision (layer 2) and a light occluder; low cover gets layer 3 (blocks bodies, not bullets).
+3. **Lighting states**: alarm mode, per-room power, dark rooms by default, light-switch props.
+4. **Vents**: the vent network the Vent Rat travels.
+5. **Wall variety**: more wall-top detail (panel seams, vents, hazard plates) so long walls are less repetitive.

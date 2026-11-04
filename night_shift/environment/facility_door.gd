@@ -28,6 +28,7 @@ func _ready() -> void:
 	collision_mask = 0
 	var size : Vector2 = Vector2(FacilityTileSet.TILE * 2, FacilityTileSet.TILE) if horizontal else Vector2(FacilityTileSet.TILE, FacilityTileSet.TILE * 2)
 	_sprite = Sprite2D.new()
+	_sprite.scale = Vector2.ONE * FacilityTileSet.ART_SCALE #drawn at 176 px per metre, shown at 44
 	add_child(_sprite)
 	_shape = CollisionShape2D.new()
 	_shape.shape = RectangleShape2D.new()

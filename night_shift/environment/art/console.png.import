@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://buf4drrbjh08c"
-path="res://.godot/imported/flashlight_lamps_off.png-1c6576c44b1d68ec079de922a93bd62e.ctex"
+uid="uid://cb60xvwbm1cs4"
+path="res://.godot/imported/console.png-405b983a30fb13761de22f97d60167b0.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://docs/night_shift/flashlight_lamps_off.png"
-dest_files=["res://.godot/imported/flashlight_lamps_off.png-1c6576c44b1d68ec079de922a93bd62e.ctex"]
+source_file="res://night_shift/environment/art/console.png"
+dest_files=["res://.godot/imported/console.png-405b983a30fb13761de22f97d60167b0.ctex"]
 
 [params]
 
@@ -23,7 +23,7 @@ compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
-mipmaps/generate=false
+mipmaps/generate=true
 mipmaps/limit=-1
 roughness/mode=0
 roughness/src_normal=""

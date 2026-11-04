@@ -35,6 +35,10 @@ func _ready() -> void:
 	if args.has("at"):
 		var parts : PackedStringArray = String(args["at"]).split(",")
 		camera.position = Vector2(float(parts[0]), float(parts[1]))
+	if args.has("ambient"): #--ambient=1 shows the art without the darkness and lamps, for judging the drawing itself
+		facility.ambient.color = Color.WHITE.lerp(facility.ambient.color, 1.0 - float(args["ambient"]))
+		if float(args["ambient"]) >= 1.0:
+			_set_lamps(false)
 	if args.has("lamps") and args["lamps"] == "off":
 		_set_lamps(false)
 	if args.has("flash"):
@@ -42,6 +46,8 @@ func _ready() -> void:
 		_flashlight.rotation = float(args.get("angle", 0.0))
 	if args.has("doors") and args["doors"] == "open":
 		_set_doors(true)
+	if args.has("ref"): #a character drawn for scale: --ref=<folder with the cel legs_idle.png and torso_idle_aim.png> --ref_at=x,y (world pixels)
+		_add_reference_character(String(args["ref"]), String(args.get("ref_at", "400,400")))
 	if args.has("shot"):
 		_shot_path = args["shot"]
 
@@ -88,6 +94,24 @@ func _draw() -> void:
 		var origin : Vector2 = camera.position
 		draw_rect(Rect2(origin + Vector2(40, 40), Vector2(44, 44)), Color("#4be38a"), false, 1.0)
 		draw_rect(Rect2(origin + Vector2(100, 40), Vector2(22, 22)), Color("#6fd3e8"), false, 1.0)
+
+
+func _add_reference_character(folder : String, at : String) -> void:
+	var parts : PackedStringArray = at.split(",")
+	for sheet in ["legs_idle.png", "torso_idle_aim.png"]:
+		var image : Image = Image.load_from_file(folder.path_join(sheet))
+		if image == null:
+			push_warning("reference sprite %s not found" % folder.path_join(sheet))
+			return
+		var sprite : Sprite2D = Sprite2D.new()
+		sprite.texture = ImageTexture.create_from_image(image)
+		sprite.region_enabled = true
+		sprite.region_rect = Rect2(0, 0, 256, 256) #first frame of the 256 px cel sheet
+		sprite.offset = Vector2(0, -21.2) #godot_offset from the sheet's sprites.json: puts the hips on the origin
+		sprite.scale = Vector2.ONE * 0.25 #176 px per metre down to the world's 44
+		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+		sprite.position = Vector2(float(parts[0]), float(parts[1]))
+		facility.actors.add_child(sprite)
 
 
 func _set_lamps(on : bool) -> void:

@@ -1,10 +1,10 @@
 class_name FacilityMap
 extends Node2D
 
-##Facility 9, built at runtime from facility_layout.json: floors, walls (derived from the floors), contact shadows, doors, vents and
+##Facility 9, built at runtime from facility_layout.json: floors, walls (derived from the floors), doors, vents and
 ##ceiling lamps. Edit the layout file and run the scene, there is nothing to repaint.
 ##
-##Nodes in facility_map.tscn: Floors, Shadows, Walls (tile layers), Doors, Props, Lamps, and Actors, the node players and other moving
+##Nodes in facility_map.tscn: Floors, Walls (tile layers), Doors, Props, Lamps, and Actors, the node players and other moving
 ##things are added to (y-sorted). Ambient is the CanvasModulate that makes everything dark except where a lamp or flashlight reaches.
 ##
 ##Physics layers: walls are on layer 2 (FacilityTileSet.WORLD_LAYER), closed doors on layer 4 (DOOR_LAYER). A player body should have
@@ -29,7 +29,6 @@ var doors : Array[FacilityDoor] = []
 var vents : Array[Vector2i] = []
 
 @onready var floors : TileMapLayer = $Floors
-@onready var shadows : TileMapLayer = $Shadows
 @onready var walls : TileMapLayer = $Walls
 @onready var doors_node : Node2D = $Doors
 @onready var props_node : Node2D = $Props
@@ -49,14 +48,15 @@ func build() -> void:
 	if layout.is_empty():
 		return
 	var tile_set : TileSet = FacilityTileSet.build()
-	for layer : TileMapLayer in [floors, shadows, walls]:
+	for layer : TileMapLayer in [floors, walls]:
 		layer.tile_set = tile_set
+		layer.scale = Vector2.ONE * FacilityTileSet.ART_SCALE #the tiles are drawn at 4x resolution, like the character sprites
 		layer.clear()
 	_read_rooms(layout)
 	_read_doors(layout)
 	_compute_walls()
 	_paint_floors()
-	_paint_walls_and_shadows()
+	_paint_walls()
 	_place_doors(layout)
 	_place_vents(layout)
 	if lamps_enabled:
@@ -175,13 +175,9 @@ func _paint_floors() -> void:
 		floors.set_cell(cell, FacilityTileSet.SOURCE_FLOORS, Vector2i(variant, row))
 
 
-func _paint_walls_and_shadows() -> void:
+func _paint_walls() -> void:
 	for cell : Vector2i in wall_cells:
 		walls.set_cell(cell, FacilityTileSet.SOURCE_WALLS, FacilityTileSet.mask_to_atlas(FacilityTileSet.neighbour_mask(cell, wall_cells)))
-	for cell : Vector2i in floor_cells:
-		var mask : int = FacilityTileSet.neighbour_mask(cell, wall_cells)
-		if mask != 0:
-			shadows.set_cell(cell, FacilityTileSet.SOURCE_SHADOWS, FacilityTileSet.mask_to_atlas(mask))
 
 
 func _place_doors(layout : Dictionary) -> void:
@@ -216,6 +212,7 @@ func _place_vents(layout : Dictionary) -> void:
 		var sprite : Sprite2D = Sprite2D.new()
 		sprite.texture = texture
 		sprite.position = cell_to_world(cell)
+		sprite.scale = Vector2.ONE * FacilityTileSet.ART_SCALE
 		sprite.name = "Vent_%d_%d" % [cell.x, cell.y]
 		props_node.add_child(sprite)
 
