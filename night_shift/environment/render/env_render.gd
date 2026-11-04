@@ -3,7 +3,7 @@ extends Node
 ##Photographs the 3D environment pieces from straight above and writes the tile and prop images, the way the character sprites were made:
 ##an orthographic overhead camera, the cel material from the sprite kit, and an ink outline where a surface steps up from the one beside it.
 ##Run it with a window (3D needs a renderer), from the repository root:
-##  godot --path . res://night_shift/environment/render/env_render.tscn -- [--only=floors,walls,doors,console] [--out=res://night_shift/environment/art/]
+##  godot --path . res://night_shift/environment/render/env_render.tscn -- [--only=floors,walls,doors] [--out=res://night_shift/environment/art/]
 ##Resolution: 176 px per metre, the same as the cel character sheets, so one 0.5 m tile is 88 px. In the game everything visual is drawn at
 ##scale 0.25 (44 px per metre) next to the 0.25-scaled character sprites.
 
@@ -11,7 +11,6 @@ const PX_PER_M : float = 176.0
 const INK_THRESHOLD : float = 0.02 #a surface this much higher than its neighbour gets an ink line on the lower side
 const INK_COLOR : Color = Color("#07090c")
 const HEIGHT_SHADER : Shader = preload("res://night_shift/environment/render/height.gdshader")
-const FLOOR_KINDS : PackedStringArray = ["room", "corridor", "utility", "vault", "outdoor"]
 
 var _out_dir : String = "res://night_shift/environment/art/"
 var _only : PackedStringArray = []
@@ -37,17 +36,15 @@ func _wanted(group : String) -> bool:
 
 func _run() -> void:
 	var cell_px : int = roundi(EnvPieces.CELL * PX_PER_M)
-	if _wanted("floors"):
-		var atlas : Image = Image.create(cell_px * 4, cell_px * FLOOR_KINDS.size(), false, Image.FORMAT_RGBA8)
-		for row in FLOOR_KINDS.size():
-			for variant in 4:
-				var tile : Image = await _render(func(root : Node3D) -> void: root.add_child(EnvPieces.floor_tile(FLOOR_KINDS[row], variant)),
+	if _wanted("floors"): #columns are the shapes, rows are the tones
+		var tones : int = EnvPieces.FLOOR_TONES.size()
+		var atlas : Image = Image.create(cell_px * EnvPieces.FLOOR_SHAPES, cell_px * tones, false, Image.FORMAT_RGBA8)
+		for tone in tones:
+			for shape in EnvPieces.FLOOR_SHAPES:
+				var tile : Image = await _render(func(root : Node3D) -> void: root.add_child(EnvPieces.floor_tile(shape, tone)),
 					Vector2(EnvPieces.CELL, EnvPieces.CELL), Rect2(-0.25, -0.25, 0.5, 0.5))
-				atlas.blit_rect(tile, Rect2i(0, 0, cell_px, cell_px), Vector2i(variant * cell_px, row * cell_px))
+				atlas.blit_rect(tile, Rect2i(0, 0, cell_px, cell_px), Vector2i(shape * cell_px, tone * cell_px))
 		_save(atlas, "floors.png")
-		var vent : Image = await _render(func(root : Node3D) -> void: root.add_child(EnvPieces.floor_tile("vent", 0)),
-			Vector2(EnvPieces.CELL, EnvPieces.CELL), Rect2(-0.25, -0.25, 0.5, 0.5))
-		_save(vent, "vent_grate.png")
 	if _wanted("walls"):
 		var atlas : Image = Image.create(cell_px * 16, cell_px * 16, false, Image.FORMAT_RGBA8)
 		for mask in 256:
@@ -63,10 +60,6 @@ func _run() -> void:
 					var image : Image = await _render(func(root : Node3D) -> void: root.add_child(EnvPieces.door(state, exterior, vertical)),
 						area, Rect2(-area.x / 2.0, -area.y / 2.0, area.x, area.y))
 					_save(image, "door_%s_%s_%s.png" % ["exterior" if exterior else "interior", state, "v" if vertical else "h"])
-	if _wanted("console"):
-		var image : Image = await _render(func(root : Node3D) -> void: root.add_child(EnvPieces.console()),
-			Vector2(1.0, 0.5), Rect2(-0.5, -0.25, 1.0, 0.5))
-		_save(image, "console.png")
 
 
 ##Builds a piece, renders its colour and its height from above, draws the ink and returns the cropped picture.

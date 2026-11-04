@@ -14,39 +14,47 @@ const NEIGHBOUR_BITS : Array[Vector2i] = [Vector2i(0, -1), Vector2i(1, -1), Vect
 	Vector2i(0, 1), Vector2i(-1, 1), Vector2i(-1, 0), Vector2i(-1, -1)] #N, NE, E, SE, S, SW, W, NW, the bit order of the wall masks
 
 
-static func floor_tile(kind : String, variant : int) -> Node3D:
+const FLOOR_SHAPES : int = 6 #columns of the floor atlas: how a tile is cut up
+const FLOOR_TONES : Array[String] = ["brown_dark", "brown", "brown_light"] #rows of the floor atlas
+
+
+##The one floor of the facility: brown steel panels. shape is how the tile is cut up (0 one panel, 1 two side by side, 2 two stacked,
+##3 four quarters, 4 a panel with a recessed plate, 5 a narrow and a wide panel), tone how light it is. FacilityMap mixes them so that a
+##big room does not read as a grid of identical tiles.
+static func floor_tile(shape : int, tone : int) -> Node3D:
 	var root : Node3D = Node3D.new()
 	var h : float = CELL / 2.0
-	var full : Rect2 = Rect2(-h, -h, CELL, CELL)
-	var r : RandomNumberGenerator = RandomNumberGenerator.new()
-	r.seed = hash(kind) + variant * 7919
-	match kind:
-		"room": #steel panels
-			root.add_child(EnvMesh.quad(full, 0.0, EnvMesh.cel("floor")))
-			_panels(root, "tile", 0.015, 0.03, false)
-		"corridor": #concrete slabs
-			root.add_child(EnvMesh.quad(full, 0.0, EnvMesh.cel("deep")))
-			_panels(root, "floor", 0.01, 0.025, false)
-		"utility": #plain plate with a few raised diamonds
-			root.add_child(EnvMesh.quad(full, 0.0, EnvMesh.cel("tile")))
-			_panels(root, "tile", 0.015, 0.03, false)
-			var flip : float = 1.0 if variant % 2 == 0 else -1.0
-			for p : Vector2 in PackedVector2Array([Vector2(-0.1 * flip, -0.1), Vector2(0.1 * flip, 0.1)]):
-				root.add_child(EnvMesh.stud(p, 0.03, 0.05, 0.022, 0.016, EnvMesh.cel("wall"), 4))
-		"vault": #dark steel
-			root.add_child(EnvMesh.quad(full, 0.0, EnvMesh.cel("shadow")))
-			_panels(root, "deep", 0.012, 0.03, false)
-		"outdoor": #asphalt, a few darker and lighter patches
-			root.add_child(EnvMesh.quad(full, 0.0, EnvMesh.cel("deep")))
-			for i in 3:
-				var rad : float = r.randf_range(0.04, 0.07)
-				root.add_child(EnvMesh.stud(Vector2(r.randf_range(-0.16, 0.16), r.randf_range(-0.16, 0.16)), 0.0, rad, rad * 0.6,
-					0.012, EnvMesh.cel("floor"), 8))
-		"vent": #floor grille
-			root.add_child(EnvMesh.quad(full, 0.0, EnvMesh.cel("shadow")))
-			for i in 4:
-				root.add_child(EnvMesh.plate(Rect2(-0.2, -0.19 + i * 0.1, 0.4, 0.05), 0.0, 0.03, EnvMesh.cel("wall")))
+	var color : String = FLOOR_TONES[tone]
+	root.add_child(EnvMesh.quad(Rect2(-h, -h, CELL, CELL), 0.0, EnvMesh.cel("brown_deep"))) #the gaps between panels
+	var m : float = 0.015
+	var gap : float = 0.014
+	var inner : float = CELL - m * 2.0
+	var half : float = (inner - gap) / 2.0
+	match shape:
+		0:
+			_panel(root, Rect2(-h + m, -h + m, inner, inner), color)
+		1:
+			_panel(root, Rect2(-h + m, -h + m, half, inner), color)
+			_panel(root, Rect2(-h + m + half + gap, -h + m, half, inner), color)
+		2:
+			_panel(root, Rect2(-h + m, -h + m, inner, half), color)
+			_panel(root, Rect2(-h + m, -h + m + half + gap, inner, half), color)
+		3:
+			for ix in 2:
+				for iz in 2:
+					_panel(root, Rect2(-h + m + ix * (half + gap), -h + m + iz * (half + gap), half, half), color)
+		4:
+			_panel(root, Rect2(-h + m, -h + m, inner, inner), color)
+			root.add_child(EnvMesh.plate(Rect2(-0.12, -0.12, 0.24, 0.24), 0.03, 0.012, EnvMesh.cel(FLOOR_TONES[maxi(tone - 1, 0)] if tone > 0 else "brown_deep"), 0.012))
+		5:
+			var narrow : float = inner * 0.34 - gap / 2.0
+			_panel(root, Rect2(-h + m, -h + m, narrow, inner), color)
+			_panel(root, Rect2(-h + m + narrow + gap, -h + m, inner - narrow - gap, inner), color)
 	return root
+
+
+static func _panel(root : Node3D, rect : Rect2, color : String) -> void:
+	root.add_child(EnvMesh.plate(rect, 0.0, 0.03, EnvMesh.cel(color), 0.03))
 
 
 ##One wall cell at the centre of a 3 x 3 block. mask has a bit set for each neighbour that is wall (N, NE, E, SE, S, SW, W, NW).
@@ -114,26 +122,3 @@ static func door(state : String, exterior : bool, vertical : bool) -> Node3D:
 		var c : Vector2 = pt.call(0.045 * side, 0.0)
 		root.add_child(EnvMesh.quad(Rect2(c.x - 0.016, c.y - 0.016, 0.032, 0.032), sill + leaf_h + 0.025, EnvMesh.flat(light)))
 	return root
-
-
-##A wall console, two cells wide and one deep: a desk with a screen and a keyboard.
-static func console() -> Node3D:
-	var root : Node3D = Node3D.new()
-	root.add_child(EnvMesh.plate(Rect2(-0.47, -0.21, 0.94, 0.42), 0.0, 0.30, EnvMesh.cel("wall"), 0.03))
-	root.add_child(EnvMesh.plate(Rect2(-0.44, -0.18, 0.88, 0.36), 0.30, 0.03, EnvMesh.cel("wall_top"), 0.02))
-	root.add_child(EnvMesh.plate(Rect2(-0.30, -0.17, 0.60, 0.12), 0.33, 0.09, EnvMesh.cel("shadow"), 0.03))
-	root.add_child(EnvMesh.quad(Rect2(-0.27, -0.148, 0.54, 0.075), 0.425, EnvMesh.flat("item")))
-	root.add_child(EnvMesh.plate(Rect2(-0.22, 0.02, 0.44, 0.11), 0.33, 0.025, EnvMesh.cel("wall"), 0.012))
-	return root
-
-
-##One framed floor panel, or two half panels side by side when split.
-static func _panels(root : Node3D, color : String, margin : float, height : float, split : bool) -> void:
-	var h : float = CELL / 2.0
-	var inner : float = CELL - margin * 2.0
-	if split:
-		var pw : float = (inner - 0.012) / 2.0
-		root.add_child(EnvMesh.plate(Rect2(-h + margin, -h + margin, pw, inner), 0.0, height, EnvMesh.cel(color)))
-		root.add_child(EnvMesh.plate(Rect2(0.006, -h + margin, pw, inner), 0.0, height, EnvMesh.cel(color)))
-	else:
-		root.add_child(EnvMesh.plate(Rect2(-h + margin, -h + margin, inner, inner), 0.0, height, EnvMesh.cel(color)))

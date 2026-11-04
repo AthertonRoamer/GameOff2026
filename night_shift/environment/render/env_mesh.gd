@@ -1,4 +1,4 @@
-class_name EnvMesh
+﻿class_name EnvMesh
 extends RefCounted
 
 ##Small 3D building blocks for the environment pieces, all in metres, y up. The picture is taken from straight above, with -Z at the top
@@ -13,6 +13,7 @@ const FLAT_SHADER : Shader = preload("res://night_shift/environment/render/flat.
 const PAL : Dictionary = {
 	"void": "#07090c", "shadow": "#0c0e12", "deep": "#151920",
 	"floor": "#1a1f27", "tile": "#222833", "wall": "#2a313d", "wall_top": "#3a4352", "metal": "#5a6475",
+	"brown_deep": "#1f1a18", "brown_dark": "#332a26", "brown": "#3a2f2a", "brown_light": "#42362f", #the floor: the kit's duffel brown and tones around it
 	"g0": "#1b2435", "uniform": "#2b3a55", "uniform_light": "#4a5d80", "armor": "#3c4a63",
 	"flash": "#fff3c4", "backup": "#f2b544", "warm": "#e07b2a",
 	"alarm": "#e5484d", "medic": "#c8322f", "item": "#6fd3e8", "nv": "#4be38a",
