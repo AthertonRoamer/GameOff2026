@@ -1,26 +1,30 @@
-﻿extends Node
+extends CanvasLayer
 
-##The pixel art look for sprites. Sprites that want it ask for a material (make_material) and show it while `enabled` is on; P turns it on and off for
-##all of them at once (they listen to `toggled`). The shader is pixel_sprite.gdshader. It is an autoload (project settings), named PixelArt.
-##Only sprites that have this material are changed: the characters and the doors. The tile map and anything drawn in code keep the smooth look.
-
-signal toggled(on : bool)
+##The pixel art shader (pixel_sprite.gdshader) over the whole game: the finished picture, HUD and menus included, is redrawn in big square pixels.
+##It is an autoload (project settings, named PixelArt), so it covers every scene. P turns it on and off.
 
 const SHADER : Shader = preload("res://game/effects/pixel_sprite.gdshader")
 
+signal toggled(on : bool)
+
 @export var enabled : bool = true : set = set_enabled
-@export var art_pixels_per_pixel : float = 8.0 #the size of one big pixel, in the sprite sheet's own pixels (176 per metre, so 8 is 5 cm)
+@export var pixel_size : float = 3.0 : set = set_pixel_size #one big pixel, in screen pixels
+
+var _rect : ColorRect
+var _material : ShaderMaterial
 
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-
-
-func make_material() -> ShaderMaterial:
-	var material : ShaderMaterial = ShaderMaterial.new()
-	material.shader = SHADER
-	material.set_shader_parameter("art_pixels_per_pixel", art_pixels_per_pixel)
-	return material
+	layer = 100 #above every other canvas layer, so everything is pixelated
+	_material = ShaderMaterial.new()
+	_material.shader = SHADER
+	_rect = ColorRect.new()
+	_rect.material = _material
+	_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(_rect)
+	_apply()
 
 
 func _input(event : InputEvent) -> void:
@@ -32,4 +36,17 @@ func set_enabled(value : bool) -> void:
 	if enabled == value:
 		return
 	enabled = value
+	if _rect != null:
+		_apply()
 	toggled.emit(enabled)
+
+
+func set_pixel_size(value : float) -> void:
+	pixel_size = value
+	if _rect != null:
+		_apply()
+
+
+func _apply() -> void:
+	_rect.visible = enabled
+	_material.set_shader_parameter("pixel_size", pixel_size)

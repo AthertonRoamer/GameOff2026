@@ -20,7 +20,6 @@ var room_a : String = ""
 var room_b : String = ""
 
 var _sprite : Sprite2D
-var _pixel_material : ShaderMaterial
 var _shape : CollisionShape2D
 var _occluder : LightOccluder2D
 
@@ -32,9 +31,6 @@ func _ready() -> void:
 	_sprite = Sprite2D.new()
 	_sprite.scale = Vector2.ONE * FacilityTileSet.ART_SCALE #drawn at 176 px per metre, shown at 44
 	add_child(_sprite)
-	_pixel_material = PixelArt.make_material() #the pixel art look, while it is on (P)
-	PixelArt.toggled.connect(_on_pixel_art_toggled)
-	_on_pixel_art_toggled(PixelArt.enabled)
 	_shape = CollisionShape2D.new()
 	_shape.shape = RectangleShape2D.new()
 	(_shape.shape as RectangleShape2D).size = size
@@ -44,10 +40,6 @@ func _ready() -> void:
 	_occluder.occluder.polygon = PackedVector2Array([-size / 2.0, Vector2(size.x, -size.y) / 2.0, size / 2.0, Vector2(-size.x, size.y) / 2.0])
 	add_child(_occluder)
 	_apply()
-
-
-func _on_pixel_art_toggled(on : bool) -> void:
-	_sprite.material = _pixel_material if on else null
 
 
 func set_state(new_state : State) -> void:
