@@ -232,5 +232,59 @@
   "fps": 15,
   "loop": true,
   "px_per_m": 176.5
+ },
+ "torso_strafe_walk": {
+  "file": "torso_strafe_walk.png",
+  "frames": 12,
+  "hframes": 4,
+  "vframes": 3,
+  "frame_size": 256,
+  "pivot_px": [
+   128.0,
+   149.2
+  ],
+  "godot_offset": [
+   0.0,
+   -21.2
+  ],
+  "fps": 10,
+  "loop": true,
+  "px_per_m": 176.55
+ },
+ "torso_strafe_walk_aim": {
+  "file": "torso_strafe_walk_aim.png",
+  "frames": 12,
+  "hframes": 4,
+  "vframes": 3,
+  "frame_size": 256,
+  "pivot_px": [
+   128.0,
+   149.2
+  ],
+  "godot_offset": [
+   0.0,
+   -21.2
+  ],
+  "fps": 10,
+  "loop": true,
+  "px_per_m": 176.55
+ },
+ "torso_strafe_run": {
+  "file": "torso_strafe_run.png",
+  "frames": 12,
+  "hframes": 4,
+  "vframes": 3,
+  "frame_size": 256,
+  "pivot_px": [
+   128.0,
+   149.2
+  ],
+  "godot_offset": [
+   0.0,
+   -21.2
+  ],
+  "fps": 15,
+  "loop": true,
+  "px_per_m": 176.55
  }
 }

@@ -99,14 +99,6 @@ func update_visual(move_vel: Vector2, aim_dir: Vector2, aiming: bool, running: b
 		_was_aiming = aiming
 		_start_draw_transition(aiming)
 
-	var torso_anim := "torso_idle"
-	if interacting:
-		torso_anim = "torso_interact"
-	elif aiming:
-		torso_anim = "torso_walk_aim" if moving else "torso_idle_aim"
-	elif moving:
-		torso_anim = "torso_run" if running else "torso_walk"
-
 	# sprites are drawn facing up, so add 90 degrees to a direction's angle
 	# the torso (and the flashlight on it) always follows the mouse, drawn gun or not; it only falls back to the movement when there is no aim
 	var torso_before := torso.rotation
@@ -122,14 +114,16 @@ func update_visual(move_vel: Vector2, aim_dir: Vector2, aiming: bool, running: b
 		_torso_turn_speed = lerpf(_torso_turn_speed, instant, 1.0 - exp(-dt / tau))
 
 	var legs_anim := "legs_idle"
+	var strafing := false
+	var side_amount := 0.0 #positive: moving to the character's right
 	if moving:
 		# which way the player moves relative to where the torso faces: forward and back follow the movement (back plays the walk in reverse),
 		# sideways is a strafe: the legs face the torso and the strafe sheet (a right strafe, mirrored for left) plays
 		var facing := Vector2.from_angle(torso.rotation - PI / 2)
 		var heading := move_vel.normalized()
 		var forward_amount := heading.dot(facing)
-		var side_amount := heading.dot(facing.rotated(PI / 2)) #positive: moving to the character's right
-		var strafing := absf(forward_amount) < strafe_cone and meta.has("legs_strafe_walk")
+		side_amount = heading.dot(facing.rotated(PI / 2))
+		strafing = absf(forward_amount) < strafe_cone and meta.has("legs_strafe_walk")
 		var target_rotation : float
 		if strafing:
 			legs_anim = "legs_strafe_run" if running and meta.has("legs_strafe_run") else "legs_strafe_walk"
@@ -152,6 +146,21 @@ func update_visual(move_vel: Vector2, aim_dir: Vector2, aiming: bool, running: b
 		_stepping_now = _update_step_turn(get_process_delta_time())
 		legs.speed_scale = idle_breath_speed
 
+	# the upper body: a strafe has its own torso animations (the sheets are a right strafe; a left strafe is the mirror image, and the lamp and
+	# muzzle on the torso are separate nodes, so they stay where they are)
+	var torso_anim := "torso_idle"
+	var torso_strafe := strafing and meta.has("torso_strafe_walk")
+	if interacting:
+		torso_anim = "torso_interact"
+	elif aiming:
+		torso_anim = ("torso_strafe_walk_aim" if torso_strafe and meta.has("torso_strafe_walk_aim") else "torso_walk_aim") if moving else "torso_idle_aim"
+		torso_strafe = torso_strafe and torso_anim == "torso_strafe_walk_aim"
+	elif moving:
+		if torso_strafe:
+			torso_anim = "torso_strafe_run" if running and meta.has("torso_strafe_run") else "torso_strafe_walk"
+		else:
+			torso_anim = "torso_run" if running else "torso_walk"
+	torso.flip_h = torso_strafe and side_amount < 0.0
 	torso.speed_scale = idle_breath_speed if torso_anim in ["torso_idle", "torso_idle_aim"] else 1.0 # breathing is a slow idle cycle
 	if not _stepping_now: #mid-step the legs hold their own frozen pose
 		_play(legs, legs_anim)
@@ -229,6 +238,7 @@ func _start_draw_transition(drawing: bool) -> void:
 		ghost.centered = true
 		ghost.offset = torso.offset
 		ghost.rotation = torso.rotation
+		ghost.flip_h = torso.flip_h
 		ghost.texture_filter = torso.texture_filter
 		add_child(ghost)
 		move_child(ghost, torso.get_index() + 1)

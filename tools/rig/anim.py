@@ -63,8 +63,12 @@ STATES = [
     # strafing to the character's right while facing forward (the game mirrors the sheet for a left strafe). Both clips travel along the way they
     # strafe and loop (the last frame is the first again); the travel itself is cancelled by recenter(), the game moves the player.
     # (a wider frame than the other leg sheets: a strafing run reaches nearly a metre to the side, which the 1.45 m frame cuts off)
-    dict(name='legs_strafe_walk', layer='legs', action='strafe_walk', n=12, mode='free', clip='Walk Strafe Right.fbx', loop=True, ortho=2.0),
-    dict(name='legs_strafe_run', layer='legs', action='strafe_run', n=12, mode='free', clip='Right Strafe.fbx', loop=True, ortho=2.0),
+    dict(name='legs_strafe_walk', layer='legs', action='strafe_walk', n=12, mode='free', clip='Walk Strafe Right.fbx', loop=True, yaw_offset=29, ortho=2.0),
+    dict(name='legs_strafe_run', layer='legs', action='strafe_run', n=12, mode='free', clip='Right Strafe.fbx', loop=True, yaw_offset=65, ortho=2.0),
+    # and the upper body of the same clips: holstered, gun out (aim, the arms are posed on the gun as in torso_walk_aim), and running (holstered)
+    dict(name='torso_strafe_walk', layer='torso', action='strafe_walk', n=12, mode='holster', clip='Walk Strafe Right.fbx', loop=True, yaw_offset=29),
+    dict(name='torso_strafe_walk_aim', layer='torso', action='strafe_walk', n=12, mode='aim', clip='Walk Strafe Right.fbx', loop=True, yaw_offset=29),
+    dict(name='torso_strafe_run', layer='torso', action='strafe_run', n=12, mode='holster', clip='Right Strafe.fbx', loop=True, yaw_offset=65),
 ]
 IDLE_SPINE = Vector((0.0, 0.0, 1.323))
 
