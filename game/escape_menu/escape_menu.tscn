@@ -1,0 +1,25 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://game/escape_menu/escape_menu.gd" id="1_menu"]
+
+[node name="EscapeMenu" type="CanvasLayer"]
+script = ExtResource("1_menu")
+
+[node name="Panel" type="Panel" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="CenterContainer" type="CenterContainer" parent="Panel"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="QuitButton" type="Button" parent="Panel/CenterContainer"]
+text = "Quit Game"
+
+[connection signal="pressed" from="Panel/CenterContainer/QuitButton" to="." method="_on_quit_button_pressed"]
