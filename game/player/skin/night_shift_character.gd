@@ -48,6 +48,7 @@ var dead := false
 const GAIT_CYCLES : Array[String] = ["legs_walk", "legs_run", "legs_strafe_walk", "legs_strafe_run", "torso_walk", "torso_run", "torso_walk_aim",
 	"torso_strafe_walk", "torso_strafe_walk_aim", "torso_strafe_run"] #12-frame stride cycles that can hand over to each other at the same phase
 var _ready_done := false
+var _pixel_materials : Dictionary = {} #sprite -> its ShaderMaterial (pixel art look), shown while PixelArt is on
 var _stepping := false #the turn clip is playing
 var _stepping_now := false
 var _step_t := 0.0 #0 to 1 through the clip
@@ -91,6 +92,10 @@ func _ready() -> void:
 	_play(legs, "legs_idle")
 	_play(torso, "torso_idle")
 	_ready_done = true
+	for s : AnimatedSprite2D in [legs, torso, full]:
+		_pixel_materials[s] = PixelArt.make_material()
+	PixelArt.toggled.connect(_on_pixel_art_toggled)
+	_on_pixel_art_toggled(PixelArt.enabled)
 
 
 ## move_vel: current velocity. aim_dir: direction the player is aiming.
@@ -225,11 +230,30 @@ func _fade_copy(sprite: AnimatedSprite2D, time: float) -> void:
 	copy.rotation = sprite.rotation
 	copy.flip_h = sprite.flip_h
 	copy.texture_filter = sprite.texture_filter
+	if sprite.material != null:
+		copy.material = sprite.material.duplicate() #a frozen frame keeps its region
 	add_child(copy)
 	move_child(copy, sprite.get_index() + 1)
 	var tween := create_tween()
 	tween.tween_property(copy, "modulate:a", 0.0, time)
 	tween.tween_callback(copy.queue_free)
+
+
+## The pixel art shader needs to know which part of the sheet the current animation frame is, since the sheets are atlases.
+func _process(_delta: float) -> void:
+	if not PixelArt.enabled:
+		return
+	for s : AnimatedSprite2D in _pixel_materials:
+		if s.visible and s.sprite_frames != null and s.sprite_frames.has_animation(s.animation):
+			var frame_texture := s.sprite_frames.get_frame_texture(s.animation, s.frame) as AtlasTexture
+			if frame_texture != null:
+				var sheet := frame_texture.atlas.get_size()
+				(_pixel_materials[s] as ShaderMaterial).set_shader_parameter("region", Vector4(frame_texture.region.position.x / sheet.x, frame_texture.region.position.y / sheet.y, frame_texture.region.size.x / sheet.x, frame_texture.region.size.y / sheet.y))
+
+
+func _on_pixel_art_toggled(on: bool) -> void:
+	for s : AnimatedSprite2D in _pixel_materials:
+		s.material = _pixel_materials[s] if on else null
 
 
 ## Called the moment the gun is drawn or put away, before the torso switches to its new animation.
@@ -246,6 +270,8 @@ func _start_draw_transition(drawing: bool) -> void:
 		ghost.rotation = torso.rotation
 		ghost.flip_h = torso.flip_h
 		ghost.texture_filter = torso.texture_filter
+		if torso.material != null:
+			ghost.material = torso.material.duplicate()
 		add_child(ghost)
 		move_child(ghost, torso.get_index() + 1)
 		_ghost = ghost
