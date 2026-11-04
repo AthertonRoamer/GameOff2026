@@ -1,4 +1,4 @@
-extends Node2D
+﻿extends Node2D
 
 ##Fly-around viewer for the facility, so the art and scale can be checked without a player scene.
 ##  WASD / arrows  move the camera (hold Shift for fast)      1, 2, 3  camera zoom      M  map overview
@@ -21,7 +21,7 @@ var _meter_box : bool = false
 
 func _ready() -> void:
 	var args : Dictionary = _parse_args()
-	camera.position = facility.cell_to_world(Vector2i(40, 28))
+	camera.position = facility.map_bounds_px().get_center()
 	camera.zoom = Vector2.ONE * float(args.get("zoom", 2.0))
 	_last_zoom = camera.zoom.x
 	await get_tree().process_frame

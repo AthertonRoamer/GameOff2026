@@ -32,12 +32,15 @@ ight_shift_character.gd` (that only controls nearest-neighbour filtering). Scale
 | Fact | Value |
 |---|---|
 | World scale | 44 px per metre (render 176 px per metre, drawn at 0.25) |
-| Tile | 22 px world, 88 px in the image = 0.5 m |
-| Wall | 1 tile = 0.5 m thick |
-| Door | 2 tiles = 1 m wide |
-| Corridor | 4 tiles = 2 m wide |
+| Cell | 11 px world, 44 px in the image = 0.25 m |
+| Wall | 1 cell = 0.25 m thick |
+| Gate | 4 cells = 1 m wide, one wall thick |
+| Corridor | 8 cells = 2 m wide |
 | Room | 7 to 12 m on a side |
 | Camera zoom | 2x suggested: a 1152 x 648 view then shows 13 x 7.4 m |
+
+## Grid
+The map is on a quarter metre grid so walls can be thin. 	ools/art/convert_layout_to_quarter_metre.py converted the layout from the old half metre grid (rooms keep their size, walls halve, gates stay 1 m). Floors are 0.5 m slabs cut into quarters, so a slab never splits across a variant. Gates are 1 m long and one wall thick, with end posts carrying a status light, rails, two ribbed leaves, a lock bar, and hazard marking on the floor either side (open gates show posts, rails and the marking).
 
 ## Colours
 The look is the lamp-lit screenshot the art is judged by (olive-grey floors, very dark navy walls), with the lighting itself removed. Those colours
@@ -63,11 +66,11 @@ editing the rect list is the whole workflow.
 | File | Job |
 |---|---|
 | `render/env_render.gd/.tscn` | Photographs the pieces from above and writes the images to `art/` (needs a window). Rendering everything takes about 20 s |
-| `render/env_pieces.gd` | The pieces: floors (room panels, corridor slabs, utility diamond plate, vault steel, outdoor asphalt, 4 variants each), vent grille, 256 wall tiles with a pipe that follows the wall round every corner and junction, doors (interior / exterior x closed / locked / open x horizontal / vertical), console |
+| `render/env_pieces.gd` | The pieces: one floor (0.5 m concrete slabs in 8 wear variants: plain, split, bolted, grit, scuffs, drain, stain), the vent grille, 256 x 2 wall tiles (slim wall, pipe that follows it round every corner and junction, panel joints with clamps and rivets), and the gates (interior / exterior x closed / locked / open x horizontal / vertical) |
 | `render/env_mesh.gd` | Building blocks: beveled plates, studs, flat quads, cel and flat materials |
 | `render/*.gdshader` | `cel` (the character material), `flat` (glowing parts), `height` (for the ink) |
 | `facility_tileset.gd` | Builds the TileSet in code from `floors.png` and `walls.png`; walls get collision (layer 2) and a light occluder |
-| `facility_map.gd/.tscn` | Reads the layout; paints floors (the kind comes from each room in the layout file) and walls; places doors and vent grilles; room queries (`room_at`, `rooms_of_kind`, `doors_of_room`, `room_rects_px`) |
+| `facility_map.gd/.tscn` | Reads the layout; paints the one floor (a wear variant per 0.5 m slab, mostly plain) and the walls; places gates and vent grilles; room queries (`room_at`, `rooms_of_kind`, `doors_of_room`, `room_rects_px`) |
 | `facility_door.gd` | Sliding door, `State.OPEN / CLOSED / LOCKED`, blocks movement (layer 4) and light |
 | `facility_test.tscn` | Fly-around viewer: WASD, 1/2/3 zoom, R doors, M overview, B 1 m box; `--ref=` draws a cel character for scale |
 
@@ -86,7 +89,7 @@ godot --headless --path . --import        # then keep mipmaps on: mipmaps/genera
 Removed for now: no lamps, flashlight, ambient darkness or light textures, so the art shows as drawn. Walls and doors still carry light occluders (inert until lights exist). Lighting is the next thing to do, after the art is settled; the old setup (amber banded lamps, flashlight cone) is in git history at `4138938`.
 
 ## Status
-Done: renderer, the lamp-lit look baked in (olive-grey floors, dark navy walls, pipes round all corners), doors, vent grilles, tileset and map builder, viewer, screenshots in
+Done: renderer, the lamp-lit look baked in (olive-grey floors, dark navy walls, pipes round all corners), thin walls and slim detailed gates on a 0.25 m grid, one floor with wear, vent grilles, tileset and map builder, viewer, screenshots in
 `docs/night_shift/`. Replaced: the first flat tiles and the oblique demo, both abandoned.
 
 Next, in this order (each is one more piece in `env_pieces.gd`):

@@ -1,4 +1,4 @@
-extends Node
+﻿extends Node
 
 ##Photographs the 3D environment pieces from straight above and writes the tile and prop images, the way the character sprites were made:
 ##an orthographic overhead camera, the cel material from the sprite kit, and an ink outline where a surface steps up from the one beside it.
@@ -37,23 +37,26 @@ func _wanted(group : String) -> bool:
 
 func _run() -> void:
 	var cell_px : int = roundi(EnvPieces.CELL * PX_PER_M)
-	if _wanted("floors"):
-		var atlas : Image = Image.create(cell_px * 4, cell_px * FLOOR_KINDS.size(), false, Image.FORMAT_RGBA8)
-		for row in FLOOR_KINDS.size():
-			for variant in 4:
-				var tile : Image = await _render(func(root : Node3D) -> void: root.add_child(EnvPieces.floor_tile(FLOOR_KINDS[row], variant)),
-					Vector2(EnvPieces.CELL, EnvPieces.CELL), Rect2(-0.25, -0.25, 0.5, 0.5))
-				atlas.blit_rect(tile, Rect2i(0, 0, cell_px, cell_px), Vector2i(variant * cell_px, row * cell_px))
+	if _wanted("floors"): #each 0.5 m slab is cut into its four cell sized quarters: atlas column = variant * 2 + quarter x, row = quarter y
+		var atlas : Image = Image.create(cell_px * 2 * EnvPieces.FLOOR_VARIANTS, cell_px * 2, false, Image.FORMAT_RGBA8)
+		for variant in EnvPieces.FLOOR_VARIANTS:
+			var slab : Image = await _render(func(root : Node3D) -> void: root.add_child(EnvPieces.floor_tile("floor", variant)),
+				Vector2(EnvPieces.SLAB, EnvPieces.SLAB), Rect2(-EnvPieces.SLAB / 2.0, -EnvPieces.SLAB / 2.0, EnvPieces.SLAB, EnvPieces.SLAB))
+			for qy in 2:
+				for qx in 2:
+					atlas.blit_rect(slab, Rect2i(qx * cell_px, qy * cell_px, cell_px, cell_px), Vector2i((variant * 2 + qx) * cell_px, qy * cell_px))
 		_save(atlas, "floors.png")
 		var vent : Image = await _render(func(root : Node3D) -> void: root.add_child(EnvPieces.floor_tile("vent", 0)),
-			Vector2(EnvPieces.CELL, EnvPieces.CELL), Rect2(-0.25, -0.25, 0.5, 0.5))
+			Vector2(EnvPieces.SLAB, EnvPieces.SLAB), Rect2(-EnvPieces.SLAB / 2.0, -EnvPieces.SLAB / 2.0, EnvPieces.SLAB, EnvPieces.SLAB))
 		_save(vent, "vent_grate.png")
-	if _wanted("walls"):
-		var atlas : Image = Image.create(cell_px * 16, cell_px * 16, false, Image.FORMAT_RGBA8)
-		for mask in 256:
-			var tile : Image = await _render(func(root : Node3D) -> void: root.add_child(EnvPieces.wall_tile(mask)),
-				Vector2(1.5, 1.5), Rect2(-0.25, -0.25, 0.5, 0.5))
-			atlas.blit_rect(tile, Rect2i(0, 0, cell_px, cell_px), Vector2i((mask % 16) * cell_px, (mask / 16) * cell_px))
+	if _wanted("walls"): #atlas column = mask % 16, row = mask / 16 + 16 * variant
+		var atlas : Image = Image.create(cell_px * 16, cell_px * 32, false, Image.FORMAT_RGBA8)
+		var crop : Rect2 = Rect2(-EnvPieces.CELL / 2.0, -EnvPieces.CELL / 2.0, EnvPieces.CELL, EnvPieces.CELL)
+		for variant in 2:
+			for mask in 256:
+				var tile : Image = await _render(func(root : Node3D) -> void: root.add_child(EnvPieces.wall_tile(mask, variant)),
+					Vector2(EnvPieces.CELL * 3.0, EnvPieces.CELL * 3.0), crop)
+				atlas.blit_rect(tile, Rect2i(0, 0, cell_px, cell_px), Vector2i((mask % 16) * cell_px, ((mask / 16) + 16 * variant) * cell_px))
 		_save(atlas, "walls.png")
 	if _wanted("doors"):
 		for exterior in [false, true]:
@@ -63,11 +66,6 @@ func _run() -> void:
 					var image : Image = await _render(func(root : Node3D) -> void: root.add_child(EnvPieces.door(state, exterior, vertical)),
 						area, Rect2(-area.x / 2.0, -area.y / 2.0, area.x, area.y))
 					_save(image, "door_%s_%s_%s.png" % ["exterior" if exterior else "interior", state, "v" if vertical else "h"])
-	if _wanted("console"):
-		var image : Image = await _render(func(root : Node3D) -> void: root.add_child(EnvPieces.console()),
-			Vector2(1.0, 0.5), Rect2(-0.5, -0.25, 1.0, 0.5))
-		_save(image, "console.png")
-
 
 ##Builds a piece, renders its colour and its height from above, draws the ink and returns the cropped picture.
 ##area is the size of the photographed region in metres, centred on the origin; crop is the part to keep, relative to the centre.

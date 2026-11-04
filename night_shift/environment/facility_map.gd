@@ -21,7 +21,7 @@ const TILE : int = FacilityTileSet.TILE
 @export var doors_start : FacilityDoor.State = FacilityDoor.State.CLOSED
 @export var void_color : Color = Color("#07090c") #what shows outside the building. Palette A "void"
 
-var rooms : Dictionary = {} #room id -> {name, kind, function, floor, rects: Array[Rect2i], exterior: bool}
+var rooms : Dictionary = {} #room id -> {name, kind, function, rects: Array[Rect2i], exterior: bool}
 var floor_cells : Dictionary = {} #Vector2i -> room id
 var wall_cells : Dictionary = {} #Vector2i -> true
 var doors : Array[FacilityDoor] = []
@@ -135,7 +135,7 @@ func _read_rooms(layout : Dictionary) -> void:
 				for x in range(rect.position.x, rect.end.x):
 					floor_cells[Vector2i(x, y)] = room["id"]
 		rooms[room["id"]] = {"name": room["name"], "kind": room["kind"], "function": room.get("function", ""),
-			"floor": room["floor"], "rects": rects, "exterior": false}
+			"rects": rects, "exterior": false}
 
 
 func _read_doors(layout : Dictionary) -> void:
@@ -158,21 +158,19 @@ func _compute_walls() -> void:
 
 
 func _paint_floors() -> void:
+	#One floor everywhere: 0.5 m concrete slabs, two cells square. A slab's wear variant is picked per slab (not per cell, so a slab stays whole),
+	#mostly plain with the odd drain, stain or scuffed one, and each cell shows the quarter of the slab it is part of.
 	for cell : Vector2i in floor_cells:
-		var kind : String = rooms[floor_cells[cell]]["floor"]
-		var row : int = FacilityTileSet.FLOOR_KINDS.find(kind)
-		var noise : int = (cell.x * 73856093 ^ cell.y * 19349663) & 0xFF
-		var variant : int
-		if kind == "room":
-			variant = (cell.x + cell.y) % 2 + 2 * (noise % 2) #the checker needs the parity, the rest is noise
-		else:
-			variant = 3 if noise % 14 == 0 else noise % 3 #variant 3 is the rare cracked tile
-		floors.set_cell(cell, FacilityTileSet.SOURCE_FLOORS, Vector2i(variant, row))
-
+		var slab : Vector2i = Vector2i(floori(cell.x / 2.0), floori(cell.y / 2.0))
+		var pick : float = float(((slab.x * 73856093) ^ (slab.y * 19349663)) & 0xFFFF) / 65535.0
+		var variant : int = 0
+		if pick >= 0.55:
+			variant = [1, 6, 2, 3, 3, 4, 5, 7][mini(int((pick - 0.55) / 0.05625), 7)]
+		floors.set_cell(cell, FacilityTileSet.SOURCE_FLOORS, Vector2i(variant * 2 + posmod(cell.x, 2), posmod(cell.y, 2)))
 
 func _paint_walls() -> void:
 	for cell : Vector2i in wall_cells:
-		walls.set_cell(cell, FacilityTileSet.SOURCE_WALLS, FacilityTileSet.mask_to_atlas(FacilityTileSet.neighbour_mask(cell, wall_cells)))
+		walls.set_cell(cell, FacilityTileSet.SOURCE_WALLS, FacilityTileSet.mask_to_atlas(FacilityTileSet.neighbour_mask(cell, wall_cells), posmod(cell.x + cell.y, 2)))
 
 
 func _place_doors(layout : Dictionary) -> void:
@@ -206,7 +204,7 @@ func _place_vents(layout : Dictionary) -> void:
 		vents.append(cell)
 		var sprite : Sprite2D = Sprite2D.new()
 		sprite.texture = texture
-		sprite.position = cell_to_world(cell)
+		sprite.position = Vector2((cell + Vector2i.ONE) * TILE) #a vent grille is 0.5 m, 2 x 2 cells, and the vent is its top left cell
 		sprite.scale = Vector2.ONE * FacilityTileSet.ART_SCALE
 		sprite.name = "Vent_%d_%d" % [cell.x, cell.y]
 		props_node.add_child(sprite)

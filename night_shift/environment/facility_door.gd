@@ -1,7 +1,7 @@
-class_name FacilityDoor
+﻿class_name FacilityDoor
 extends StaticBody2D
 
-##A sliding door, one metre wide (2 tiles), sitting in a wall. Closed and locked doors block movement (physics layer 4) and light.
+##A sliding gate, one metre wide (4 cells) and a wall thick, sitting in a wall. Closed and locked doors block movement (physics layer 4) and light.
 ##This is only the visual and physical door. Who may open it, and what it costs the generator, is game logic: call set_state().
 
 signal state_changed(new_state : State)
@@ -9,9 +9,10 @@ signal state_changed(new_state : State)
 enum State { OPEN, CLOSED, LOCKED }
 
 const ART_DIR : String = "res://night_shift/environment/art/"
+const LENGTH_PX : float = 44.0 #a gate is one metre long and one wall (a quarter metre) thick
 
 @export var exterior : bool = false #heavier door with hazard stripes, leads outside
-@export var horizontal : bool = true #true: the door sits in a horizontal wall and is 2 tiles wide, false: vertical wall, 2 tiles tall
+@export var horizontal : bool = true #true: the gate sits in a horizontal wall and is 4 cells wide, false: vertical wall, 4 cells tall
 @export var state : State = State.CLOSED : set = set_state
 
 var door_index : int = -1
@@ -26,7 +27,7 @@ var _occluder : LightOccluder2D
 func _ready() -> void:
 	collision_layer = FacilityTileSet.DOOR_LAYER
 	collision_mask = 0
-	var size : Vector2 = Vector2(FacilityTileSet.TILE * 2, FacilityTileSet.TILE) if horizontal else Vector2(FacilityTileSet.TILE, FacilityTileSet.TILE * 2)
+	var size : Vector2 = Vector2(LENGTH_PX, FacilityTileSet.TILE) if horizontal else Vector2(FacilityTileSet.TILE, LENGTH_PX)
 	_sprite = Sprite2D.new()
 	_sprite.scale = Vector2.ONE * FacilityTileSet.ART_SCALE #drawn at 176 px per metre, shown at 44
 	add_child(_sprite)

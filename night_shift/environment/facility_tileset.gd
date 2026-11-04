@@ -1,19 +1,20 @@
-class_name FacilityTileSet
+﻿class_name FacilityTileSet
 extends RefCounted
 
 ##Builds the facility's TileSet from the rendered atlases in art/ (made by render/env_render.gd from 3D pieces photographed from above).
-##The art is drawn at 176 px per metre like the cel character sheets, so a 0.5 m tile is 88 px. The map draws its tile layers at ART_SCALE
-##(0.25), which makes a tile 22 px and keeps the world at 44 px per metre, the same scale the 0.25-scaled character sprites use.
-##  source 0, floors: 4 columns (variants) x 5 rows, one row per floor kind in FLOOR_KINDS
-##  source 1, walls:  16 x 16 atlas, tile index = bitmask of which neighbours are wall (see NEIGHBOURS)
+##The art is drawn at 176 px per metre like the cel character sheets, so a quarter metre cell is 44 px. The map draws its tile layers at ART_SCALE
+##(0.25), which makes a cell 11 px and keeps the world at 44 px per metre, the same scale the 0.25-scaled character sprites use.
+##  source 0, floors: 0.5 m slabs cut into quarters. Column = variant * 2 + (cell x mod 2), row = cell y mod 2
+##  source 1, walls:  16 columns x 32 rows. Column = mask % 16, row = mask / 16 + 16 * variant, where mask says which neighbours are wall (see
+##                     NEIGHBOURS) and variant 1 is the cell that carries a panel joint
 ##Walls carry a collision shape on physics layer 2 ("world") and a light occluder, so they block movement, bullets and light.
 
-const TILE : int = 22 #world pixels per tile (0.5 m)
-const ART_TILE : int = 88 #pixels per tile in the images
+const TILE : int = 11 #world pixels per cell (0.25 m, also the thickness of a wall)
+const ART_TILE : int = 44 #pixels per cell in the images
 const ART_SCALE : float = 0.25
 const SOURCE_FLOORS : int = 0
 const SOURCE_WALLS : int = 1
-const FLOOR_KINDS : PackedStringArray = ["room", "corridor", "utility", "vault", "outdoor"]
+const FLOOR_VARIANTS : int = 8 #how many wear variants the floor has
 const ART_DIR : String = "res://night_shift/environment/art/"
 
 const WORLD_LAYER : int = 1 << 1 #physics layer 2: walls and other solid world pieces, stops bodies and projectiles
@@ -30,8 +31,8 @@ static func build() -> TileSet:
 	tile_set.set_physics_layer_collision_layer(0, WORLD_LAYER)
 	tile_set.set_physics_layer_collision_mask(0, 0)
 	tile_set.add_occlusion_layer()
-	_add_source(tile_set, SOURCE_FLOORS, "floors.png", 4, FLOOR_KINDS.size(), false)
-	_add_source(tile_set, SOURCE_WALLS, "walls.png", 16, 16, true)
+	_add_source(tile_set, SOURCE_FLOORS, "floors.png", FLOOR_VARIANTS * 2, 2, false)
+	_add_source(tile_set, SOURCE_WALLS, "walls.png", 16, 32, true)
 	return tile_set
 
 
@@ -43,8 +44,8 @@ static func neighbour_mask(cell : Vector2i, cells : Dictionary) -> int:
 	return mask
 
 
-static func mask_to_atlas(mask : int) -> Vector2i:
-	return Vector2i(mask % 16, mask / 16)
+static func mask_to_atlas(mask : int, variant : int = 0) -> Vector2i:
+	return Vector2i(mask % 16, mask / 16 + 16 * variant)
 
 
 static func _add_source(tile_set : TileSet, id : int, file : String, columns : int, rows : int, solid : bool) -> void:
