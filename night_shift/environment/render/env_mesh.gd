@@ -13,7 +13,10 @@ const FLAT_SHADER : Shader = preload("res://night_shift/environment/render/flat.
 const PAL : Dictionary = {
 	"void": "#07090c", "shadow": "#0c0e12", "deep": "#151920",
 	"floor": "#1a1f27", "tile": "#222833", "wall": "#2a313d", "wall_top": "#3a4352", "metal": "#5a6475",
-	"brown_deep": "#1f1a18", "brown_dark": "#332a26", "brown": "#3a2f2a", "brown_light": "#42362f", #the floor: the kit's duffel brown and tones around it
+	#Baked from the lit look the art is judged by (a screenshot with the amber lamps on): olive-grey floors and very dark navy walls. These are the colours the pieces use,
+	#now that the lighting is gone. The names above are the kit palette; the ones below are what the lamps turned them into.
+	"floor_deep": "#161714", "floor_slab": "#1b1c18", "floor_panel_dim": "#20221d", "floor_panel": "#262822", "floor_stud": "#34352d",
+	"wall_dark": "#101829", "cap_dark": "#0b1220", "pipe": "#1c2a4a", "door_leaf": "#16203b", "door_leaf_ext": "#1b2848", "door_inner": "#1d2a4d",
 	"g0": "#1b2435", "uniform": "#2b3a55", "uniform_light": "#4a5d80", "armor": "#3c4a63",
 	"flash": "#fff3c4", "backup": "#f2b544", "warm": "#e07b2a",
 	"alarm": "#e5484d", "medic": "#c8322f", "item": "#6fd3e8", "nv": "#4be38a",
@@ -136,6 +139,19 @@ static func pipe(center : Vector2, y_base : float, length : float, radius : floa
 		node.rotation_degrees.x = 90.0
 	return node
 
+
+##A ball, used to join pipes at a bend, a junction or an end. Its radius is the pipe's, so it sits flush with the pipes it joins.
+static func ball(center : Vector2, y_base : float, radius : float, material : Material) -> MeshInstance3D:
+	var mesh : SphereMesh = SphereMesh.new()
+	mesh.radius = radius
+	mesh.height = radius * 2.0
+	mesh.radial_segments = 20
+	mesh.rings = 10
+	var node : MeshInstance3D = MeshInstance3D.new()
+	node.mesh = mesh
+	node.material_override = material
+	node.position = Vector3(center.x, y_base + radius, center.y)
+	return node
 
 static func _add_quad(st : SurfaceTool, a : Vector3, b : Vector3, c : Vector3, d : Vector3, normal : Vector3) -> void:
 	_add_tri(st, a, b, c, normal)

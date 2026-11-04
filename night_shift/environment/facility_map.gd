@@ -13,6 +13,7 @@ extends Node2D
 signal built
 
 const LAYOUT_PATH : String = "res://night_shift/environment/facility_layout.json"
+const VENT_TEXTURE : String = "res://night_shift/environment/art/vent_grate.png"
 const TILE : int = FacilityTileSet.TILE
 
 @export_file("*.json") var layout_path : String = LAYOUT_PATH
@@ -20,7 +21,7 @@ const TILE : int = FacilityTileSet.TILE
 @export var doors_start : FacilityDoor.State = FacilityDoor.State.CLOSED
 @export var void_color : Color = Color("#07090c") #what shows outside the building. Palette A "void"
 
-var rooms : Dictionary = {} #room id -> {name, kind, function, rects: Array[Rect2i], exterior: bool}
+var rooms : Dictionary = {} #room id -> {name, kind, function, floor, rects: Array[Rect2i], exterior: bool}
 var floor_cells : Dictionary = {} #Vector2i -> room id
 var wall_cells : Dictionary = {} #Vector2i -> true
 var doors : Array[FacilityDoor] = []
@@ -134,7 +135,7 @@ func _read_rooms(layout : Dictionary) -> void:
 				for x in range(rect.position.x, rect.end.x):
 					floor_cells[Vector2i(x, y)] = room["id"]
 		rooms[room["id"]] = {"name": room["name"], "kind": room["kind"], "function": room.get("function", ""),
-			"rects": rects, "exterior": false}
+			"floor": room["floor"], "rects": rects, "exterior": false}
 
 
 func _read_doors(layout : Dictionary) -> void:
@@ -157,43 +158,17 @@ func _compute_walls() -> void:
 
 
 func _paint_floors() -> void:
-	#One brown floor everywhere. A tile's shape (how it is cut into panels) is random per cell, and its tone follows slow value noise, so a big
-	#room shows soft lighter and darker patches instead of a grid of identical tiles, with the odd single tile standing out.
 	for cell : Vector2i in floor_cells:
-		var pick : float = _hash01(cell, 1)
-		var shape : int = 0
-		if pick >= 0.92:
-			shape = 5
-		elif pick >= 0.84:
-			shape = 4
-		elif pick >= 0.76:
-			shape = 3
-		elif pick >= 0.68:
-			shape = 2
-		elif pick >= 0.60:
-			shape = 1
-		var n : float = _value_noise(Vector2(cell) / 8.0)
-		var tone : int = 0 if n < 0.38 else (2 if n > 0.62 else 1)
-		if _hash01(cell, 2) < 0.1:
-			tone = clampi(tone + (1 if _hash01(cell, 3) < 0.5 else -1), 0, FacilityTileSet.FLOOR_TONES - 1)
-		floors.set_cell(cell, FacilityTileSet.SOURCE_FLOORS, Vector2i(shape, tone))
+		var kind : String = rooms[floor_cells[cell]]["floor"]
+		var row : int = FacilityTileSet.FLOOR_KINDS.find(kind)
+		var noise : int = (cell.x * 73856093 ^ cell.y * 19349663) & 0xFF
+		var variant : int
+		if kind == "room":
+			variant = (cell.x + cell.y) % 2 + 2 * (noise % 2) #the checker needs the parity, the rest is noise
+		else:
+			variant = 3 if noise % 14 == 0 else noise % 3 #variant 3 is the rare cracked tile
+		floors.set_cell(cell, FacilityTileSet.SOURCE_FLOORS, Vector2i(variant, row))
 
-
-##A repeatable pseudo-random number from 0 to 1 for a cell.
-static func _hash01(cell : Vector2i, salt : int) -> float:
-	return float(((cell.x * 73856093) ^ (cell.y * 19349663) ^ (salt * 83492791)) & 0xFFFF) / 65535.0
-
-
-##Smooth noise from 0 to 1: random values on a grid, blended between grid points.
-static func _value_noise(p : Vector2) -> float:
-	var base : Vector2i = Vector2i(p.floor())
-	var f : Vector2 = p - Vector2(base)
-	f = f * f * (Vector2(3.0, 3.0) - 2.0 * f)
-	var a : float = _hash01(base, 11)
-	var b : float = _hash01(base + Vector2i(1, 0), 11)
-	var c : float = _hash01(base + Vector2i(0, 1), 11)
-	var d : float = _hash01(base + Vector2i(1, 1), 11)
-	return lerpf(lerpf(a, b, f.x), lerpf(c, d, f.x), f.y)
 
 func _paint_walls() -> void:
 	for cell : Vector2i in wall_cells:
@@ -224,7 +199,14 @@ func _place_doors(layout : Dictionary) -> void:
 
 
 func _place_vents(layout : Dictionary) -> void:
-	#only the positions for now: the vent grille art was dropped with the other floor art
 	vents.clear()
+	var texture : Texture2D = load(VENT_TEXTURE)
 	for v : Array in layout.get("vents", []):
-		vents.append(Vector2i(int(v[0]), int(v[1])))
+		var cell : Vector2i = Vector2i(int(v[0]), int(v[1]))
+		vents.append(cell)
+		var sprite : Sprite2D = Sprite2D.new()
+		sprite.texture = texture
+		sprite.position = cell_to_world(cell)
+		sprite.scale = Vector2.ONE * FacilityTileSet.ART_SCALE
+		sprite.name = "Vent_%d_%d" % [cell.x, cell.y]
+		props_node.add_child(sprite)

@@ -39,12 +39,13 @@ ight_shift_character.gd` (that only controls nearest-neighbour filtering). Scale
 | Room | 7 to 12 m on a side |
 | Camera zoom | 2x suggested: a 1152 x 648 view then shows 13 x 7.4 m |
 
-## Palette
-All piece colours are Palette A names (`env_mesh.gd` `PAL`, copied from the kit): the floor is brown, built on the kit's `duffel` #3a2f2a in three tones (`brown_dark` #332a26, `brown` #3a2f2a, `brown_light` #42362f) over `brown_deep` #1f1a18 gaps,
-walls `wall` #2a313d with a plain `wall_top` #3a4352 cap, door leaves `uniform` #2b3a55 (`armor` #3c4a63 for exterior doors), door lights `item` #6fd3e8 or
-`alarm` #e5484d, hazard stripes `backup` #f2b544. Screens and lights are flat colours with no shading. Because the cel bands are derived from
-the base colour (as for the characters), the finished pixels sit slightly outside the 25 named colours.
-
+## Colours
+The look is the lamp-lit screenshot the art is judged by (olive-grey floors, very dark navy walls), with the lighting itself removed. Those colours
+are baked into the pieces (`env_mesh.gd`, the entries under "Baked"): floors `floor_slab` #1b1c18 / `floor_panel` #262822 / `floor_panel_dim` #20221d /
+`floor_deep` #161714 / `floor_stud` #34352d; walls `wall_dark` #101829 with a `cap_dark` #0b1220 cap; pipes `pipe` #1c2a4a; door leaves
+`door_leaf` #16203b (`door_leaf_ext` #1b2848 for exterior doors). They were sampled from that screenshot, so they sit outside the kit's 25 named
+colours; the kit palette is still listed in `PAL`. Screens and door lights are flat `item` cyan / `alarm` red. The cel bands are derived from each
+base colour as for the characters.
 ## The facility
 42 x 28 m, 21 rooms, 24 doors (
 ight_shift/environment/facility_layout.json`, checked by `py -3 tools/art/check_layout.py`).
@@ -62,11 +63,11 @@ editing the rect list is the whole workflow.
 | File | Job |
 |---|---|
 | `render/env_render.gd/.tscn` | Photographs the pieces from above and writes the images to `art/` (needs a window). Rendering everything takes about 20 s |
-| `render/env_pieces.gd` | The pieces: the one brown floor (6 panel shapes x 3 tones), 256 wall tiles, doors (interior / exterior x closed / locked / open x horizontal / vertical) |
+| `render/env_pieces.gd` | The pieces: floors (room panels, corridor slabs, utility diamond plate, vault steel, outdoor asphalt, 4 variants each), vent grille, 256 wall tiles with a pipe that follows the wall round every corner and junction, doors (interior / exterior x closed / locked / open x horizontal / vertical), console |
 | `render/env_mesh.gd` | Building blocks: beveled plates, studs, flat quads, cel and flat materials |
 | `render/*.gdshader` | `cel` (the character material), `flat` (glowing parts), `height` (for the ink) |
 | `facility_tileset.gd` | Builds the TileSet in code from `floors.png` and `walls.png`; walls get collision (layer 2) and a light occluder |
-| `facility_map.gd/.tscn` | Reads the layout; paints the floor (random panel shape per cell, tone from slow noise so big rooms show soft patches, not a grid of copies) and walls; places doors; keeps the vent positions; room queries (`room_at`, `rooms_of_kind`, `doors_of_room`, `room_rects_px`) |
+| `facility_map.gd/.tscn` | Reads the layout; paints floors (the kind comes from each room in the layout file) and walls; places doors and vent grilles; room queries (`room_at`, `rooms_of_kind`, `doors_of_room`, `room_rects_px`) |
 | `facility_door.gd` | Sliding door, `State.OPEN / CLOSED / LOCKED`, blocks movement (layer 4) and light |
 | `facility_test.tscn` | Fly-around viewer: WASD, 1/2/3 zoom, R doors, M overview, B 1 m box; `--ref=` draws a cel character for scale |
 
@@ -85,7 +86,7 @@ godot --headless --path . --import        # then keep mipmaps on: mipmaps/genera
 Removed for now: no lamps, flashlight, ambient darkness or light textures, so the art shows as drawn. Walls and doors still carry light occluders (inert until lights exist). Lighting is the next thing to do, after the art is settled; the old setup (amber banded lamps, flashlight cone) is in git history at `4138938`.
 
 ## Status
-Done: renderer, one brown floor everywhere (all other floor kinds, the vent grille and the console art are removed), plain walls, doors, tileset and map builder on the new art, viewer, screenshots in
+Done: renderer, the lamp-lit look baked in (olive-grey floors, dark navy walls, pipes round all corners), doors, vent grilles, tileset and map builder, viewer, screenshots in
 `docs/night_shift/`. Replaced: the first flat tiles and the oblique demo, both abandoned.
 
 Next, in this order (each is one more piece in `env_pieces.gd`):
