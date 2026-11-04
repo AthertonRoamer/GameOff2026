@@ -1,0 +1,68 @@
+{
+	"_comment": "Facility 9 layout. All numbers are tile coordinates, 1 tile = 22 px = 0.5 m. Rects are [x0, y0, x1, y1] inclusive. Walls are not listed: every cell that touches a floor cell (including diagonally) and is not floor becomes wall, so rooms need a gap of exactly one tile between them. Doors are 2 cells wide and list the wall cells they open.",
+	"tile_size": 22,
+	"px_per_m": 44,
+	"rooms": [
+		{"id": "ring", "name": "Main Corridor", "kind": "corridor", "floor": "corridor", "lamp": "backup",
+			"rects": [[10, 14, 69, 17], [10, 38, 69, 41], [10, 18, 13, 37], [66, 18, 69, 37]]},
+
+		{"id": "archive", "name": "Archive", "kind": "item", "floor": "room", "lamp": "backup", "rects": [[15, 19, 28, 27]]},
+		{"id": "camera_room", "name": "Camera Room", "kind": "utility", "function": "cameras", "floor": "utility", "lamp": "backup", "rects": [[30, 19, 41, 27]]},
+		{"id": "door_control", "name": "Door Control", "kind": "utility", "function": "doors", "floor": "utility", "lamp": "backup", "rects": [[43, 19, 52, 27]]},
+		{"id": "light_control", "name": "Lighting Control", "kind": "utility", "function": "lights", "floor": "utility", "lamp": "backup", "rects": [[54, 19, 64, 27]]},
+
+		{"id": "vault", "name": "Vault", "kind": "item", "floor": "vault", "lamp": "backup", "rects": [[15, 29, 28, 36]]},
+		{"id": "generator", "name": "Generator Room", "kind": "utility", "function": "generator", "floor": "utility", "lamp": "warm", "rects": [[30, 29, 43, 36]]},
+		{"id": "turret_control", "name": "Turret Control", "kind": "utility", "function": "turrets", "floor": "utility", "lamp": "backup", "rects": [[45, 29, 54, 36]]},
+		{"id": "breaker", "name": "Breaker Room", "kind": "utility", "function": "power", "floor": "utility", "lamp": "backup", "rects": [[56, 29, 64, 36]]},
+
+		{"id": "break_room", "name": "Break Room", "kind": "office", "floor": "room", "lamp": "backup", "rects": [[3, 3, 20, 12]]},
+		{"id": "locker_room", "name": "Locker Room", "kind": "item", "floor": "room", "lamp": "backup", "rects": [[59, 3, 76, 12]]},
+		{"id": "office", "name": "Offices", "kind": "office", "floor": "room", "lamp": "backup", "rects": [[3, 43, 26, 52]]},
+		{"id": "records", "name": "Records", "kind": "item", "floor": "room", "lamp": "backup", "rects": [[53, 43, 76, 52]]},
+
+		{"id": "stairwell", "name": "Roof Stairwell", "kind": "exterior_room", "floor": "corridor", "lamp": "backup", "rects": [[33, 4, 46, 12]]},
+		{"id": "loading_dock", "name": "Loading Dock", "kind": "exterior_room", "floor": "corridor", "lamp": "backup", "rects": [[28, 43, 51, 52]]},
+		{"id": "maintenance_bay", "name": "Maintenance Bay", "kind": "exterior_room", "floor": "utility", "lamp": "backup", "rects": [[2, 20, 8, 35]]},
+		{"id": "cafeteria", "name": "Cafeteria", "kind": "exterior_room", "floor": "room", "lamp": "backup", "rects": [[71, 20, 77, 35]]},
+
+		{"id": "pad_north", "name": "Roof", "kind": "outdoor", "floor": "outdoor", "rects": [[34, 0, 45, 2]]},
+		{"id": "pad_south", "name": "Loading Yard", "kind": "outdoor", "floor": "outdoor", "rects": [[34, 54, 45, 55]]},
+		{"id": "pad_west", "name": "Car Park", "kind": "outdoor", "floor": "outdoor", "rects": [[-2, 24, 0, 29]]},
+		{"id": "pad_east", "name": "Smoking Area", "kind": "outdoor", "floor": "outdoor", "rects": [[79, 24, 81, 29]]}
+	],
+	"doors": [
+		{"rect": [21, 18, 22, 18], "a": "ring", "b": "archive"},
+		{"rect": [35, 18, 36, 18], "a": "ring", "b": "camera_room"},
+		{"rect": [47, 18, 48, 18], "a": "ring", "b": "door_control"},
+		{"rect": [59, 18, 60, 18], "a": "ring", "b": "light_control"},
+		{"rect": [21, 37, 22, 37], "a": "ring", "b": "vault"},
+		{"rect": [36, 37, 37, 37], "a": "ring", "b": "generator"},
+		{"rect": [49, 37, 50, 37], "a": "ring", "b": "turret_control"},
+		{"rect": [59, 37, 60, 37], "a": "ring", "b": "breaker"},
+
+		{"rect": [21, 28, 22, 28], "a": "archive", "b": "vault"},
+		{"rect": [35, 28, 36, 28], "a": "camera_room", "b": "generator"},
+		{"rect": [48, 28, 49, 28], "a": "door_control", "b": "turret_control"},
+		{"rect": [59, 28, 60, 28], "a": "light_control", "b": "breaker"},
+
+		{"rect": [14, 13, 15, 13], "a": "ring", "b": "break_room"},
+		{"rect": [62, 13, 63, 13], "a": "ring", "b": "locker_room"},
+		{"rect": [39, 13, 40, 13], "a": "ring", "b": "stairwell"},
+		{"rect": [14, 42, 15, 42], "a": "ring", "b": "office"},
+		{"rect": [62, 42, 63, 42], "a": "ring", "b": "records"},
+		{"rect": [39, 42, 40, 42], "a": "ring", "b": "loading_dock"},
+		{"rect": [9, 26, 9, 27], "a": "ring", "b": "maintenance_bay"},
+		{"rect": [70, 26, 70, 27], "a": "ring", "b": "cafeteria"},
+
+		{"rect": [39, 3, 40, 3], "a": "stairwell", "b": "pad_north", "exterior": true},
+		{"rect": [39, 53, 40, 53], "a": "loading_dock", "b": "pad_south", "exterior": true},
+		{"rect": [1, 26, 1, 27], "a": "maintenance_bay", "b": "pad_west", "exterior": true},
+		{"rect": [78, 26, 78, 27], "a": "cafeteria", "b": "pad_east", "exterior": true}
+	],
+	"vents": [
+		[16, 20], [31, 20], [44, 20], [63, 20],
+		[16, 35], [31, 35], [63, 35],
+		[4, 4], [75, 4], [4, 51], [75, 51], [34, 5], [29, 51]
+	]
+}

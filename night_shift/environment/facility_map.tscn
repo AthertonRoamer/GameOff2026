@@ -1,0 +1,26 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://night_shift/environment/facility_map.gd" id="1_map"]
+
+[node name="FacilityMap" type="Node2D"]
+texture_filter = 1
+script = ExtResource("1_map")
+
+[node name="Ambient" type="CanvasModulate" parent="."]
+color = Color(0.3, 0.34, 0.46, 1)
+
+[node name="Floors" type="TileMapLayer" parent="."]
+
+[node name="Shadows" type="TileMapLayer" parent="."]
+
+[node name="Walls" type="TileMapLayer" parent="."]
+
+[node name="Doors" type="Node2D" parent="."]
+
+[node name="Props" type="Node2D" parent="."]
+y_sort_enabled = true
+
+[node name="Actors" type="Node2D" parent="."]
+y_sort_enabled = true
+
+[node name="Lamps" type="Node2D" parent="."]
