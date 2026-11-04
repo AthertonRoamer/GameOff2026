@@ -11,6 +11,7 @@ extends Resource
 @export var broadcast_port : int = 3002
 
 @export_group("Menu")
+@export var use_debug_menu : bool = false
 @export var menu_scene : PackedScene #= preload("res://multiplayer_template/menu/p2p_host_noray_menu/p2p_host_noray_menu.tscn")
 @export var debug_menu_scene : PackedScene = preload("res://multiplayer_template/menu/debug_menu/debug_menu.tscn")
 
@@ -31,6 +32,12 @@ extends Resource
 @export_group("Game")
 @export var game_manager_scene : PackedScene = preload("res://multiplayer_template/game_manager/basic_game_manager/basic_game_manager.tscn")
 @export var game_scene : PackedScene
+
+@export_group("Rollback") #only used when game_manager_scene is a RollbackGameManager
+@export var rollback_start_delay_ticks : int = 30 #how far in the future the lobby schedules the game start, in network ticks
+@export var rollback_sync_timeout : float = 30.0 #how long the lobby waits for every member's clock to be healthy before starting anyway
+@export var rollback_quiet_loading : bool = true #mute netfox's log output between loading and the game start, where it can flood a catching-up client
+@export var rollback_diagnostics : bool = false #show the RollbackDiagnostics overlay on players (F3 toggles it)
 
 @export_group("Dynamic")
 @export var dynamic_config_script : Script #allows you to run code if necessary during config step

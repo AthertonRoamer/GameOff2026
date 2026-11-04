@@ -1,0 +1,8 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://multiplayer_template/rollback/net_input.gd" id="1_input"]
+
+[node name="ProbePlayer" type="Node2D"]
+
+[node name="Input" type="Node" parent="."]
+script = ExtResource("1_input")

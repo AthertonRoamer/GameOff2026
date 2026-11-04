@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://multiplayer_template/rollback/rollback_game_manager.gd" id="1_rgm"]
+
+[node name="RollbackGameManager" type="Node"]
+script = ExtResource("1_rgm")

@@ -1,0 +1,12 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://tests/harness/probe/probe_game.gd" id="1_game"]
+[ext_resource type="Script" path="res://multiplayer_template/rollback/rollback_player_spawner.gd" id="2_spawner"]
+[ext_resource type="PackedScene" path="res://tests/harness/probe/probe_player.tscn" id="3_player"]
+
+[node name="ProbeGame" type="Node2D"]
+script = ExtResource("1_game")
+
+[node name="Spawner" type="Node" parent="."]
+script = ExtResource("2_spawner")
+player_scene = ExtResource("3_player")
