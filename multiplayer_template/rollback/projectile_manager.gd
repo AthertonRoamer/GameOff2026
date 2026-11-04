@@ -26,6 +26,7 @@ var can_hit : Callable = Callable() #optional filter (target node -> bool), for 
 
 var _projectiles : Array[Dictionary] = [] #{owner_id, owner, origin, direction, fire_tick, damage, checked_tick}
 var _active : bool = true
+var _was_drawing : bool = false
 
 
 func _ready() -> void:
@@ -65,8 +66,11 @@ func get_projectiles() -> Array[Dictionary]:
 
 
 func _process(_delta : float) -> void:
-	if is_visible_in_tree() and not _projectiles.is_empty():
+	#redraw while there is something to draw and once more after the last projectile is gone, or its final frame stays on screen
+	var has_projectiles : bool = not _projectiles.is_empty()
+	if is_visible_in_tree() and (has_projectiles or _was_drawing):
 		queue_redraw()
+	_was_drawing = has_projectiles
 
 
 func _draw() -> void:
@@ -141,6 +145,13 @@ func _client_spawn(owner_id : int, origin : Vector2, direction : Vector2, fire_t
 
 @rpc("authority", "call_remote", "reliable")
 func _client_remove(owner_id : int, fire_tick : int) -> void:
-	var index : int = _find(owner_id, fire_tick)
-	if index != -1:
-		_projectiles.remove_at(index)
+	#the shooter's own prediction can be tick or two off the lobby's version of the same shot, so take the closest one of that owner
+	var best : int = -1
+	var best_gap : int = lifetime_ticks / 3
+	for i in _projectiles.size():
+		var gap : int = absi(_projectiles[i]["fire_tick"] - fire_tick)
+		if _projectiles[i]["owner_id"] == owner_id and gap <= best_gap:
+			best = i
+			best_gap = gap
+	if best != -1:
+		_projectiles.remove_at(best)

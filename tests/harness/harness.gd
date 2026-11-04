@@ -16,6 +16,7 @@ var use_rollback : bool = false
 var use_demo : bool = false
 var use_moving : bool = false #shooter and target run side by side, the shooter fires at where it sees the target
 var use_combat : bool = false #the acting client kills the host's player with projectiles, then everyone checks the respawn
+var use_hold : bool = false #the client, then the host, hold fire for 3 s each and report every shot event they saw
 var no_lagcomp : bool = false #the lobby does not rewind targets, for comparison
 var join_port : int = LOBBY_PORT #the client can join through a latency proxy by using another port
 var players_expected : int = 2 #host waits for this many members before beginning
@@ -37,7 +38,8 @@ func _ready() -> void:
 	use_moving = args.has("--moving")
 	no_lagcomp = args.has("--no-lagcomp")
 	use_combat = args.has("--combat")
-	use_demo = args.has("--demo") or use_moving or use_combat or OS.get_cmdline_args().has("--harness-demo")
+	use_hold = args.has("--hold")
+	use_demo = args.has("--demo") or use_moving or use_combat or use_hold or OS.get_cmdline_args().has("--harness-demo")
 	use_rollback = args.has("--rollback") or use_demo
 	idx = args.find("--join-port")
 	if idx != -1 and idx + 1 < args.size():
@@ -204,6 +206,25 @@ func fire_pulse(aim : Vector2) -> void:
 	Input.action_release("ui_accept")
 
 
+func hold_report(who : String) -> void:
+	#holds the instant shot, then the projectile weapon, for 3 s each, aiming where nothing is. Reports every CONFIRMING event this process saw
+	var game : Node = Main.mode.get_game()
+	var me : Node2D = game.spawner.local_player
+	me.input.test_aim = Vector2.UP
+	me.fire_events.clear()
+	me.alt_events.clear()
+	Input.action_press("ui_accept")
+	await get_tree().create_timer(3.0).timeout
+	Input.action_release("ui_accept")
+	await get_tree().create_timer(0.5).timeout
+	Input.action_press("ui_focus_next")
+	await get_tree().create_timer(3.0).timeout
+	Input.action_release("ui_focus_next")
+	await get_tree().create_timer(0.5).timeout
+	log_line("HOLD_%s fire=%s" % [who.to_upper(), str(me.fire_events)])
+	log_line("HOLD_%s alt=%s" % [who.to_upper(), str(me.alt_events)])
+
+
 func alt_pulse(aim : Vector2) -> void:
 	#one projectile: the tap is shorter than the cooldown
 	var game : Node = Main.mode.get_game()
@@ -355,6 +376,10 @@ func run_host_scenario() -> void:
 		log_line("HOST_STILL_RUNS moved=%.1f" % (me.position.x - start_x))
 	elif use_combat:
 		await combat_report()
+	elif use_hold:
+		await get_tree().create_timer(5.0).timeout #the client holds first
+		await hold_report("host")
+		await get_tree().create_timer(1.0).timeout
 	elif use_moving:
 		await moving_target_run(1.7)
 		await get_tree().create_timer(3.0).timeout
@@ -374,6 +399,9 @@ func run_client_scenario(mode : ClientMode) -> void:
 		log_line("LEFT")
 	elif kill_mode:
 		await get_tree().create_timer(300.0).timeout #the runner kills this process
+	elif use_hold:
+		await hold_report("client")
+		await get_tree().create_timer(5.0).timeout
 	elif use_combat:
 		if not observer:
 			for shot in 3: #40 damage each: two shots hurt, the third kills

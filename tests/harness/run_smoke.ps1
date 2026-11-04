@@ -4,6 +4,7 @@ param(
 	[switch]$Noray,
 	[switch]$Rollback, #use RollbackGameManager and the probe game, and check every peer starts on the scheduled tick
 	[switch]$Demo, #run the rollback demo: the first client shoots and moves, then every peer's view of every player must agree
+	[switch]$Hold, #the client and then the host hold each weapon for 3 s; prints every shot event each saw (diagnostic, no pass/fail on cadence)
 	[switch]$Combat, #the first client kills the host's player with projectiles; every peer must see it die and respawn at the same place
 	[switch]$Moving, #shooter and target run side by side and the shooter fires at where it sees the target; reports how many shots hit
 	[switch]$NoLagComp, #with -Moving: the lobby does not rewind targets, for comparison
@@ -27,9 +28,10 @@ $scene = "res://tests/harness/harness.tscn"
 $common = @()
 if ($Noray) { $common += "--noray" }
 if ($Rollback) { $common += "--rollback" }
-if ($Demo -or $Leave -or $Kill -or $Combat) { $common += "--demo" }
+if ($Demo -or $Leave -or $Kill -or $Combat -or $Hold) { $common += "--demo" }
 if ($Moving) { $common += "--moving" }
 if ($Combat) { $common += "--combat" }
+if ($Hold) { $common += "--hold" }
 if ($Leave) { $common += "--leave" }
 if ($Kill) { $common += "--kill" }
 $common += @("--players", ($Clients + 1), "--rounds", $Rounds)
@@ -120,7 +122,16 @@ function Get-Positions($file, $label) {
 	return $result
 }
 
-if ($Combat) {
+if ($Hold) {
+	foreach ($file in (@($hostOut) + $clientOuts[0])) {
+		foreach ($line in (Select-String -Path $file -Pattern "HOLD_(HOST|CLIENT) (fire|alt)=\[(.*)\]")) {
+			$m = $line.Matches[0]
+			$ticks = @($m.Groups[3].Value -split ",\s*" | Where-Object { $_ -ne "" } | ForEach-Object { [int]$_ })
+			$gaps = @(); for ($i = 1; $i -lt $ticks.Count; $i++) { $gaps += ($ticks[$i] - $ticks[$i-1]) }
+			"HOLD: $($m.Groups[1].Value) $($m.Groups[2].Value): $($ticks.Count) events, gaps between them: $($gaps -join ' ')"
+		}
+	}
+} elseif ($Combat) {
 	foreach ($file in (@($hostOut) + $clientOuts)) {
 		$name = Split-Path $file -Leaf
 		$dead = Get-Positions $file "COMBAT_DEAD"
