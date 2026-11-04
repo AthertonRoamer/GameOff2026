@@ -17,13 +17,41 @@ extends Node2D
 @onready var full: AnimatedSprite2D = $Full
 
 ## How far the torso kicks back when a shot is fired, in the sprite sheets' pixels (the node is scaled 0.25, so a quarter of this in the world).
-@export var recoil_px := 24.0
-@export var recoil_out_time := 0.03
-@export var recoil_back_time := 0.14
+@export var recoil_px := 8.0
+@export var recoil_out_time := 0.05
+@export var recoil_back_time := 0.18
+
+## Drawing and holstering the gun: the sheets have no frames between the arms-down and arms-up poses, so the old pose fades out over the new one
+## while swelling slightly (draw) or shrinking slightly (holster), and the shoulder lamp slides between its two positions.
+@export var draw_time := 0.16
+@export var lamp_holstered_pos := Vector2(42, -2)
+@export var lamp_drawn_pos := Vector2(34, -12)
+
+## Standing still, turning on the spot: the feet stay put until the upper body is this far round, then step to catch up at this speed.
+@export var turn_threshold_deg := 70.0
+@export var turn_clip_deg := 96.0 #how far the legs_turn sheet turns the body (measured from the Mixamo clip)
+@export var turn_clip_time := 1.0 #how long the legs_turn sheet takes at its natural pace (96 degrees in 1 s)
+## The turn clip plays at the pace the player is turning at (the torso's turn speed, smoothed), between these multiples of its natural pace:
+## a slow turn gives an unhurried step, a fast flick a quick one.
+@export var turn_clip_min_scale := 0.8
+@export var turn_clip_max_scale := 3.5
+## Playback speed of the idle cycle, which is the breathing (the sheets' idle is 8 frames at 8 fps, a bit quick for a breath).
+@export var idle_breath_speed := 0.5
 
 var meta: Dictionary = {}
 var dead := false
+var _stepping := false #the turn clip is playing
+var _stepping_now := false
+var _step_t := 0.0 #0 to 1 through the clip
+var _step_from := 0.0
+var _step_dir := 1.0
+var _legs_placed := false
+var _torso_turn_speed := 0.0 #radians per second, smoothed
 var _recoil_tween: Tween
+var _was_aiming := false
+var _ghost: AnimatedSprite2D
+var _lamp: Node2D
+var _lamp_tween: Tween
 
 
 func _ready() -> void:
@@ -49,6 +77,9 @@ func _ready() -> void:
 		if pixel_art:
 			s.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	full.visible = false
+	_lamp = torso.get_node_or_null("Lamp") as Node2D
+	if _lamp:
+		_lamp.position = lamp_holstered_pos
 	_play(legs, "legs_idle")
 	_play(torso, "torso_idle")
 
@@ -61,10 +92,9 @@ func update_visual(move_vel: Vector2, aim_dir: Vector2, aiming: bool, running: b
 	var moving := move_vel.length() > 5.0
 	if running:
 		aiming = false  # running always holsters
-
-	var legs_anim := "legs_idle"
-	if moving:
-		legs_anim = "legs_run" if running else "legs_walk"
+	if aiming != _was_aiming:
+		_was_aiming = aiming
+		_start_draw_transition(aiming)
 
 	var torso_anim := "torso_idle"
 	if interacting:
@@ -75,22 +105,125 @@ func update_visual(move_vel: Vector2, aim_dir: Vector2, aiming: bool, running: b
 		torso_anim = "torso_run" if running else "torso_walk"
 
 	# sprites are drawn facing up, so add 90 degrees to a direction's angle
-	if aiming and aim_dir != Vector2.ZERO:
+	# the torso (and the flashlight on it) always follows the mouse, drawn gun or not; it only falls back to the movement when there is no aim
+	var torso_before := torso.rotation
+	if aim_dir != Vector2.ZERO:
 		torso.rotation = aim_dir.angle() + PI / 2
 	elif moving:
 		torso.rotation = move_vel.angle() + PI / 2
+	# how fast the player is turning (smoothed), which sets how fast the feet's turn clip plays
+	var dt := get_process_delta_time()
+	if dt > 0.0:
+		var instant := absf(angle_difference(torso_before, torso.rotation)) / dt
+		var tau := 0.05 if instant > _torso_turn_speed else 0.45 #quick to notice a flick, slow to forget it, so the feet keep up
+		_torso_turn_speed = lerpf(_torso_turn_speed, instant, 1.0 - exp(-dt / tau))
 
+	var legs_anim := "legs_idle"
 	if moving:
-		var backwards := aiming and move_vel.dot(Vector2.from_angle(torso.rotation - PI / 2)) < 0.0
+		legs_anim = "legs_run" if running else "legs_walk"
+		var backwards := move_vel.dot(Vector2.from_angle(torso.rotation - PI / 2)) < 0.0
 		var leg_dir := -move_vel if backwards else move_vel
 		legs.rotation = leg_dir.angle() + PI / 2
 		legs.speed_scale = -1.0 if backwards else 1.0  # backpedal = walk cycle in reverse
 	else:
-		legs.rotation = torso.rotation
-		legs.speed_scale = 1.0
+		# standing still: the feet stay planted while the torso turns, and take a stepping turn once the twist gets too large
+		_stepping_now = _update_step_turn(get_process_delta_time())
+		legs.speed_scale = idle_breath_speed
 
-	_play(legs, legs_anim)
+	torso.speed_scale = idle_breath_speed if torso_anim in ["torso_idle", "torso_idle_aim"] else 1.0 # breathing is a slow idle cycle
+	if moving:
+		_stepping = false
+		_stepping_now = false
+		legs.flip_h = false
+	if not _stepping_now: #mid-step the legs hold their own frozen pose
+		_play(legs, legs_anim)
 	_play(torso, torso_anim)
+
+
+## Turning on the spot. Still players do not spin their feet with the mouse: the legs stay planted until the torso has twisted more than
+## turn_threshold_deg away, then they play the turn clip (legs_turn, a Mixamo turn rendered from the rig): a right turn of turn_clip_deg
+## that starts and ends in the standing stance, mirrored for a left turn. The body's own turning is baked into the frames, so the legs node holds
+## still while the sheet plays and is turned by turn_clip_deg when it ends. That fixes the turn rate at turn_clip_deg per turn_clip_time. If the
+## torso is still far round afterwards, the next clip starts at once.
+## Returns true while the clip is playing (the caller must then leave the legs' frame alone).
+func _update_step_turn(delta: float) -> bool:
+	if not _legs_placed:
+		_legs_placed = true
+		legs.rotation = torso.rotation
+		return false
+	if _stepping:
+		var natural_speed := deg_to_rad(turn_clip_deg) / turn_clip_time
+		var pace := clampf(_torso_turn_speed / natural_speed, turn_clip_min_scale, turn_clip_max_scale)
+		_step_t = minf(_step_t + delta / turn_clip_time * pace, 1.0)
+		legs.frame = roundi(_step_t * (legs.sprite_frames.get_frame_count("legs_turn") - 1))
+		if _step_t < 1.0:
+			return true
+		_fade_copy(legs, 0.14) #the last frame of the clip fades into the idle pose
+		_stepping = false
+		legs.flip_h = false
+		legs.rotation = _step_from + _step_dir * deg_to_rad(turn_clip_deg)
+		return false
+	var twist := angle_difference(legs.rotation, torso.rotation)
+	if absf(twist) <= deg_to_rad(turn_threshold_deg) or not legs.sprite_frames.has_animation("legs_turn"):
+		return false
+	_fade_copy(legs, 0.12) #the idle pose fades into the first frame of the clip
+	_stepping = true
+	_step_t = 0.0
+	_step_dir = signf(twist)
+	_step_from = legs.rotation
+	legs.flip_h = _step_dir < 0.0 #the clip is a right turn, a left turn is its mirror image
+	legs.animation = "legs_turn"
+	legs.offset = _offset("legs_turn")
+	legs.stop()
+	legs.frame = 0
+	return true
+
+
+## A frozen copy of a sprite that fades out where it is, to hide the jump between two poses.
+func _fade_copy(sprite: AnimatedSprite2D, time: float) -> void:
+	if not sprite.visible or sprite.sprite_frames == null:
+		return
+	var copy := AnimatedSprite2D.new()
+	copy.sprite_frames = sprite.sprite_frames
+	copy.animation = sprite.animation
+	copy.frame = sprite.frame
+	copy.centered = true
+	copy.offset = sprite.offset
+	copy.rotation = sprite.rotation
+	copy.flip_h = sprite.flip_h
+	copy.texture_filter = sprite.texture_filter
+	add_child(copy)
+	move_child(copy, sprite.get_index() + 1)
+	var tween := create_tween()
+	tween.tween_property(copy, "modulate:a", 0.0, time)
+	tween.tween_callback(copy.queue_free)
+
+
+## Called the moment the gun is drawn or put away, before the torso switches to its new animation.
+func _start_draw_transition(drawing: bool) -> void:
+	if _ghost:
+		_ghost.queue_free()
+	if torso.visible and torso.sprite_frames != null:
+		var ghost := AnimatedSprite2D.new() #a frozen copy of the old pose, on top of the torso
+		ghost.sprite_frames = torso.sprite_frames
+		ghost.animation = torso.animation
+		ghost.frame = torso.frame
+		ghost.centered = true
+		ghost.offset = torso.offset
+		ghost.rotation = torso.rotation
+		ghost.texture_filter = torso.texture_filter
+		add_child(ghost)
+		move_child(ghost, torso.get_index() + 1)
+		_ghost = ghost
+		var tween := create_tween().set_parallel(true)
+		tween.tween_property(ghost, "modulate:a", 0.0, draw_time).set_ease(Tween.EASE_OUT)
+		tween.tween_property(ghost, "scale", Vector2.ONE * (1.07 if drawing else 0.94), draw_time).set_ease(Tween.EASE_OUT)
+		tween.chain().tween_callback(ghost.queue_free)
+	if _lamp:
+		if _lamp_tween:
+			_lamp_tween.kill()
+		_lamp_tween = create_tween()
+		_lamp_tween.tween_property(_lamp, "position", lamp_drawn_pos if drawing else lamp_holstered_pos, draw_time * 1.2).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 
 
 ## The shot animation, which the sheets do not have: the torso (and the flashlight on it) kicks back along the barrel and eases forward again,

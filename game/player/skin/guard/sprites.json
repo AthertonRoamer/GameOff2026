@@ -178,5 +178,23 @@
   "fps": 6,
   "loop": true,
   "px_per_m": 176.54
+ },
+ "legs_turn": {
+  "file": "legs_turn.png",
+  "frames": 16,
+  "hframes": 4,
+  "vframes": 4,
+  "frame_size": 256,
+  "pivot_px": [
+   128.0,
+   149.2
+  ],
+  "godot_offset": [
+   0.0,
+   -21.2
+  ],
+  "fps": 16,
+  "loop": false,
+  "px_per_m": 176.55
  }
 }

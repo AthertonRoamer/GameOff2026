@@ -2,6 +2,7 @@ class_name Player
 extends CharacterBody2D
 
 @export var speed : float = 250.0
+@export var run_multiplier : float = 1.6 #top speed while shift is held and the player is moving
 @export var acceleration : float = 500.0
 @export var acceleration_time : float = .025
 @export var set_acceleration_from_time : bool = true
@@ -16,7 +17,7 @@ extends CharacterBody2D
 @onready var interpolator : TickInterpolator = $TickInterpolator
 @onready var camera : Camera2D = $Camera2D
 @onready var skin : NightShiftCharacter = $Skin
-@onready var flashlight : Flashlight = $Skin/Torso/Flashlight #comes out of the front of the torso, so it follows the aim
+@onready var flashlight : Flashlight = $Skin/Torso/Lamp/Flashlight #the shoulder lamp's beam; the lamp is on the torso, so it follows the aim
 
 var lag_compensator : LagCompensator
 var projectile_manager : ProjectileManager
@@ -56,7 +57,7 @@ func _ready() -> void:
 func _process(_delta : float) -> void:
 	#The body no longer turns to face the mouse: the skin turns its own legs (to the way it moves) and torso (to the aim). The gun stays out.
 	var aim_direction : Vector2 = (input.aim - global_position).normalized() if input.aim != Vector2.ZERO else Vector2.ZERO
-	skin.update_visual(velocity, aim_direction, true, false, interacting)
+	skin.update_visual(velocity, aim_direction, is_aiming(), is_running(), interacting)
 
 
 func _rollback_tick(delta : float, _tick : int, _is_fresh : bool) -> void:
@@ -65,15 +66,26 @@ func _rollback_tick(delta : float, _tick : int, _is_fresh : bool) -> void:
 		speed_now = max(speed_now - friction * delta, 0.0)
 		velocity = velocity.normalized() * speed_now
 
+	var top_speed : float = speed * (run_multiplier if is_running() else 1.0)
 	var accel_step : Vector2 = input.movement * acceleration * delta
-	if (velocity + accel_step).length() <= speed:
+	if (velocity + accel_step).length() <= top_speed:
 		velocity += accel_step
 	elif input.movement != Vector2.ZERO:
-		velocity = input.movement * speed
+		velocity = input.movement * top_speed
 
 	velocity *= NetworkTime.physics_factor
 	move_and_slide()
 	velocity /= NetworkTime.physics_factor
+
+
+##Shift held while moving. Drawing the gun (right mouse) while running drops you to a walk with the gun out.
+func is_running() -> bool:
+	return input.run and input.movement != Vector2.ZERO and not input.aiming
+
+
+##The gun is drawn while the aim button (right mouse) is held. A holstered gun cannot fire.
+func is_aiming() -> bool:
+	return input.aiming
 
 
 func set_active(active : bool) -> void:

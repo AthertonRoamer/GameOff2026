@@ -6,7 +6,7 @@
 [resource]
 script = ExtResource("1_gun")
 damage = 20.0
-bullet_speed = 500.0
+bullet_speed = 620.0
 bullet_color = Color(1, 0.3, 0.2, 1)
 item_name = "Rifle"
 icon = ExtResource("2_icon")

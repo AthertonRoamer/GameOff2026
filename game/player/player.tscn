@@ -44,7 +44,7 @@ script = ExtResource("2_input")
 script = ExtResource("4_rollback")
 root = NodePath("..")
 state_properties = Array[String]([":position", ":velocity", "Inventory:last_use_tick", "Inventory:active_slot"])
-input_properties = Array[String](["Input:movement", "Input:aim", "Input:use_item", "Input:slot_select", "Input:slot_delta"])
+input_properties = Array[String](["Input:movement", "Input:aim", "Input:use_item", "Input:run", "Input:aiming","Input:slot_select", "Input:slot_delta"])
 
 [node name="TickInterpolator" type="Node" parent="." unique_id=1495510548 node_paths=PackedStringArray("root")]
 script = ExtResource("5_interp")

@@ -3,7 +3,7 @@ extends Node2D
 
 ##A single-player testing ground: the facility map with one player in the guard skin. No lobby and no network: netfox's clock is started
 ##offline, so the player's rollback tick, input and interpolation run exactly as they do in a game.
-##  WASD move, the mouse aims (the torso follows the mouse, the legs follow the movement), left mouse fires the equipped gun (1-4 or the wheel pick the slot), E opens and closes the nearest gate,
+##  WASD move, shift runs (and holsters the gun), hold right mouse to draw the gun and aim (the torso follows the mouse, the legs follow the movement), left mouse fires the drawn gun (1-4 or the wheel pick the slot), E opens and closes the nearest gate,
 ##  F turns the flashlight on and off, N turns the darkness (the CanvasModulate over the whole map, players included) on and off.
 ##Command line (after --), for screenshots and checks:  --shot=<png> [--press=<action>] [--hold=<seconds>] [--aim=dx,dy] [--at=x,y] [--flash=off] [--dark=off]
 ##  presses an input action for a while, aims at a point on screen, takes a screenshot and prints what the player did.
@@ -70,9 +70,11 @@ func _use_nearest_gate() -> void:
 		if d < best:
 			best = d
 			nearest = door
+	if nearest == null: #nothing in reach: no interact animation either
+		return
 	_interact_left = INTERACT_TIME
 	player.interacting = true
-	if nearest != null and nearest.state != FacilityDoor.State.LOCKED:
+	if nearest.state != FacilityDoor.State.LOCKED:
 		nearest.state = FacilityDoor.State.OPEN if nearest.state == FacilityDoor.State.CLOSED else FacilityDoor.State.CLOSED
 
 
@@ -82,22 +84,33 @@ func _run_check() -> void:
 		var aim : PackedStringArray = String(_args["aim"]).split(",")
 		player.input.active = false
 		player.input.aim = player.global_position + Vector2(float(aim[0]), float(aim[1])) * 100.0
+		player.input.aiming = true #the gun is drawn, as if the right mouse button were held
 	await get_tree().create_timer(1.0).timeout
+	if _args.has("aim2"): #turn on the spot: swing the aim round after the player has settled, and report what the feet do
+		var aim2 : PackedStringArray = String(_args["aim2"]).split(",")
+		player.input.aim = player.global_position + Vector2(float(aim2[0]), float(aim2[1])) * 100.0
+		for step in 8:
+			await get_tree().create_timer(0.15 if step < 7 else 0.6).timeout
+			if step == 1 and _args.has("mid"): #a picture partway through the first step
+				get_viewport().get_texture().get_image().save_png(String(_args["mid"]))
+			print("PLAYGROUND turn t=%d legs=%s legs_deg=%.0f torso_deg=%.0f torso_frame=%d speed=%.1f" % [step, player.skin.legs.animation, rad_to_deg(player.skin.legs.rotation), rad_to_deg(player.skin.torso.rotation), player.skin.torso.frame, player.skin.torso.speed_scale])
 	if _args.has("open"): #press E next to a gate first
 		_use_nearest_gate()
 		await get_tree().create_timer(0.3).timeout
 	var start : Vector2 = player.position
 	var action : String = String(_args.get("press", ""))
 	if action != "":
-		Input.action_press(action)
+		for each : String in action.split(","): #several actions can be held together, like player_right,player_run
+			Input.action_press(each)
 		await get_tree().create_timer(float(_args.get("hold", 1.0))).timeout
 	get_viewport().get_texture().get_image().save_png(String(_args["shot"]))
 	var gate_states : Array = facility.doors.filter(func(d : FacilityDoor) -> bool: return d.global_position.distance_to(start) < INTERACT_RANGE).map(func(d : FacilityDoor) -> String: return FacilityDoor.State.keys()[d.state])
 	print("PLAYGROUND gates_near_start=%s projectiles_in_flight=%d" % [gate_states, projectiles.get_projectiles().size()])
 	print("PLAYGROUND start=%s end=%s moved=%.1f legs=%s torso=%s" % [start, player.position, player.position.distance_to(start),
 		player.skin.legs.animation, player.skin.torso.animation])
-	if action != "":
-		Input.action_release(action)
+	for each : String in action.split(","):
+		if each != "":
+			Input.action_release(each)
 	get_tree().quit()
 
 

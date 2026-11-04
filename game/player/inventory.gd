@@ -35,7 +35,7 @@ func _rollback_tick(_delta : float, tick : int, _is_fresh : bool) -> void:
 		active_slot = wrapi(active_slot + player.input.slot_delta, 0, SLOT_COUNT)
 
 	var item : Item = active_item
-	var wants_to_use : bool = item != null and player.input.use_item and tick - last_use_tick >= item.cooldown_ticks
+	var wants_to_use : bool = item != null and player.input.use_item and player.is_aiming() and tick - last_use_tick >= item.cooldown_ticks
 	use_action.set_active(wants_to_use)
 	if use_action.is_active():
 		last_use_tick = tick

@@ -4,6 +4,8 @@ extends NetInput
 var movement : Vector2 = Vector2.ZERO
 var aim : Vector2 = Vector2.ZERO
 var use_item : bool = false
+var run : bool = false #shift held
+var aiming : bool = false #right mouse held: the gun is drawn
 var slot_select : int = -1
 var slot_delta : int = 0
 var active : bool = false
@@ -13,6 +15,8 @@ func _gather() -> void:
 	movement = Input.get_vector("player_left", "player_right", "player_up", "player_down") if active else Vector2.ZERO
 	aim = (get_parent() as Node2D).get_global_mouse_position() if active else aim
 	use_item = active and Input.is_action_pressed("player_use_active_item")
+	run = active and Input.is_action_pressed("player_run")
+	aiming = active and Input.is_action_pressed("player_aim")
 	slot_select = _gather_slot_select() if active else -1
 	slot_delta = _gather_slot_delta() if active else 0
 

@@ -6,8 +6,8 @@
 [resource]
 script = ExtResource("1_gun")
 damage = 10.0
-bullet_speed = 700.0
-bullet_color = Color(0.3, 0.6, 1, 1)
+bullet_speed = 850.0
+bullet_color = Color(1, 0.72, 0.3, 1)
 item_name = "Pistol"
 icon = ExtResource("2_icon")
 cooldown_ticks = 20

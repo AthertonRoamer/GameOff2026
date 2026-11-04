@@ -15,7 +15,7 @@ extends Node2D
 signal projectile_hit(projectile : Dictionary, target : Node) #lobby only. projectile: {owner_id, owner, fire_tick, damage, position}
 
 @export var speed : float = 600.0 #pixels per second
-@export var radius : float = 3.0 #the hit size and the size of the drawn bullet
+@export var radius : float = 2.2 #the hit size and the size of the drawn bullet
 @export var tracer_length : float = 20.0 #how long the fading streak behind a bullet is
 @export var lifetime_ticks : int = 90
 @export var duplicate_window_ticks : int = 8
