@@ -9,6 +9,7 @@ extends CharacterBody2D
 @export var slow_down_time : float = .1
 @export var set_friction_from_slow_down_time : bool = true
 @export var name_display : Label
+@export var muzzle_distance : float = 28.0 #from the player's middle to the end of the barrel, in pixels: where bullets start and the flash is
 @export var starting_items : Array[Item] = []
 
 @onready var input : PlayerInput = $Input
@@ -29,6 +30,7 @@ var player_name : String = "":
 
 signal health_changed(h : float)
 signal died
+signal shot_fired #a gun fired: plays the skin's recoil and muzzle flash
 
 @export var starting_health : float = 100.0
 var health : float = starting_health:
@@ -48,6 +50,7 @@ func _ready() -> void:
 		acceleration = speed / acceleration_time
 	camera.enabled = input.is_multiplayer_authority()
 	died.connect(skin.die)
+	shot_fired.connect(skin.play_shot)
 
 
 func _process(_delta : float) -> void:

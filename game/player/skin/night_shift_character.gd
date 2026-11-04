@@ -16,8 +16,14 @@ extends Node2D
 @onready var torso: AnimatedSprite2D = $Torso
 @onready var full: AnimatedSprite2D = $Full
 
+## How far the torso kicks back when a shot is fired, in the sprite sheets' pixels (the node is scaled 0.25, so a quarter of this in the world).
+@export var recoil_px := 24.0
+@export var recoil_out_time := 0.03
+@export var recoil_back_time := 0.14
+
 var meta: Dictionary = {}
 var dead := false
+var _recoil_tween: Tween
 
 
 func _ready() -> void:
@@ -85,6 +91,23 @@ func update_visual(move_vel: Vector2, aim_dir: Vector2, aiming: bool, running: b
 
 	_play(legs, legs_anim)
 	_play(torso, torso_anim)
+
+
+## The shot animation, which the sheets do not have: the torso (and the flashlight on it) kicks back along the barrel and eases forward again,
+## and the muzzle flash, if the skin has one under the torso, fires. Call it once per shot.
+func play_shot() -> void:
+	if dead or not torso.visible:
+		return
+	var back := -Vector2.from_angle(torso.rotation - PI / 2) * recoil_px #the sprites face up, so the barrel points along rotation - 90 degrees
+	if _recoil_tween:
+		_recoil_tween.kill()
+	torso.position = Vector2.ZERO
+	_recoil_tween = create_tween()
+	_recoil_tween.tween_property(torso, "position", back, recoil_out_time).set_ease(Tween.EASE_OUT)
+	_recoil_tween.tween_property(torso, "position", Vector2.ZERO, recoil_back_time).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	var flash := torso.get_node_or_null("Muzzle") as MuzzleFlash
+	if flash:
+		flash.flash()
 
 
 func go_down() -> void:

@@ -17,7 +17,7 @@ const INTERACT_TIME : float = 0.6
 
 @onready var facility : FacilityMap = $FacilityMap
 @onready var darkness : CanvasModulate = $Darkness
-@onready var projectiles : ProjectileManager = $ProjectileManager
+@onready var projectiles : ProjectileManager = $ProjectileLayer/ProjectileManager
 
 var player : Player
 var _interact_left : float = 0.0
@@ -35,7 +35,7 @@ func _ready() -> void:
 	if _args.has("at"):
 		var at : PackedStringArray = String(_args["at"]).split(",")
 		player.position = Vector2(float(at[0]), float(at[1]))
-	player.projectile_manager = projectiles #the gun spawns its bullets here; walls (physics layer 2) stop them
+	player.projectile_manager = projectiles #the gun spawns its bullets here; walls (physics layer 2) stop them. The manager is on its own canvas layer, so the darkness does not dim the bullets, they glow
 	player.set_active(true)
 	player.flashlight.on = String(_args.get("flash", "on")) != "off"
 	darkness.visible = String(_args.get("dark", "on")) != "off"

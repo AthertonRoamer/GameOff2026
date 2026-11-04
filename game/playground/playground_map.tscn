@@ -1,20 +1,23 @@
 [gd_scene format=3 uid="uid://cknf84mgc06b3"]
 
 [ext_resource type="Script" uid="uid://dj2aqjnp8u7ef" path="res://game/playground/playground_map.gd" id="1_playground"]
-[ext_resource type="Script" path="res://multiplayer_template/rollback/projectile_manager.gd" id="3_projectiles"]
 [ext_resource type="PackedScene" uid="uid://bq6ro63p8oq1b" path="res://night_shift/environment/facility_map.tscn" id="2_map"]
+[ext_resource type="Script" uid="uid://dxvlk0rkeiwfe" path="res://multiplayer_template/rollback/projectile_manager.gd" id="3_projectiles"]
 
 [node name="PlaygroundMap" type="Node2D" unique_id=625759709]
 script = ExtResource("1_playground")
 
 [node name="FacilityMap" parent="." unique_id=1299632475 instance=ExtResource("2_map")]
 
-[node name="ProjectileManager" type="Node2D" parent="."]
+[node name="ProjectileLayer" type="CanvasLayer" parent="."]
+follow_viewport_enabled = true
+
+[node name="ProjectileManager" type="Node2D" parent="ProjectileLayer" unique_id=2097749111]
 script = ExtResource("3_projectiles")
 world_collision_mask = 2
 
 [node name="Darkness" type="CanvasModulate" parent="." unique_id=1330488076]
-color = Color(0.12, 0.13, 0.18, 1)
+color = Color(0.21988139, 0.23190084, 0.3095929, 1)
 
 [node name="Hint" type="CanvasLayer" parent="." unique_id=820722179]
 

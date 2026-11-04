@@ -15,7 +15,8 @@ extends Node2D
 signal projectile_hit(projectile : Dictionary, target : Node) #lobby only. projectile: {owner_id, owner, fire_tick, damage, position}
 
 @export var speed : float = 600.0 #pixels per second
-@export var radius : float = 8.0
+@export var radius : float = 3.0 #the hit size and the size of the drawn bullet
+@export var tracer_length : float = 20.0 #how long the fading streak behind a bullet is
 @export var lifetime_ticks : int = 90
 @export var duplicate_window_ticks : int = 8
 @export var world_collision_mask : int = 0 #physics layers that stop a projectile (lobby only). 0 ignores the world
@@ -26,6 +27,7 @@ var can_hit : Callable = Callable() #optional filter (target node -> bool), for 
 
 var _projectiles : Array[Dictionary] = [] #{owner_id, owner, origin, direction, fire_tick, damage, checked_tick}
 var _active : bool = true
+static var _halo_texture : GradientTexture2D
 var _had_projectiles : bool = false #so the last projectile's removal still triggers one more redraw to clear it
 
 
@@ -78,8 +80,21 @@ func _draw() -> void:
 	var now : float = NetworkTime.tick + NetworkTime.tick_factor
 	for projectile in _projectiles:
 		if now >= projectile["fire_tick"]:
-			draw_circle(position_at(projectile, now), radius, projectile["color"])
+			_draw_bullet(position_at(projectile, now), projectile["direction"], projectile["color"])
 
+
+##A small glowing bullet: a soft halo, a tapered streak that fades out behind it, a bright slug and a white-hot tip. All drawn, no texture.
+func _draw_bullet(head : Vector2, direction : Vector2, base : Color) -> void:
+	var side : Vector2 = direction.orthogonal()
+	var tail : Vector2 = head - direction * tracer_length
+	var streak_width : float = radius * 0.8
+	draw_polygon(PackedVector2Array([tail, head + side * streak_width, head - side * streak_width]),
+		PackedColorArray([Color(base.r, base.g, base.b, 0.0), Color(base.r, base.g, base.b, 0.6), Color(base.r, base.g, base.b, 0.6)]))
+	var halo : float = radius * 3.2 #a smooth radial glow, not stacked circles, so it has no visible rings
+	draw_texture_rect(_get_halo_texture(), Rect2(head - Vector2(halo, halo), Vector2(halo, halo) * 2.0), false, Color(base.r, base.g, base.b, 0.55))
+	draw_line(head - direction * radius * 2.4, head, base.lightened(0.4), radius * 1.2, true)
+	draw_circle(head, radius * 0.7, base.lightened(0.75))
+	draw_circle(head + direction * radius * 0.2, radius * 0.4, Color.WHITE)
 
 func _on_tick(_delta : float, tick : int) -> void:
 	if not _active:
@@ -157,3 +172,18 @@ func _client_remove(owner_id : int, fire_tick : int) -> void:
 			best_gap = gap
 	if best != -1:
 		_projectiles.remove_at(best)
+
+
+static func _get_halo_texture() -> GradientTexture2D:
+	if _halo_texture == null:
+		var gradient : Gradient = Gradient.new()
+		gradient.offsets = PackedFloat32Array([0.0, 0.35, 1.0])
+		gradient.colors = PackedColorArray([Color(1, 1, 1, 1), Color(1, 1, 1, 0.3), Color(1, 1, 1, 0)])
+		_halo_texture = GradientTexture2D.new()
+		_halo_texture.gradient = gradient
+		_halo_texture.fill = GradientTexture2D.FILL_RADIAL
+		_halo_texture.fill_from = Vector2(0.5, 0.5)
+		_halo_texture.fill_to = Vector2(1.0, 0.5)
+		_halo_texture.width = 64
+		_halo_texture.height = 64
+	return _halo_texture

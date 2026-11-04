@@ -81,3 +81,7 @@ light-like thing in the art and live in their own layer.
 1. Lighting, from scratch, once the art is settled (ambient, room lights, flashlights, alarm mode, per-room power).
 2. Props (generator, panels, consoles, furniture), only when wanted: the smooth look needs them drawn as the same kind of simple rounded height shapes.
 3. Detail, only when wanted and one element at a time.
+
+## Shooting look
+- **Shot animation** (the sprite sheets have none, so it is procedural): when a gun fires, Player.shot_fired plays NightShiftCharacter.play_shot(): the torso (and the flashlight on it) kicks back along the barrel and eases forward, and a MuzzleFlash (game/player/skin/muzzle_flash.gd, under the torso at the end of the barrel) shows an additive star for 0.07 s with a short burst of real light that lights the walls in the dark. It plays once per shot, even when a tick is resimulated, because ProjectileManager.spawn() returns false for a repeat. Bullets start at Player.muzzle_distance (28 px) from the player's middle, where the flash is.
+- **Bullet art**: ProjectileManager draws each bullet as a small tracer: smooth radial halo, tapered fading streak, bright slug and white-hot tip, all drawn in code. adius (the hit size and the drawn size) went from 8 to 3 px. In the playground the manager sits on its own CanvasLayer so the darkness does not dim the bullets.

@@ -10,7 +10,7 @@
 [ext_resource type="Script" uid="uid://dour8fehaaugp" path="res://addons/netfox/tick-interpolator.gd" id="5_interp"]
 [ext_resource type="Script" uid="uid://cthih2m0x736l" path="res://game/player/inventory.gd" id="6_inventory"]
 [ext_resource type="Script" uid="uid://chr4omg2hy3yu" path="res://addons/netfox/rewindable-action.gd" id="7_action"]
-[ext_resource type="Script" path="res://addons/netfox/state-synchronizer.gd" id="8_state"]
+[ext_resource type="Script" uid="uid://3lbngqcexe0l" path="res://addons/netfox/state-synchronizer.gd" id="8_state"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_body"]
 radius = 12.0
@@ -53,9 +53,9 @@ properties = Array[String]([":position"])
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=892186358]
 enabled = false
-zoom = Vector2(2, 2)
+zoom = Vector2(1.5, 1.5)
 
-[node name="HealthSynchronizer" type="Node" parent="." node_paths=PackedStringArray("root")]
+[node name="HealthSynchronizer" type="Node" parent="." unique_id=882105411 node_paths=PackedStringArray("root")]
 script = ExtResource("8_state")
 root = NodePath("..")
 properties = Array[String]([":health"])
