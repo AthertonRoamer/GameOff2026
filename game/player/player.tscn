@@ -1,0 +1,48 @@
+[gd_scene format=3 uid="uid://cjgvd6bswi4xv"]
+
+[ext_resource type="Script" uid="uid://ckrhpcd5yy1sg" path="res://game/player/player.gd" id="1_player"]
+[ext_resource type="Script" uid="uid://v8yulraat58n" path="res://game/player/player_input.gd" id="2_input"]
+[ext_resource type="Texture2D" uid="uid://ckxs3fsktcc1o" path="res://icon.svg" id="3_icon"]
+[ext_resource type="Script" uid="uid://d350u8evihs1u" path="res://addons/netfox/rollback/rollback-synchronizer.gd" id="4_rollback"]
+[ext_resource type="Script" uid="uid://dour8fehaaugp" path="res://addons/netfox/tick-interpolator.gd" id="5_interp"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
+size = Vector2(64, 64)
+
+[node name="Player" type="CharacterBody2D" unique_id=1961820754 node_paths=PackedStringArray("name_display")]
+motion_mode = 1
+script = ExtResource("1_player")
+name_display = NodePath("NameDisplay")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=629595761]
+scale = Vector2(0.5, 0.5)
+texture = ExtResource("3_icon")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=730710891]
+shape = SubResource("RectangleShape2D_body")
+
+[node name="NameDisplay" type="Label" parent="." unique_id=1103005571]
+offset_left = -33.0
+offset_top = -66.0
+offset_right = 31.0
+offset_bottom = -43.0
+text = "Player"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Input" type="Node" parent="." unique_id=1568405177]
+script = ExtResource("2_input")
+
+[node name="RollbackSynchronizer" type="Node" parent="." unique_id=1751885658 node_paths=PackedStringArray("root")]
+script = ExtResource("4_rollback")
+root = NodePath("..")
+state_properties = Array[String]([":position", ":velocity", ":health"])
+input_properties = Array[String](["Input:movement", "Input:aim"])
+
+[node name="TickInterpolator" type="Node" parent="." unique_id=1495510548 node_paths=PackedStringArray("root")]
+script = ExtResource("5_interp")
+root = NodePath("..")
+properties = Array[String]([":position"])
+
+[node name="Camera2D" type="Camera2D" parent="."]
+enabled = false

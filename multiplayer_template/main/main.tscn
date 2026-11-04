@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://fa7axvvtup3f"]
 
 [ext_resource type="Script" uid="uid://dgrnocmu1mbe7" path="res://multiplayer_template/main/main.gd" id="1_cj4ru"]
-[ext_resource type="Resource" uid="uid://cbharvpnadaxu" path="res://multiplayer_template/demo_games/demo_rollback_game/rollback_demo_configuration.tres" id="2_wdcc4"]
+[ext_resource type="Resource" uid="uid://1bwimpas2gqw" path="res://game/game_configuration.tres" id="2_wdcc4"]
 
 [node name="Main" type="Node" unique_id=1460359677]
 script = ExtResource("1_cj4ru")

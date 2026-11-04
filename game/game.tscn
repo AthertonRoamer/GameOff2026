@@ -1,0 +1,30 @@
+[gd_scene format=3 uid="uid://bh0362dvn266j"]
+
+[ext_resource type="Script" uid="uid://b312vytrdsvmx" path="res://game/game.gd" id="1_game"]
+[ext_resource type="Script" uid="uid://cx367i6s5h34" path="res://multiplayer_template/rollback/rollback_player_spawner.gd" id="2_spawner"]
+[ext_resource type="Script" uid="uid://bhuu3dcyyuuys" path="res://multiplayer_template/network/network_unloader/network_unloader.gd" id="3_unloader"]
+[ext_resource type="Script" uid="uid://cxmddjddbx8pt" path="res://multiplayer_template/rollback/lag_compensator.gd" id="4_lagcomp"]
+[ext_resource type="PackedScene" path="res://game/escape_menu/escape_menu.tscn" id="5_escape"]
+[ext_resource type="PackedScene" path="res://game/player/player.tscn" id="6_player"]
+[ext_resource type="Script" path="res://game/player_setup/player_setup.gd" id="7_setup"]
+
+[node name="Game" type="Node2D" unique_id=2090356720]
+script = ExtResource("1_game")
+
+[node name="Spawner" type="Node" parent="." unique_id=335399860]
+script = ExtResource("2_spawner")
+player_scene = ExtResource("6_player")
+
+[node name="LagCompensator" type="Node" parent="." unique_id=26346272]
+script = ExtResource("4_lagcomp")
+
+[node name="PlayerSetup" type="Node" parent="." node_paths=PackedStringArray("lag_compensator")]
+script = ExtResource("7_setup")
+lag_compensator = NodePath("../LagCompensator")
+
+[node name="NetworkUnloader" type="Node" parent="." unique_id=1938974698]
+script = ExtResource("3_unloader")
+
+[node name="EscapeMenu" parent="." unique_id=1642261372 instance=ExtResource("5_escape")]
+
+[connection signal="cease_rpcs_request_received" from="NetworkUnloader" to="." method="_on_network_unloader_cease_rpcs_request_received"]
