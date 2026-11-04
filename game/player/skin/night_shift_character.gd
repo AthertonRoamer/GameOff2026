@@ -36,6 +36,8 @@ extends Node2D
 ## Moving sideways relative to the torso (within this cosine of straight sideways, 0.5 = 60 degrees either side of it) plays the strafe sheets
 ## instead of the forward or backward walk and run.
 @export var strafe_cone := 0.5
+## Changing between movement animations (idle, walk, run, strafe) fades the old pose out over this long, so the change is not a pop.
+@export var move_blend_time := 0.14
 @export var turn_clip_min_scale := 0.8
 @export var turn_clip_max_scale := 3.5
 ## Playback speed of the idle cycle, which is the breathing (the sheets' idle is 8 frames at 8 fps, a bit quick for a breath).
@@ -43,6 +45,9 @@ extends Node2D
 
 var meta: Dictionary = {}
 var dead := false
+const GAIT_CYCLES : Array[String] = ["legs_walk", "legs_run", "legs_strafe_walk", "legs_strafe_run", "torso_walk", "torso_run", "torso_walk_aim",
+	"torso_strafe_walk", "torso_strafe_walk_aim", "torso_strafe_run"] #12-frame stride cycles that can hand over to each other at the same phase
+var _ready_done := false
 var _stepping := false #the turn clip is playing
 var _stepping_now := false
 var _step_t := 0.0 #0 to 1 through the clip
@@ -85,6 +90,7 @@ func _ready() -> void:
 		_lamp.position = lamp_holstered_pos
 	_play(legs, "legs_idle")
 	_play(torso, "torso_idle")
+	_ready_done = true
 
 
 ## move_vel: current velocity. aim_dir: direction the player is aiming.
@@ -95,7 +101,8 @@ func update_visual(move_vel: Vector2, aim_dir: Vector2, aiming: bool, running: b
 	var moving := move_vel.length() > 5.0
 	if running:
 		aiming = false  # running always holsters
-	if aiming != _was_aiming:
+	var drew := aiming != _was_aiming #the draw transition has its own crossfade on the torso
+	if drew:
 		_was_aiming = aiming
 		_start_draw_transition(aiming)
 
@@ -115,6 +122,7 @@ func update_visual(move_vel: Vector2, aim_dir: Vector2, aiming: bool, running: b
 
 	var legs_anim := "legs_idle"
 	var strafing := false
+	var legs_flip := false
 	var side_amount := 0.0 #positive: moving to the character's right
 	if moving:
 		# which way the player moves relative to where the torso faces: forward and back follow the movement (back plays the walk in reverse),
@@ -128,21 +136,18 @@ func update_visual(move_vel: Vector2, aim_dir: Vector2, aiming: bool, running: b
 		if strafing:
 			legs_anim = "legs_strafe_run" if running and meta.has("legs_strafe_run") else "legs_strafe_walk"
 			target_rotation = torso.rotation
-			legs.flip_h = side_amount < 0.0
+			legs_flip = side_amount < 0.0
 			legs.speed_scale = 1.0
 		else:
 			legs_anim = "legs_run" if running else "legs_walk"
 			var backwards := forward_amount < 0.0
 			target_rotation = (-move_vel if backwards else move_vel).angle() + PI / 2
-			legs.flip_h = false
 			legs.speed_scale = -1.0 if backwards else 1.0  # backpedal = walk cycle in reverse
 		legs.rotation += angle_difference(legs.rotation, target_rotation) * (1.0 - exp(-dt * 24.0)) #the legs swing round to a new heading rather than snapping
 		_stepping = false
 		_stepping_now = false
 	else:
 		# standing still: the feet stay planted while the torso turns, and take a stepping turn once the twist gets too large
-		if not _stepping:
-			legs.flip_h = false
 		_stepping_now = _update_step_turn(get_process_delta_time())
 		legs.speed_scale = idle_breath_speed
 
@@ -160,11 +165,11 @@ func update_visual(move_vel: Vector2, aim_dir: Vector2, aiming: bool, running: b
 			torso_anim = "torso_strafe_run" if running and meta.has("torso_strafe_run") else "torso_strafe_walk"
 		else:
 			torso_anim = "torso_run" if running else "torso_walk"
-	torso.flip_h = torso_strafe and side_amount < 0.0
+	var torso_flip := torso_strafe and side_amount < 0.0
 	torso.speed_scale = idle_breath_speed if torso_anim in ["torso_idle", "torso_idle_aim"] else 1.0 # breathing is a slow idle cycle
 	if not _stepping_now: #mid-step the legs hold their own frozen pose
-		_play(legs, legs_anim)
-	_play(torso, torso_anim)
+		_play(legs, legs_anim, legs_flip, true)
+	_play(torso, torso_anim, torso_flip, not drew)
 
 
 ## Turning on the spot. Still players do not spin their feet with the mouse: the legs stay planted until the torso has twisted more than
@@ -185,7 +190,8 @@ func _update_step_turn(delta: float) -> bool:
 		legs.frame = roundi(_step_t * (legs.sprite_frames.get_frame_count("legs_turn") - 1))
 		if _step_t < 1.0:
 			return true
-		_fade_copy(legs, 0.14) #the last frame of the clip fades into the idle pose
+		_fade_copy(legs, 0.14) #the last frame of the clip fades into the idle pose (done here, before the legs are turned, so _play must not fade again)
+		legs.animation = "legs_idle"
 		_stepping = false
 		legs.flip_h = false
 		legs.rotation = _step_from + _step_dir * deg_to_rad(turn_clip_deg)
@@ -298,11 +304,23 @@ func _show_full(anim_name: String) -> void:
 	full.offset = _offset(anim_name)
 
 
-func _play(s: AnimatedSprite2D, anim_name: String) -> void:
+## Starts an animation on a sprite. Changing from one animation to another (idle to walk, walk to run, run to strafe...) crossfades: a frozen copy
+## of the old pose fades out over move_blend_time, and a change between two gait cycles keeps the stride's phase instead of restarting it.
+func _play(s: AnimatedSprite2D, anim_name: String, flip := false, fade := false) -> void:
 	if s.animation != anim_name or not s.is_playing():
+		var changing := s.animation != anim_name
+		var phase := 0.0
+		if changing and GAIT_CYCLES.has(s.animation) and GAIT_CYCLES.has(anim_name):
+			phase = float(s.frame) / maxf(1.0, s.sprite_frames.get_frame_count(s.animation))
+		if changing and fade and move_blend_time > 0.0 and _ready_done:
+			_fade_copy(s, move_blend_time) #copies the old pose, flip included
+		s.flip_h = flip
 		s.offset = _offset(anim_name)
 		s.play(anim_name)
-
+		if phase > 0.0:
+			s.frame = clampi(int(phase * s.sprite_frames.get_frame_count(anim_name)), 0, s.sprite_frames.get_frame_count(anim_name) - 1)
+	else:
+		s.flip_h = flip
 
 ## Shifts the sprite so the character's position (the hips) sits on the node origin.
 func _offset(anim_name: String) -> Vector2:
