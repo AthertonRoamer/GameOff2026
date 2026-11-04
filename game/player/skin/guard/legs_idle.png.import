@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cu2bod2yx7maf"
-path="res://.godot/imported/vent_grate.png-c6194b489f78e9b779a9222a81748116.ctex"
+uid="uid://cm7rto872fj8x"
+path="res://.godot/imported/legs_idle.png-5449a0393181afd60f599d536e7853f1.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://night_shift/environment/art/vent_grate.png"
-dest_files=["res://.godot/imported/vent_grate.png-c6194b489f78e9b779a9222a81748116.ctex"]
+source_file="res://game/player/skin/guard/legs_idle.png"
+dest_files=["res://.godot/imported/legs_idle.png-5449a0393181afd60f599d536e7853f1.ctex"]
 
 [params]
 

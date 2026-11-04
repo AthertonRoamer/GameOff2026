@@ -8,6 +8,8 @@ script = ExtResource("1_map")
 
 [node name="Floors" type="TileMapLayer" parent="." unique_id=840902636]
 
+[node name="Shadows" type="TileMapLayer" parent="."]
+
 [node name="Walls" type="TileMapLayer" parent="." unique_id=1980226533]
 
 [node name="Doors" type="Node2D" parent="." unique_id=878524524]

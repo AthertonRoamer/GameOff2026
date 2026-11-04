@@ -1,4 +1,4 @@
-﻿class_name FacilityDoor
+class_name FacilityDoor
 extends StaticBody2D
 
 ##A sliding gate, one metre wide (4 cells) and a wall thick, sitting in a wall. Closed and locked doors block movement (physics layer 4) and light.
