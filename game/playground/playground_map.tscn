@@ -20,6 +20,7 @@ world_collision_mask = 10
 color = Color(0.21988139, 0.23190084, 0.3095929, 1)
 
 [node name="Hint" type="CanvasLayer" parent="." unique_id=820722179]
+layer = 30
 
 [node name="Label" type="Label" parent="Hint" unique_id=858107412]
 offset_left = 16.0

@@ -25,6 +25,7 @@ NetworkRollback="*uid://gas743comroj"
 NetworkEvents="*uid://bdmobxxptryj0"
 NetworkPerformance="*uid://cqgf7aqmjfoa3"
 Network="*uid://bicdyfsswgj06"
+PixelArt="*res://game/effects/pixel_art.gd"
 
 [display]
 
