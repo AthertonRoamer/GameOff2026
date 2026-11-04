@@ -2,9 +2,15 @@
 
 [ext_resource type="Script" uid="uid://ckrhpcd5yy1sg" path="res://game/player/player.gd" id="1_player"]
 [ext_resource type="Script" uid="uid://v8yulraat58n" path="res://game/player/player_input.gd" id="2_input"]
+[ext_resource type="Script" uid="uid://bko7sp24yavq3" path="res://game/items/item.gd" id="2_j0mij"]
+[ext_resource type="Resource" path="res://game/items/guns/pistol.tres" id="3_gb4gm"]
 [ext_resource type="Texture2D" uid="uid://ckxs3fsktcc1o" path="res://icon.svg" id="3_icon"]
 [ext_resource type="Script" uid="uid://d350u8evihs1u" path="res://addons/netfox/rollback/rollback-synchronizer.gd" id="4_rollback"]
+[ext_resource type="Resource" path="res://game/items/guns/rifle.tres" id="4_uv2nh"]
 [ext_resource type="Script" uid="uid://dour8fehaaugp" path="res://addons/netfox/tick-interpolator.gd" id="5_interp"]
+[ext_resource type="Script" uid="uid://cthih2m0x736l" path="res://game/player/inventory.gd" id="6_inventory"]
+[ext_resource type="Script" uid="uid://chr4omg2hy3yu" path="res://addons/netfox/rewindable-action.gd" id="7_action"]
+[ext_resource type="Script" path="res://addons/netfox/state-synchronizer.gd" id="8_state"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
 size = Vector2(64, 64)
@@ -13,6 +19,7 @@ size = Vector2(64, 64)
 motion_mode = 1
 script = ExtResource("1_player")
 name_display = NodePath("NameDisplay")
+starting_items = Array[ExtResource("2_j0mij")]([ExtResource("3_gb4gm"), ExtResource("4_uv2nh")])
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=629595761]
 scale = Vector2(0.5, 0.5)
@@ -36,13 +43,24 @@ script = ExtResource("2_input")
 [node name="RollbackSynchronizer" type="Node" parent="." unique_id=1751885658 node_paths=PackedStringArray("root")]
 script = ExtResource("4_rollback")
 root = NodePath("..")
-state_properties = Array[String]([":position", ":velocity", ":health"])
-input_properties = Array[String](["Input:movement", "Input:aim"])
+state_properties = Array[String]([":position", ":velocity", "Inventory:last_use_tick", "Inventory:active_slot"])
+input_properties = Array[String](["Input:movement", "Input:aim", "Input:use_item", "Input:slot_select", "Input:slot_delta"])
 
 [node name="TickInterpolator" type="Node" parent="." unique_id=1495510548 node_paths=PackedStringArray("root")]
 script = ExtResource("5_interp")
 root = NodePath("..")
 properties = Array[String]([":position"])
 
-[node name="Camera2D" type="Camera2D" parent="."]
+[node name="Camera2D" type="Camera2D" parent="." unique_id=892186358]
 enabled = false
+
+[node name="HealthSynchronizer" type="Node" parent="." node_paths=PackedStringArray("root")]
+script = ExtResource("8_state")
+root = NodePath("..")
+properties = Array[String]([":health"])
+
+[node name="Inventory" type="Node" parent="." unique_id=984158519]
+script = ExtResource("6_inventory")
+
+[node name="UseAction" type="Node" parent="Inventory" unique_id=545507635]
+script = ExtResource("7_action")
