@@ -26,6 +26,7 @@ var can_hit : Callable = Callable() #optional filter (target node -> bool), for 
 
 var _projectiles : Array[Dictionary] = [] #{owner_id, owner, origin, direction, fire_tick, damage, checked_tick}
 var _active : bool = true
+var _had_projectiles : bool = false #so the last projectile's removal still triggers one more redraw to clear it
 
 
 func _ready() -> void:
@@ -44,20 +45,23 @@ func quiesce() -> void:
 
 
 ##Starts a projectile on this peer and, on the lobby, on every other client. Returns false if it was a repeat of an earlier shot.
-func spawn(owner_node : Node, owner_id : int, origin : Vector2, direction : Vector2, fire_tick : int, damage : int = 0) -> bool:
+##speed/color override this manager's defaults per shot, so different weapons can fire visually/physically distinct projectiles.
+func spawn(owner_node : Node, owner_id : int, origin : Vector2, direction : Vector2, fire_tick : int, damage : int = 0, shot_speed : float = -1.0, shot_color : Color = Color(0, 0, 0, 0)) -> bool:
 	if not _active or direction.is_zero_approx() or _find(owner_id, fire_tick) != -1:
 		return false
-	_add(owner_node, owner_id, origin, direction.normalized(), fire_tick, damage)
+	var resolved_speed : float = shot_speed if shot_speed >= 0.0 else speed
+	var resolved_color : Color = shot_color if shot_color.a > 0.0 else color
+	_add(owner_node, owner_id, origin, direction.normalized(), fire_tick, damage, resolved_speed, resolved_color)
 	if _is_lobby():
 		for peer in multiplayer.get_peers():
 			if peer != owner_id: #the shooter already predicted it
-				_client_spawn.rpc_id(peer, owner_id, origin, direction.normalized(), fire_tick, damage)
+				_client_spawn.rpc_id(peer, owner_id, origin, direction.normalized(), fire_tick, damage, resolved_speed, resolved_color)
 	return true
 
 
 ##Where a projectile is at a (possibly fractional) tick.
 func position_at(projectile : Dictionary, tick : float) -> Vector2:
-	return projectile["origin"] + projectile["direction"] * speed * (tick - projectile["fire_tick"]) * NetworkTime.ticktime
+	return projectile["origin"] + projectile["direction"] * projectile["speed"] * (tick - projectile["fire_tick"]) * NetworkTime.ticktime
 
 
 func get_projectiles() -> Array[Dictionary]:
@@ -65,15 +69,16 @@ func get_projectiles() -> Array[Dictionary]:
 
 
 func _process(_delta : float) -> void:
-	if is_visible_in_tree() and not _projectiles.is_empty():
+	if is_visible_in_tree() and (not _projectiles.is_empty() or _had_projectiles):
 		queue_redraw()
+	_had_projectiles = not _projectiles.is_empty()
 
 
 func _draw() -> void:
 	var now : float = NetworkTime.tick + NetworkTime.tick_factor
 	for projectile in _projectiles:
 		if now >= projectile["fire_tick"]:
-			draw_circle(position_at(projectile, now), radius, color)
+			draw_circle(position_at(projectile, now), radius, projectile["color"])
 
 
 func _on_tick(_delta : float, tick : int) -> void:
@@ -116,9 +121,10 @@ func _check_hits(projectile : Dictionary, tick : int) -> void:
 		return
 
 
-func _add(owner_node : Node, owner_id : int, origin : Vector2, direction : Vector2, fire_tick : int, damage : int) -> void:
+func _add(owner_node : Node, owner_id : int, origin : Vector2, direction : Vector2, fire_tick : int, damage : int, shot_speed : float, shot_color : Color) -> void:
 	_projectiles.append({"owner_id": owner_id, "owner": owner_node, "origin": origin, "direction": direction,
-		"fire_tick": fire_tick, "damage": damage, "checked_tick": fire_tick, "position": origin})
+		"fire_tick": fire_tick, "damage": damage, "checked_tick": fire_tick, "position": origin,
+		"speed": shot_speed, "color": shot_color})
 
 
 func _find(owner_id : int, fire_tick : int) -> int:
@@ -134,9 +140,9 @@ func _is_lobby() -> bool:
 
 
 @rpc("authority", "call_remote", "reliable")
-func _client_spawn(owner_id : int, origin : Vector2, direction : Vector2, fire_tick : int, damage : int) -> void:
+func _client_spawn(owner_id : int, origin : Vector2, direction : Vector2, fire_tick : int, damage : int, shot_speed : float, shot_color : Color) -> void:
 	if _active and _find(owner_id, fire_tick) == -1:
-		_add(null, owner_id, origin, direction, fire_tick, damage)
+		_add(null, owner_id, origin, direction, fire_tick, damage, shot_speed, shot_color)
 
 
 @rpc("authority", "call_remote", "reliable")
