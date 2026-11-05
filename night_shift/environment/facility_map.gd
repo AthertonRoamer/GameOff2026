@@ -44,7 +44,7 @@ func build() -> void:
 	var layout : Dictionary = _load_layout()
 	if layout.is_empty():
 		return
-	var tile_set : TileSet = FacilityTileSet.build()
+	var tile_set : TileSet = FacilityTileSet.shared() #built once per process (see WarmUp)
 	for layer : TileMapLayer in [floors, shadows, walls]:
 		layer.tile_set = tile_set
 		layer.scale = Vector2.ONE * FacilityTileSet.ART_SCALE #the tiles are drawn at 4x resolution, like the character sprites

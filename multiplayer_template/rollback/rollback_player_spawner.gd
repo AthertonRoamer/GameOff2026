@@ -1,7 +1,7 @@
 class_name RollbackPlayerSpawner
 extends Node
 
-##Spawns one player per lobby member as children of this node, set up the way netfox rollback needs it.
+##Spawns one player per lobby member as children of this node (or of spawn_parent), set up the way netfox rollback needs it.
 ##Every peer (including the lobby) runs the same spawn_all(), so node names and paths match without a MultiplayerSpawner.
 ##Authority: the player body belongs to the lobby (peer 1), the input node belongs to the member's own peer.
 ##Put this node in the game scene and call setup(lobby) then spawn_all(), usually from the game's _ready().
@@ -12,6 +12,7 @@ signal player_removed(player : Node, member : LobbyMember)
 
 @export var player_scene : PackedScene
 @export var input_node_name : StringName = &"Input"
+@export var spawn_parent : Node #where players are added (for example a y-sorted node of the map). Unset: this node. Must be the same node on every peer
 
 var lobby : Lobby
 var players : Dictionary = {} #key: member id (int), value: player node
@@ -50,7 +51,7 @@ func spawn_player(member : LobbyMember, index : int = 0) -> Node:
 	if member.id == multiplayer.get_unique_id():
 		local_player = player
 	player_spawned.emit(player, member, index)
-	add_child(player)
+	(spawn_parent if spawn_parent != null else self).add_child(player)
 	return player
 
 

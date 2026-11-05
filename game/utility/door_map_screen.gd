@@ -2,8 +2,9 @@ class_name DoorMapScreen
 extends Control
 
 ##The door control screen: a minimap of the whole facility with every door on it. Click a door to open or close it. Locked doors cannot be changed.
-##It is drawn entirely in code in Palette A. Put it on a CanvasLayer (it covers the screen), call open() with the map, and listen for `closed`.
-##Doors are only changed here (state is FacilityDoor.State); what that costs the generator is the game's job.
+##It is drawn entirely in code in Palette A. Put it on a CanvasLayer (it covers the screen), set `facility` and `control`, call open() and listen
+##for `closed`. A click does not change the door itself: it asks `control` (the lobby decides, then every peer switches the door on the same tick).
+##A door whose change is on its way blinks. Without a control (a bare test) the click flips the door locally.
 
 signal closed
 
@@ -21,6 +22,7 @@ const ROOM_FILL : Dictionary = {"corridor": Color("#1a1f27"), "utility": Color("
 const MARGIN : float = 36.0
 
 var facility : FacilityMap
+var control : FacilityControl
 var player : Node2D #drawn as a dot on the map
 var _hover : FacilityDoor
 var _scale : float = 1.0
@@ -38,8 +40,7 @@ func _ready() -> void:
 	_font = ThemeDB.fallback_font
 
 
-func open(map : FacilityMap, tracked : Node2D = null) -> void:
-	facility = map
+func open(tracked : Node2D = null) -> void:
 	player = tracked
 	_hover = null
 	visible = true
@@ -54,11 +55,15 @@ func close() -> void:
 	closed.emit()
 
 
-##Flips a door the way a click does. Returns false for a locked door.
+##Asks for a door to flip, the way a click does. Returns false for a locked door or one already switching.
 func toggle_door(door : FacilityDoor) -> bool:
-	if door.state == FacilityDoor.State.LOCKED:
+	if door.state == FacilityDoor.State.LOCKED or (control != null and control.is_pending(door)):
 		return false
-	door.state = FacilityDoor.State.OPEN if door.state == FacilityDoor.State.CLOSED else FacilityDoor.State.CLOSED
+	var target : FacilityDoor.State = FacilityDoor.State.OPEN if door.state == FacilityDoor.State.CLOSED else FacilityDoor.State.CLOSED
+	if control != null:
+		control.request_door(door, target)
+	else:
+		door.state = target
 	queue_redraw()
 	return true
 
@@ -179,6 +184,8 @@ func _draw() -> void:
 	for door in facility.doors:
 		var rect : Rect2 = _door_rect(door)
 		var colour : Color = [OPEN_COLOUR, CLOSED_COLOUR, LOCKED_COLOUR][door.state]
+		if control != null and control.is_pending(door): #switching: blink while the change is on its way
+			colour = colour.lerp(TEXT, 0.5 + 0.5 * sin(Time.get_ticks_msec() / 60.0))
 		var hovered : bool = door == _hover
 		if hovered:
 			draw_rect(rect.grow(4.0), Color(colour, 0.35))

@@ -24,6 +24,16 @@ const NEIGHBOURS : Array[Vector2i] = [Vector2i(0, -1), Vector2i(1, -1), Vector2i
 	Vector2i(0, 1), Vector2i(-1, 1), Vector2i(-1, 0), Vector2i(-1, -1)] #N, NE, E, SE, S, SW, W, NW: bit 0 to bit 7 of a wall mask
 
 
+static var _shared : TileSet
+
+
+##One tile set built once and shared by every map (maps only read it). WarmUp builds it at startup, so loading a game does not.
+static func shared() -> TileSet:
+	if _shared == null:
+		_shared = build()
+	return _shared
+
+
 static func build() -> TileSet:
 	var tile_set : TileSet = TileSet.new()
 	tile_set.tile_size = Vector2i(ART_TILE, ART_TILE)

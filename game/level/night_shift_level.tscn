@@ -1,0 +1,32 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://game/level/night_shift_level.gd" id="1_level"]
+[ext_resource type="PackedScene" uid="uid://bq6ro63p8oq1b" path="res://night_shift/environment/facility_map.tscn" id="2_map"]
+[ext_resource type="Script" uid="uid://dxvlk0rkeiwfe" path="res://multiplayer_template/rollback/projectile_manager.gd" id="3_projectiles"]
+[ext_resource type="Script" path="res://game/level/facility_control.gd" id="4_control"]
+[ext_resource type="Script" path="res://game/utility/utility_consoles.gd" id="5_consoles"]
+
+[node name="Level" type="Node2D"]
+script = ExtResource("1_level")
+
+[node name="FacilityMap" parent="." instance=ExtResource("2_map")]
+doors_start = 0
+
+[node name="Darkness" type="CanvasModulate" parent="."]
+color = Color(0.21988139, 0.23190084, 0.3095929, 1)
+
+[node name="ProjectileLayer" type="CanvasLayer" parent="."]
+follow_viewport_enabled = true
+
+[node name="ProjectileManager" type="Node2D" parent="ProjectileLayer"]
+script = ExtResource("3_projectiles")
+world_collision_mask = 10
+
+[node name="FacilityControl" type="Node" parent="." node_paths=PackedStringArray("facility")]
+script = ExtResource("4_control")
+facility = NodePath("../FacilityMap")
+
+[node name="UtilityConsoles" type="Node" parent="." node_paths=PackedStringArray("facility", "control")]
+script = ExtResource("5_consoles")
+facility = NodePath("../FacilityMap")
+control = NodePath("../FacilityControl")

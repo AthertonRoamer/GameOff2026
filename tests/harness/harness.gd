@@ -17,6 +17,7 @@ var use_demo : bool = false
 var use_moving : bool = false #shooter and target run side by side, the shooter fires at where it sees the target
 var use_combat : bool = false #the acting client kills the host's player with projectiles, then everyone checks the respawn
 var use_hold : bool = false #the client, then the host, hold fire for 3 s each and report every shot event they saw
+var use_night_shift : bool = false #the real game (game/game.tscn): the client works the door console; every peer reports doors, flashlight, interact
 var no_lagcomp : bool = false #the lobby does not rewind targets, for comparison
 var join_port : int = LOBBY_PORT #the client can join through a latency proxy by using another port
 var players_expected : int = 2 #host waits for this many members before beginning
@@ -40,7 +41,8 @@ func _ready() -> void:
 	use_combat = args.has("--combat")
 	use_hold = args.has("--hold")
 	use_demo = args.has("--demo") or use_moving or use_combat or use_hold or OS.get_cmdline_args().has("--harness-demo")
-	use_rollback = args.has("--rollback") or use_demo
+	use_night_shift = args.has("--night-shift") or OS.get_cmdline_args().has("--harness-night-shift")
+	use_rollback = args.has("--rollback") or use_demo or use_night_shift
 	idx = args.find("--join-port")
 	if idx != -1 and idx + 1 < args.size():
 		join_port = int(args[idx + 1])
@@ -82,7 +84,10 @@ func _ready() -> void:
 func apply_rollback_overrides(main : Node) -> void:
 	#swaps in RollbackGameManager and either the probe game or the rollback demo configuration, without touching main.tscn.
 	#Every process must do this, the lobby instance included
-	if use_demo:
+	if use_night_shift:
+		main.configuration.game_manager_scene = load("res://multiplayer_template/rollback/rollback_game_manager.tscn")
+		main.configuration.game_scene = load("res://game/game.tscn")
+	elif use_demo:
 		main.configuration = load("res://multiplayer_template/demo_games/demo_rollback_game/rollback_demo_configuration.tres")
 		main.configuration.rollback_diagnostics = false #keep the overlay out of the way of the automated run
 	else:
@@ -155,6 +160,9 @@ func clock_log_loop() -> void:
 
 func run_lobby_tweaks() -> void:
 	#the lobby instance has no test logic of its own, but the moving-target scenario needs it to tolerate many hits and, optionally, to not rewind
+	if use_night_shift:
+		await night_shift_lobby()
+		return
 	if not OS.get_cmdline_args().has("--harness-moving"):
 		return
 	if not await wait_until(func(): return Main.mode != null and Main.mode.get_game() != null and "spawner" in Main.mode.get_game() and Main.mode.get_game().spawner.players.size() >= 2, 120.0):
@@ -313,6 +321,8 @@ func run_host() -> void:
 		lobby_args.append("--harness-lobby")
 		if use_demo:
 			lobby_args.append("--harness-demo")
+		if use_night_shift:
+			lobby_args.append("--harness-night-shift")
 		if use_moving:
 			lobby_args.append("--harness-moving")
 		if no_lagcomp:
@@ -360,8 +370,74 @@ func run_host() -> void:
 	get_tree().quit(0)
 
 
+##Night shift (the real game), lobby side: once the game runs, wait a while (so the client can first ask from out of reach, which must be
+##refused), then move every player to the door console with the rollback-safe teleport, as the lobby is the only one that may.
+func night_shift_lobby() -> void:
+	if not await wait_until(_night_shift_running, 120.0):
+		return
+	await get_tree().create_timer(4.0).timeout
+	var game : Game = Main.mode.get_game()
+	var panel : ControlPanel = game.level.consoles.panel_for("doors")
+	var i : int = 0
+	for player : Player in game.spawner.players.values():
+		player.teleport(panel.position + Vector2(-20.0 + 40.0 * i, 44.0))
+		i += 1
+
+
+func _night_shift_running() -> bool:
+	var game : Node = Main.mode.get_game() if Main.mode != null else null
+	return game is Game and game.spawner.players.size() >= 2 and game.spawner.players.values()[0].input.active
+
+
+##Night shift, every player peer: records the tick each door changes on, so the peers can be compared.
+func night_shift_watch_doors(game : Game) -> Dictionary:
+	var changes : Dictionary = {}
+	for door : FacilityDoor in game.level.facility.doors:
+		door.state_changed.connect(func(state : FacilityDoor.State) -> void: changes[door.door_index] = "%s@%d" % [FacilityDoor.State.keys()[state], NetworkTime.tick])
+	return changes
+
+
+func night_shift_report(game : Game, changes : Dictionary) -> void:
+	var states : String = "".join(game.level.facility.doors.map(func(d : FacilityDoor) -> String: return FacilityDoor.State.keys()[d.state].substr(0, 1)))
+	var others : Array = []
+	for id in game.spawner.players:
+		var p : Player = game.spawner.players[id]
+		others.append("%d:flash=%s,interacting=%s,torso=%s,pos=%.0f,%.0f" % [id, p.flashlight.on, p.input.interacting, p.skin.torso.animation, p.position.x, p.position.y])
+	log_line("NS_RESULT doors=%s changes=%s players=[%s]" % [states, changes, " ".join(others)])
+
+
+func night_shift_client() -> void:
+	var game : Game = Main.mode.get_game()
+	var changes : Dictionary = night_shift_watch_doors(game)
+	var me : Player = game.spawner.local_player
+	var panel : ControlPanel = game.level.consoles.panel_for("doors")
+	game.level.control.request_door(game.level.facility.doors[1], FacilityDoor.State.CLOSED) #from the spawn, far from the console: the lobby must refuse
+	log_line("NS_ASKED_FROM_SPAWN distance=%.0f" % me.global_position.distance_to(panel.global_position))
+	if not await wait_until(func(): return panel.is_in_reach(me.global_position), 15.0):
+		return fail("the lobby never moved the client to the console")
+	await get_tree().create_timer(0.3).timeout
+	log_line("NS_PROMPT \"%s\"" % game.player_hud.interact_prompt.text)
+	me.interactor.use(panel)
+	var screen : DoorMapScreen = panel.screen
+	for index in [0, 3]:
+		screen.toggle_door(game.level.facility.doors[index])
+	me.input.flashlight_on = false
+	await get_tree().create_timer(2.0).timeout
+	night_shift_report(game, changes)
+	await get_tree().create_timer(2.0).timeout
+
+
+func night_shift_host() -> void:
+	var game : Game = Main.mode.get_game()
+	var changes : Dictionary = night_shift_watch_doors(game)
+	await get_tree().create_timer(12.0).timeout
+	night_shift_report(game, changes)
+
+
 func run_host_scenario() -> void:
-	if leave_mode or kill_mode:
+	if use_night_shift:
+		await night_shift_host()
+	elif leave_mode or kill_mode:
 		#a player disappears mid-game: the host must see it go, and its own game must keep running
 		var game : Node = Main.mode.get_game()
 		var started_msec : int = Time.get_ticks_msec()
@@ -393,7 +469,9 @@ func run_host_scenario() -> void:
 
 
 func run_client_scenario(mode : ClientMode) -> void:
-	if leave_mode:
+	if use_night_shift:
+		await night_shift_client()
+	elif leave_mode:
 		await get_tree().create_timer(1.0).timeout
 		mode.leave_lobby()
 		log_line("LEFT")

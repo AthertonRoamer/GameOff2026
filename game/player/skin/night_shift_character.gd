@@ -63,23 +63,39 @@ var _ghost: AnimatedSprite2D
 var _lamp: Node2D
 
 
+## Sprite sheets loaded and cut into frames, per role folder: {"meta": sprites.json, "frames": SpriteFrames}. Every character of a role shares
+## them (they are only read), so only the first one pays for loading the sheets. WarmUp fills this at startup, before any networked game.
+static var _role_cache: Dictionary = {}
+
+
+## Loads a role's sheets and builds its frames, once; later calls return the cached ones.
+static func load_role(root: String, role_name: String) -> Dictionary:
+	var key := "%s/%s" % [root, role_name]
+	if not _role_cache.has(key):
+		var role_meta: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("%s/sprites.json" % key))
+		var frames := SpriteFrames.new()
+		frames.remove_animation("default")
+		for anim_name in role_meta.keys():
+			var m: Dictionary = role_meta[anim_name]
+			var tex: Texture2D = load("%s/%s" % [key, m["file"]])
+			var size := int(m["frame_size"])
+			var cols := int(m["hframes"])
+			frames.add_animation(anim_name)
+			frames.set_animation_speed(anim_name, m["fps"])
+			frames.set_animation_loop(anim_name, m["loop"])
+			for i in int(m["frames"]):
+				var at := AtlasTexture.new()
+				at.atlas = tex
+				at.region = Rect2((i % cols) * size, (i / cols) * size, size, size)
+				frames.add_frame(anim_name, at)
+		_role_cache[key] = {"meta": role_meta, "frames": frames}
+	return _role_cache[key]
+
+
 func _ready() -> void:
-	meta = JSON.parse_string(FileAccess.get_file_as_string("%s/%s/sprites.json" % [sprite_root, role]))
-	var frames := SpriteFrames.new()
-	frames.remove_animation("default")
-	for anim_name in meta.keys():
-		var m: Dictionary = meta[anim_name]
-		var tex: Texture2D = load("%s/%s/%s" % [sprite_root, role, m["file"]])
-		var size := int(m["frame_size"])
-		var cols := int(m["hframes"])
-		frames.add_animation(anim_name)
-		frames.set_animation_speed(anim_name, m["fps"])
-		frames.set_animation_loop(anim_name, m["loop"])
-		for i in int(m["frames"]):
-			var at := AtlasTexture.new()
-			at.atlas = tex
-			at.region = Rect2((i % cols) * size, (i / cols) * size, size, size)
-			frames.add_frame(anim_name, at)
+	var loaded := load_role(sprite_root, role)
+	meta = loaded["meta"]
+	var frames: SpriteFrames = loaded["frames"]
 	for s in [legs, torso, full]:
 		s.sprite_frames = frames
 		s.centered = true

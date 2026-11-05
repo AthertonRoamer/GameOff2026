@@ -18,10 +18,11 @@ extends CharacterBody2D
 @onready var camera : Camera2D = $Camera2D
 @onready var skin : NightShiftCharacter = $Skin
 @onready var flashlight : Flashlight = $Skin/Torso/Lamp/Flashlight #the shoulder lamp's beam; the lamp is on the torso, so it follows the aim
+@onready var interactor : PlayerInteractor = $Interactor #uses consoles and other interactables (local player only)
 
 var lag_compensator : LagCompensator
 var projectile_manager : ProjectileManager
-var interacting : bool = false #a local visual flag: plays the torso's interact animation while true
+var _teleport_to : Variant = null #a position the next tick moves the player to, see teleport()
 
 var player_name : String = "":
 	set(value):
@@ -57,10 +58,23 @@ func _ready() -> void:
 func _process(_delta : float) -> void:
 	#The body no longer turns to face the mouse: the skin turns its own legs (to the way it moves) and torso (to the aim). The gun stays out.
 	var aim_direction : Vector2 = (input.aim - global_position).normalized() if input.aim != Vector2.ZERO else Vector2.ZERO
-	skin.update_visual(velocity, aim_direction, is_aiming(), is_running(), interacting)
+	skin.update_visual(velocity, aim_direction, is_aiming(), is_running(), input.interacting)
+	if flashlight.on != input.flashlight_on: #the flashlight is part of the synced input, so this shows every player's beam as they set it
+		flashlight.on = input.flashlight_on
+
+
+##Moves the player to a point. Setting position directly does not stick: the next tick restores it from the rollback history. This applies it
+##inside the next tick instead, so it is recorded (and, on the lobby, sent to every peer like any other movement). Lobby or offline only.
+func teleport(to : Vector2) -> void:
+	_teleport_to = to
 
 
 func _rollback_tick(delta : float, _tick : int, _is_fresh : bool) -> void:
+	if _teleport_to != null:
+		position = _teleport_to
+		velocity = Vector2.ZERO
+		_teleport_to = null
+		interpolator.teleport()
 	var speed_now : float = velocity.length()
 	if speed_now > 0.0:
 		speed_now = max(speed_now - friction * delta, 0.0)
