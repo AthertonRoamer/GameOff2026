@@ -1,121 +1,54 @@
 class_name PlaygroundMap
 extends Node2D
 
-##A single-player testing ground: the facility map with one player in the guard skin. No lobby and no network: netfox's clock is started
-##offline, so the player's rollback tick, input and interpolation run exactly as they do in a game.
+##A single-player testing ground: the same Level as the game (game/level/night_shift_level.tscn) with one player in the guard skin and the HUD.
+##No lobby and no network: netfox's clock is started offline, so the player's rollback tick, input and interpolation run exactly as they do in a
+##game, and the local peer is the lobby, so door requests go through FacilityControl just like in a game.
 ##  WASD move, shift runs (and holsters the gun), hold right mouse to draw the gun and aim (the torso follows the mouse, the legs follow the movement), left mouse fires the drawn gun (1-4 or the wheel pick the slot),
 ##  P turns the pixel art pass on and off (it covers the whole game, see game/effects/pixel_art.gd),
-##  F turns the flashlight on and off, N turns the darkness (the CanvasModulate over the whole map, players included) on and off.
+##  F turns the flashlight on and off, N turns the darkness on and off (the Level's can_toggle_darkness is on here).
 ##Doors are open at the start (they need power to stay shut) and cannot be worked by hand. The Door Control room has a control panel: stand next to
 ##it and press E to open its screen, a minimap of the facility where a click on a door opens or closes it. E or Esc leaves the screen.
 ##Command line (after --), for screenshots and checks:  --shot=<png> [--press=<action>] [--hold=<seconds>] [--aim=dx,dy] [--at=x,y] [--flash=off] [--dark=off]
-##  [--panel=1] [--toggle=<door index>,<door index>]  presses an input action for a while, aims at a point on screen, takes a screenshot and prints what the player did.
+##  [--panel=1] [--toggle=<door index>,<door index>] [--close]  presses an input action for a while, aims at a point on screen, takes a screenshot and prints what the player did.
 ##  --panel=1 walks the player to the panel and opens its screen; --toggle clicks those doors on the screen, like a mouse would.
 
 const PLAYER_SCENE : PackedScene = preload("res://game/player/player.tscn")
-const INTERACT_TIME : float = 0.6
-const PANEL_ROOM : String = "door_control" #the utility room whose function is "doors"
 
-@export var spawn_room : String = "ring"
 @export var camera_zoom : float = 2.0
 
-@onready var facility : FacilityMap = $FacilityMap
-@onready var darkness : CanvasModulate = $Darkness
-@onready var projectiles : ProjectileManager = $ProjectileLayer/ProjectileManager
+@onready var level : NightShiftLevel = $Level
+@onready var hud : CanvasLayer = $PlayerHud
 
 var player : Player
-var panel : ControlPanel
-var screen : DoorMapScreen
-var _interact_left : float = 0.0
+var facility : FacilityMap
 var _shots : int = 0
-var _prompt : Label
 var _args : Dictionary = {}
 
 
 func _ready() -> void:
 	_args = _parse_args()
+	facility = level.facility
 	if await NetworkTime.start() != OK: #a coroutine: on the offline peer, which counts as the server, it is done at once
 		push_warning("PlaygroundMap: NetworkTime did not start, the player will not move")
 	player = PLAYER_SCENE.instantiate()
 	player.player_name = "Guard"
-	facility.actors.add_child(player)
-	player.position = facility.room_center_px(spawn_room)
+	player.projectile_manager = level.projectiles #the gun spawns its bullets here; walls and closed doors stop them
+	hud.bind_player(player)
+	level.actors.add_child(player)
+	player.input.flashlight_on = String(_args.get("flash", "on")) != "off"
+	level.player_lookup = func(_peer_id : int) -> Player: return player
+	player.position = level.spawn_position()
 	if _args.has("at"):
 		var at : PackedStringArray = String(_args["at"]).split(",")
 		player.position = Vector2(float(at[0]), float(at[1]))
-	player.projectile_manager = projectiles #the gun spawns its bullets here; walls (physics layer 2) stop them. The manager is on its own canvas layer, so the darkness does not dim the bullets, they glow
 	player.set_active(true)
-	player.flashlight.on = String(_args.get("flash", "on")) != "off"
-	darkness.visible = String(_args.get("dark", "on")) != "off"
+	level.darkness.visible = String(_args.get("dark", "on")) != "off"
 	PixelArt.enabled = String(_args.get("pixel", "on")) != "off" #P turns the pixel art pass on and off
 	player.camera.zoom = Vector2.ONE * float(_args.get("zoom", camera_zoom))
-	_build_utility_room()
 	player.shot_fired.connect(func() -> void: _shots += 1)
 	if _args.has("shot"):
 		_run_check()
-
-
-func _process(delta : float) -> void:
-	if _interact_left > 0.0:
-		_interact_left -= delta
-		if not screen.visible:
-			player.interacting = _interact_left > 0.0
-	var in_reach : bool = panel != null and not screen.visible and panel.is_in_reach(player.global_position)
-	_prompt.visible = in_reach
-	if in_reach:
-		_prompt.position = (_prompt.get_viewport_rect().size - _prompt.size) / 2.0 + Vector2(0.0, _prompt.get_viewport_rect().size.y * 0.32)
-	if Input.is_action_just_pressed("player_interact"):
-		if screen.visible:
-			screen.close()
-		elif in_reach:
-			_open_screen()
-
-
-func _unhandled_key_input(event : InputEvent) -> void:
-	if not event.is_pressed() or event.is_echo():
-		return
-	match (event as InputEventKey).keycode:
-		KEY_F:
-			player.flashlight.toggle()
-		KEY_N:
-			darkness.visible = not darkness.visible
-
-
-##The Door Control room's console, and the screen it opens. Doors start open: a door needs power to be held shut.
-func _build_utility_room() -> void:
-	for door in facility.doors:
-		door.state = FacilityDoor.State.OPEN
-	var rects : Array[Rect2] = facility.room_rects_px(PANEL_ROOM)
-	panel = ControlPanel.new()
-	panel.title = "Door control"
-	panel.name = "DoorControlPanel"
-	panel.position = Vector2(rects[0].position.x + 62.0, rects[0].position.y + 22.0) #against the north wall, left of the room's door
-	facility.props_node.add_child(panel)
-	var layer : CanvasLayer = CanvasLayer.new()
-	layer.layer = 20
-	add_child(layer)
-	screen = DoorMapScreen.new()
-	layer.add_child(screen)
-	screen.closed.connect(_on_screen_closed)
-	_prompt = Label.new()
-	_prompt.text = "E   use the door control panel"
-	_prompt.add_theme_font_size_override("font_size", 16)
-	_prompt.add_theme_color_override("font_color", Color("#f2b544"))
-	_prompt.add_theme_color_override("font_outline_color", Color("#06080c"))
-	_prompt.add_theme_constant_override("outline_size", 6)
-	_prompt.visible = false
-	$Hint.add_child(_prompt)
-
-
-func _open_screen() -> void:
-	player.set_active(false) #the player stands at the console while the screen is up
-	player.interacting = true
-	screen.open(facility, player)
-
-
-func _on_screen_closed() -> void:
-	player.set_active(true)
-	player.interacting = false
 
 
 ##Screenshot mode: optionally aim the mouse, hold an action, then save a picture and report.
@@ -135,10 +68,12 @@ func _run_check() -> void:
 				get_viewport().get_texture().get_image().save_png(String(_args["mid"]))
 			print("PLAYGROUND turn t=%d legs=%s legs_deg=%.0f torso_deg=%.0f torso_frame=%d speed=%.1f" % [step, player.skin.legs.animation, rad_to_deg(player.skin.legs.rotation), rad_to_deg(player.skin.torso.rotation), player.skin.torso.frame, player.skin.torso.speed_scale])
 	if _args.has("panel"): #stand at the panel and press E
-		player.position = panel.position + Vector2(0.0, 44.0)
+		var panel : ControlPanel = level.consoles.panel_for("doors")
+		player.teleport(panel.position + Vector2(0.0, 44.0))
 		await get_tree().create_timer(0.4).timeout
-		print("PLAYGROUND panel in reach=%s doors_open=%d of %d" % [panel.is_in_reach(player.global_position), facility.doors.filter(func(d : FacilityDoor) -> bool: return d.state == FacilityDoor.State.OPEN).size(), facility.doors.size()])
-		_open_screen()
+		print("PLAYGROUND panel in reach=%s prompt=\"%s\" doors_open=%d of %d" % [panel.is_in_reach(player.global_position), hud.interact_prompt.text, facility.doors.filter(func(d : FacilityDoor) -> bool: return d.state == FacilityDoor.State.OPEN).size(), facility.doors.size()])
+		player.interactor.use(panel)
+		var screen : DoorMapScreen = panel.screen
 		await get_tree().create_timer(0.3).timeout
 		if _args.has("toggle"): #click doors on the screen by their position on it
 			for index : String in String(_args["toggle"]).split(","):
@@ -148,7 +83,7 @@ func _run_check() -> void:
 				print("PLAYGROUND click door %s at %s hits door %s" % [index, click_at, found.door_index if found != null else -1])
 				if found != null:
 					screen.toggle_door(found)
-		await get_tree().create_timer(0.2).timeout
+		await get_tree().create_timer(0.3).timeout #longer than FacilityControl's delay, so the doors have switched
 		if _args.has("close"): #leave the screen again, as E would
 			screen.close()
 			await get_tree().create_timer(0.3).timeout
@@ -160,7 +95,7 @@ func _run_check() -> void:
 		await get_tree().create_timer(float(_args.get("hold", 1.0))).timeout
 	get_viewport().get_texture().get_image().save_png(String(_args["shot"]))
 	var door_states : Array = facility.doors.map(func(d : FacilityDoor) -> String: return FacilityDoor.State.keys()[d.state].substr(0, 1))
-	print("PLAYGROUND doors=%s shots_fired=%d projectiles_in_flight=%d aim=%s aiming=%s use=%s" % ["".join(door_states), _shots, projectiles.get_projectiles().size(), player.input.aim - player.global_position, player.input.aiming, player.input.use_item])
+	print("PLAYGROUND doors=%s shots_fired=%d projectiles_in_flight=%d aim=%s aiming=%s use=%s interacting=%s active=%s flashlight=%s" % ["".join(door_states), _shots, level.projectiles.get_projectiles().size(), player.input.aim - player.global_position, player.input.aiming, player.input.use_item, player.input.interacting, player.input.active, player.flashlight.on])
 	print("PLAYGROUND start=%s end=%s moved=%.1f legs=%s flip=%s speed_scale=%.1f torso=%s" % [start, player.position, player.position.distance_to(start),
 		player.skin.legs.animation, player.skin.legs.flip_h, player.skin.legs.speed_scale, player.skin.torso.animation])
 	for each : String in action.split(","):

@@ -3,19 +3,32 @@ extends Node2D
 
 ##Main game scene. Set player_scene on $Spawner once a player scene exists, then set
 ##game_manager_scene to rollback_game_manager.tscn and game_scene to this scene in a Configuration resource.
+##The world itself (map, darkness, projectiles, doors, consoles) is the Level, shared with the playground. Players are spawned into its actors
+##node, so they are y-sorted with the rest of the facility.
+##DebugRemover (the first child) turns every debug setting in this scene off when it is enabled; see game/debug/debug_remover.gd.
 
+const DEBUG_SETTINGS : Array[StringName] = [&"debug_respawn_dead_players"] #turned off by DebugRemover
+
+@export_group("Debug")
 @export var debug_respawn_dead_players : bool = false #hides dead players and revives them (full health) after 3 seconds
 
+@onready var level : NightShiftLevel = $Level
 @onready var spawner : RollbackPlayerSpawner = $Spawner
 @onready var player_setup : PlayerSetup = $PlayerSetup
 @onready var player_hud : CanvasLayer = $PlayerHud
+@onready var lag_compensator : LagCompensator = $LagCompensator
 
 
 func _ready() -> void:
+	spawner.spawn_parent = level.actors
 	spawner.player_spawned.connect(_on_player_spawned)
-	$ProjectileManager.lag_compensator = $LagCompensator
-	$ProjectileManager.can_hit = func(target : Node) -> bool: return target.is_alive()
-	$ProjectileManager.projectile_hit.connect(_on_projectile_hit)
+	level.player_lookup = func(peer_id : int) -> Player: return spawner.players.get(peer_id)
+	level.projectiles.lag_compensator = lag_compensator
+	level.projectiles.can_hit = func(target : Node) -> bool: return target.is_alive()
+	level.projectiles.projectile_hit.connect(_on_projectile_hit)
+	player_setup.lag_compensator = lag_compensator
+	player_setup.projectile_manager = level.projectiles
+	player_setup.spawn_point = level.spawn_position()
 	if get_parent() is GameManager:
 		var lobby : Lobby = get_parent().lobby
 		spawner.setup(lobby)
@@ -23,6 +36,7 @@ func _ready() -> void:
 
 
 func start() -> void:
+	level.control.broadcast_snapshot() #lobby only: every peer starts from the lobby's doors
 	set_players_active(true)
 
 
@@ -64,6 +78,7 @@ func _on_projectile_hit(projectile : Dictionary, target : Node) -> void:
 
 func _on_network_unloader_cease_rpcs_request_received() -> void:
 	set_players_active(false)
-	$ProjectileManager.quiesce()
+	level.projectiles.quiesce()
+	level.control.quiesce()
 	spawner.quiesce()
 	($NetworkUnloader as NetworkUnloader).register_as_ceased()

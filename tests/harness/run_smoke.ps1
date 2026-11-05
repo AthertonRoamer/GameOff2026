@@ -4,6 +4,7 @@ param(
 	[switch]$Noray,
 	[switch]$Rollback, #use RollbackGameManager and the probe game, and check every peer starts on the scheduled tick
 	[switch]$Demo, #run the rollback demo: the first client shoots and moves, then every peer's view of every player must agree
+	[switch]$NightShift, #the real game (game/game.tscn): the client works the door console from the lobby-checked spot; every peer must agree on doors (and the tick they changed on), flashlight and interact
 	[switch]$Hold, #the client and then the host hold each weapon for 3 s; prints every shot event each saw (diagnostic, no pass/fail on cadence)
 	[switch]$Combat, #the first client kills the host's player with projectiles; every peer must see it die and respawn at the same place
 	[switch]$Moving, #shooter and target run side by side and the shooter fires at where it sees the target; reports how many shots hit
@@ -32,6 +33,7 @@ if ($Demo -or $Leave -or $Kill -or $Combat -or $Hold) { $common += "--demo" }
 if ($Moving) { $common += "--moving" }
 if ($Combat) { $common += "--combat" }
 if ($Hold) { $common += "--hold" }
+if ($NightShift) { $common += "--night-shift" }
 if ($Leave) { $common += "--leave" }
 if ($Kill) { $common += "--kill" }
 $common += @("--players", ($Clients + 1), "--rounds", $Rounds)
@@ -112,6 +114,26 @@ if ($Rollback) {
 	}
 }
 
+
+if ($NightShift) {
+	$reports = @()
+	foreach ($file in (@($hostOut) + $clientOuts[0])) {
+		$m = (Select-String -Path $file -Pattern "NS_RESULT doors=(\w+) changes=(\{.*\}) players=\[(.*)\]").Matches
+		if ($m.Count -eq 0) { "NIGHT SHIFT: $(Split-Path $file -Leaf) sent no report"; $ok = $false; continue }
+		$reports += ,@($m[0].Groups[1].Value, $m[0].Groups[2].Value, $m[0].Groups[3].Value)
+		"NIGHT SHIFT: $(Split-Path $file -Leaf): doors $($m[0].Groups[1].Value) changes $($m[0].Groups[2].Value)"
+		"NIGHT SHIFT:   players $($m[0].Groups[3].Value)"
+	}
+	if ($reports.Count -eq 2) {
+		$expected = "COOC" + ("O" * 20)
+		foreach ($r in $reports) { if ($r[0] -ne $expected) { "NIGHT SHIFT: doors should be $expected (door 1, asked for from the spawn, must stay open)"; $ok = $false } }
+		if ($reports[0][1] -ne $reports[1][1]) { "NIGHT SHIFT: the doors changed on different ticks"; $ok = $false } else { "NIGHT SHIFT: doors changed on the same tick everywhere" }
+		$clientId = ((Select-String -Path $clientOuts[0] -Pattern "DEMO_POS|GAME_STARTED me=(\d+)").Matches | Select-Object -First 1).Groups[1].Value
+		foreach ($r in $reports) {
+			if ($r[2] -notmatch "${clientId}:flash=false,interacting=true,torso=torso_interact") { "NIGHT SHIFT: the client's player should show flashlight off and the interact animation (id $clientId)"; $ok = $false }
+		}
+	}
+}
 function Get-Positions($file, $label) {
 	$line = (Select-String -Path $file -Pattern "$label me=(\d+) (.*)$").Matches
 	if ($line.Count -eq 0) { return $null }

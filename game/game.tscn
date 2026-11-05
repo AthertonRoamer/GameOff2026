@@ -7,12 +7,19 @@
 [ext_resource type="PackedScene" path="res://game/escape_menu/escape_menu.tscn" id="5_escape"]
 [ext_resource type="PackedScene" uid="uid://cjgvd6bswi4xv" path="res://game/player/player.tscn" id="6_player"]
 [ext_resource type="Script" uid="uid://c524g0r61fjy5" path="res://game/player_setup/player_setup.gd" id="7_setup"]
-[ext_resource type="Script" uid="uid://dxvlk0rkeiwfe" path="res://multiplayer_template/rollback/projectile_manager.gd" id="8_projectiles"]
+[ext_resource type="PackedScene" path="res://game/level/night_shift_level.tscn" id="8_level"]
 [ext_resource type="PackedScene" path="res://game/player_hud/player_hud.tscn" id="9_hud"]
+[ext_resource type="Script" path="res://game/debug/debug_remover.gd" id="10_debug"]
 
 [node name="Game" type="Node2D" unique_id=2090356720]
 script = ExtResource("1_game")
 debug_respawn_dead_players = true
+
+[node name="DebugRemover" type="Node" parent="."]
+script = ExtResource("10_debug")
+
+[node name="Level" parent="." instance=ExtResource("8_level")]
+can_toggle_darkness = true
 
 [node name="Spawner" type="Node" parent="." unique_id=335399860]
 script = ExtResource("2_spawner")
@@ -21,13 +28,8 @@ player_scene = ExtResource("6_player")
 [node name="LagCompensator" type="Node2D" parent="." unique_id=26346272]
 script = ExtResource("4_lagcomp")
 
-[node name="ProjectileManager" type="Node2D" parent="." unique_id=524177898]
-script = ExtResource("8_projectiles")
-
-[node name="PlayerSetup" type="Node" parent="." unique_id=401239898 node_paths=PackedStringArray("lag_compensator", "projectile_manager")]
+[node name="PlayerSetup" type="Node" parent="." unique_id=401239898]
 script = ExtResource("7_setup")
-lag_compensator = NodePath("../LagCompensator")
-projectile_manager = NodePath("../ProjectileManager")
 
 [node name="NetworkUnloader" type="Node" parent="." unique_id=1938974698]
 script = ExtResource("3_unloader")

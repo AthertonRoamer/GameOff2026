@@ -1,14 +1,19 @@
 extends CanvasLayer
 
 ##The pixel art shader (pixel_sprite.gdshader) over the whole game: the finished picture, HUD and menus included, is redrawn in big square pixels.
-##It is an autoload (project settings, named PixelArt), so it covers every scene. P turns it on and off.
+##It is an autoload (project settings, named PixelArt), so it covers every scene. P turns it on and off while can_toggle_pixel_art is on.
 
 const SHADER : Shader = preload("res://game/effects/pixel_sprite.gdshader")
 
 signal toggled(on : bool)
 
+const DEBUG_SETTINGS : Array[StringName] = [&"can_toggle_pixel_art"] #turned off by DebugRemover (it also strips autoloads)
+
 @export var enabled : bool = true : set = set_enabled
 @export var pixel_size : float = 3.0 : set = set_pixel_size #one big pixel, in screen pixels
+
+@export_group("Debug")
+@export var can_toggle_pixel_art : bool = true #P turns the pass on and off
 
 var _rect : ColorRect
 var _material : ShaderMaterial
@@ -28,7 +33,7 @@ func _ready() -> void:
 
 
 func _input(event : InputEvent) -> void:
-	if event is InputEventKey and event.pressed and not event.echo and (event as InputEventKey).keycode == KEY_P:
+	if can_toggle_pixel_art and event is InputEventKey and event.pressed and not event.echo and (event as InputEventKey).keycode == KEY_P:
 		enabled = not enabled
 
 

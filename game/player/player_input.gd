@@ -8,6 +8,8 @@ var run : bool = false #shift held
 var aiming : bool = false #right mouse held: the gun is drawn
 var slot_select : int = -1
 var slot_delta : int = 0
+var flashlight_on : bool = true #a state, not a press: the flashlight action flips it. Sent with the input, so every peer sees the beam
+var interacting : bool = false #at a console with its screen up (set by PlayerInteractor, not gathered)
 var active : bool = false
 
 
@@ -19,6 +21,8 @@ func _gather() -> void:
 	aiming = active and Input.is_action_pressed("player_aim")
 	slot_select = _gather_slot_select() if active else -1
 	slot_delta = _gather_slot_delta() if active else 0
+	if active and Input.is_action_just_pressed("player_flashlight"):
+		flashlight_on = not flashlight_on
 
 
 func _gather_slot_select() -> int:

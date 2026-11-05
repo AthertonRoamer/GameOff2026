@@ -1,30 +1,23 @@
 [gd_scene format=3 uid="uid://cknf84mgc06b3"]
 
 [ext_resource type="Script" uid="uid://dj2aqjnp8u7ef" path="res://game/playground/playground_map.gd" id="1_playground"]
-[ext_resource type="PackedScene" uid="uid://bq6ro63p8oq1b" path="res://night_shift/environment/facility_map.tscn" id="2_map"]
-[ext_resource type="Script" uid="uid://dxvlk0rkeiwfe" path="res://multiplayer_template/rollback/projectile_manager.gd" id="3_projectiles"]
+[ext_resource type="PackedScene" path="res://game/level/night_shift_level.tscn" id="2_level"]
+[ext_resource type="PackedScene" path="res://game/player_hud/player_hud.tscn" id="3_hud"]
 
 [node name="PlaygroundMap" type="Node2D" unique_id=625759709]
 script = ExtResource("1_playground")
 
-[node name="FacilityMap" parent="." unique_id=1299632475 instance=ExtResource("2_map")]
+[node name="Level" parent="." unique_id=1808838863 instance=ExtResource("2_level")]
+can_toggle_darkness = true
 
-[node name="ProjectileLayer" type="CanvasLayer" parent="." unique_id=1127179505]
-follow_viewport_enabled = true
-
-[node name="ProjectileManager" type="Node2D" parent="ProjectileLayer" unique_id=2097749111]
-script = ExtResource("3_projectiles")
-world_collision_mask = 10
-
-[node name="Darkness" type="CanvasModulate" parent="." unique_id=1330488076]
-color = Color(0.21988139, 0.23190084, 0.3095929, 1)
+[node name="PlayerHud" parent="." unique_id=1286703553 instance=ExtResource("3_hud")]
 
 [node name="Hint" type="CanvasLayer" parent="." unique_id=820722179]
-layer = 30
+layer = 10
 
 [node name="Label" type="Label" parent="Hint" unique_id=858107412]
 offset_left = 16.0
-offset_top = 12.0
+offset_top = 48.0
 offset_right = 520.0
-offset_bottom = 38.0
-text = "WASD move   shift run   right mouse draw + aim   left mouse fire   E use panel   F flashlight   N darkness"
+offset_bottom = 74.0
+text = "WASD move   shift run   right mouse draw + aim   left mouse fire   E use panel   F flashlight   N darkness   P pixel art"

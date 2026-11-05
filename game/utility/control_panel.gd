@@ -2,8 +2,8 @@ class_name ControlPanel
 extends StaticBody2D
 
 ##A utility room's control console, seen from above: a wall-height console with a lit screen, drawn in code in the game's cel style (flat tones,
-##hard edges, ink outline). It is solid, glows a little in the dark, and knows whether a player is close enough to use it. Using it is the
-##game's job: the playground calls is_in_reach() and opens the screen that goes with the console (see DoorMapScreen).
+##hard edges, ink outline). It is solid, glows a little in the dark, and is an interactable (see PlayerInteractor): in reach, E opens its `screen`.
+##UtilityConsoles places one in each utility room and gives it the screen for the room's `function`.
 ##The console faces down the screen (the operator stands below it). Sizes are in world pixels, 44 per metre.
 
 const INK : Color = Color("#06080c")
@@ -22,11 +22,15 @@ const GREEN : Color = Color("#4be38a")
 
 static var _glow_texture : GradientTexture2D
 
+var function : String = "" #the utility room's function, like "doors"
+var screen : Control #what using the console opens: a full-screen Control with open(player), close() and a `closed` signal
+
 var _light : PointLight2D
 var _time : float = 0.0
 
 
 func _ready() -> void:
+	add_to_group(PlayerInteractor.GROUP)
 	collision_layer = 1 #solid for players, not a wall for bullets
 	collision_mask = 0
 	var shape : CollisionShape2D = CollisionShape2D.new()
@@ -49,8 +53,20 @@ func _process(delta : float) -> void:
 	queue_redraw()
 
 
-func is_in_reach(world_position : Vector2) -> bool:
-	return global_position.distance_to(world_position) <= reach_m * 44.0
+func is_in_reach(world_position : Vector2, slack : float = 1.0) -> bool:
+	return global_position.distance_to(world_position) <= reach_m * 44.0 * slack
+
+
+func get_prompt() -> String:
+	return "E   use the %s panel" % title.to_lower()
+
+
+##Opens the console's screen for this player and returns it, so the interactor holds the player here until it closes.
+func interact(player : Player) -> Control:
+	if screen == null:
+		return null
+	screen.open(player)
+	return screen
 
 
 func _draw() -> void:

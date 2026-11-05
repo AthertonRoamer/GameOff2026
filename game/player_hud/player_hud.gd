@@ -5,6 +5,7 @@ extends CanvasLayer
 
 @onready var health_bar : ProgressBar = $HealthBar
 @onready var slots_box : HBoxContainer = $InventorySlots
+@onready var interact_prompt : Label = $InteractPrompt #"E   use the ..." while a console is in reach
 
 var _slot_panels : Array[PanelContainer] = []
 var _slot_icons : Array[TextureRect] = []
@@ -32,6 +33,7 @@ func bind_player(player : Player) -> void:
 	health_bar.max_value = player.starting_health
 	health_bar.value = player.health
 	player.health_changed.connect(func(h : float) -> void: health_bar.value = h)
+	(player.get_node("Interactor") as PlayerInteractor).prompt_changed.connect(_show_prompt) #by node: the player is not in the tree yet, so its @onready vars are unset
 	call_deferred("_bind_inventory", player) #player hasn't entered the tree yet, so Inventory._ready() hasn't populated slots
 
 
@@ -40,6 +42,11 @@ func _bind_inventory(player : Player) -> void:
 	_refresh_icons()
 	_highlight_slot(_inventory.active_slot)
 	_inventory.active_slot_changed.connect(_highlight_slot)
+
+
+func _show_prompt(text : String) -> void:
+	interact_prompt.text = text
+	interact_prompt.visible = text != ""
 
 
 func _refresh_icons() -> void:
