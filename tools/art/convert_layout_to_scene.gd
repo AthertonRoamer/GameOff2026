@@ -1,7 +1,8 @@
 extends SceneTree
 
-## One-time conversion: builds facility_map.tscn (rooms, doors, vents and the door control panel as nodes) from the old facility_layout.json, keeping the
-## order of the rooms and doors, so door numbers stay the same. After this the scene is what you edit, and the JSON is only history.
+## One-time conversion (history, do not run it again: it overwrites the scene, and the rooms have been edited since): builds facility_map.tscn (rooms,
+## doors, vents and the door control panel as nodes) from the old facility_layout.json, keeping the order of the rooms and doors, so door numbers stay
+## the same. After this the scene is what you edit, and the JSON is only history. (The scene has no tile layers: FacilityMap makes them itself.)
 ##   godot --headless --path . --script res://tools/art/convert_layout_to_scene.gd
 
 const LAYOUT : String = "res://night_shift/environment/facility_layout.json"
@@ -16,13 +17,6 @@ func _init() -> void:
 	var root : FacilityMap = FacilityMap.new()
 	root.name = "FacilityMap"
 	root.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-	var tile_set : TileSet = load(FacilityTileSet.TILESET_PATH)
-	for layer_name : String in ["Floors", "Shadows", "Walls"]:
-		var layer : TileMapLayer = TileMapLayer.new()
-		layer.name = layer_name
-		layer.tile_set = tile_set
-		layer.scale = Vector2.ONE * FacilityTileSet.ART_SCALE
-		_add(root, layer, root)
 	var rooms_node : Node2D = _add_node(root, "Rooms")
 	var doors_node : Node2D = _add_node(root, "Doors")
 	var vents_node : Node2D = _add_node(root, "Vents")
@@ -40,15 +34,12 @@ func _init() -> void:
 		_add(rooms_node, room, root)
 		var number : int = 1
 		for r : Array in data["rects"]:
-			var shape_node : CollisionShape2D = CollisionShape2D.new()
-			shape_node.name = "Rect%d" % number
-			var shape : RectangleShape2D = RectangleShape2D.new()
-			shape.size = Vector2((int(r[2]) - int(r[0]) + 1) * TILE, (int(r[3]) - int(r[1]) + 1) * TILE)
-			shape_node.shape = shape
-			shape_node.position = Vector2((int(r[0]) + int(r[2]) + 1) / 2.0 * TILE, (int(r[1]) + int(r[3]) + 1) / 2.0 * TILE)
-			_add(room, shape_node, root)
+			var rect : FacilityRoomRect = FacilityRoomRect.new()
+			rect.name = "Rect%d" % number
+			rect.position = Vector2(int(r[0]) * TILE, int(r[1]) * TILE)
+			rect.size = Vector2((int(r[2]) - int(r[0]) + 1) * TILE, (int(r[3]) - int(r[1]) + 1) * TILE)
+			_add(room, rect, root)
 			number += 1
-
 	for data : Dictionary in layout["doors"]:
 		var r : Array = data["rect"]
 		var cells : Vector2 = Vector2(int(r[2]) - int(r[0]) + 1, int(r[3]) - int(r[1]) + 1)

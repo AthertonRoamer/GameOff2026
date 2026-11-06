@@ -4,15 +4,15 @@ extends Node2D
 
 ##Facility 9. The map is a scene you edit in the editor, and this node is what the rest of the game asks about it.
 ##
-##  Rooms   FacilityRoom nodes: each one's rectangles are its floor (drag the CollisionShape2D handles, they snap to the 11 px grid)
+##  Rooms   FacilityRoom nodes: each one's FacilityRoomRect children are its floor (select one and drag its handles, they snap to the 11 px grid)
 ##  Doors   FacilityDoor scenes dragged into the walls between rooms
 ##  Vents   Marker2D nodes: the top left corner of a 2 x 2 cell (0.5 m) grille
 ##  Props   anything that stands on the floor (control panels), y-sorted
 ##  Actors  where players and other moving things are added, y-sorted
-##  Floors, Walls, Shadows   tile layers the map fills in itself from the rooms and doors, in the editor as well as in the game: every cell of a
-##          room is floor, every empty cell touching a floor cell is wall (so rooms need a one cell gap), and the floor beside a wall gets a soft
-##          shadow. They are not saved with the scene (they are rebuilt whenever a room or door changes), edit the rooms and doors instead.
-##          The Rebuild button below redoes them by hand.
+##  Floors, Walls, Shadows   tile layers the map makes and fills in itself from the rooms and doors, in the editor as well as in the game: every cell of
+##          a room is floor, every empty cell touching a floor cell is wall (so rooms need a one cell gap), and the floor beside a wall gets a soft
+##          shadow. They are not part of the scene file (they are made when it loads and rebuilt a moment after any room or door changes, and can
+##          not be selected in the editor), so resizing a room never touches the art. The Rebuild button below redoes them by hand.
 ##
 ##Physics layers: walls are on layer 2 (FacilityTileSet.WORLD_LAYER), closed doors on layer 4 (DOOR_LAYER). A player body should have
 ##a collision mask of 2 | 8 = 10 so walls and doors stop it, and a projectile's world mask should be 2 so only walls stop a bullet.
@@ -36,9 +36,9 @@ var vents : Array[Vector2i] = []
 var _signature : int = 0 #editor: what the rooms and doors looked like when the tiles were last built
 var _changed_for : float = 0.0
 
-@onready var floors : TileMapLayer = $Floors
-@onready var shadows : TileMapLayer = $Shadows
-@onready var walls : TileMapLayer = $Walls
+var floors : TileMapLayer #made in _ready (see _make_layers), not part of the scene file
+var shadows : TileMapLayer
+var walls : TileMapLayer
 @onready var rooms_node : Node2D = $Rooms
 @onready var doors_node : Node2D = $Doors
 @onready var vents_node : Node2D = $Vents
@@ -47,6 +47,7 @@ var _changed_for : float = 0.0
 
 
 func _ready() -> void:
+	_make_layers()
 	set_process(Engine.is_editor_hint()) #only the editor watches the rooms and doors for changes
 	if not Engine.is_editor_hint():
 		RenderingServer.set_default_clear_color(void_color) #the engine's default grey would show wherever there is no tile
@@ -69,15 +70,24 @@ func _process(delta : float) -> void:
 		build()
 
 
-func _notification(what : int) -> void:
-	if not Engine.is_editor_hint() or floors == null:
-		return
-	if what == NOTIFICATION_EDITOR_PRE_SAVE: #the tiles are derived from the rooms, so they are not kept in the scene file
-		floors.clear()
-		walls.clear()
-		shadows.clear()
-	elif what == NOTIFICATION_EDITOR_POST_SAVE:
-		build()
+##The three tile layers are made here, first among the children (so they draw under everything else), and are not given an owner, so they are never
+##saved into the scene file and the editor does not let you select them. Any saved ones from an older version of the scene are replaced.
+func _make_layers() -> void:
+	var tile_set : TileSet = FacilityTileSet.shared() #loaded once per process (see WarmUp)
+	var index : int = 0
+	for layer_name : String in ["Floors", "Shadows", "Walls"]:
+		var old : Node = get_node_or_null(layer_name)
+		if old != null:
+			remove_child(old)
+			old.free()
+		var layer : TileMapLayer = TileMapLayer.new()
+		layer.name = layer_name
+		layer.tile_set = tile_set
+		layer.scale = Vector2.ONE * FacilityTileSet.ART_SCALE #the tiles are drawn at 4x resolution, like the character sprites
+		add_child(layer)
+		move_child(layer, index)
+		index += 1
+		set(layer_name.to_lower(), layer)
 
 
 ##Reads the rooms and doors, fills in the floor, wall and shadow layers, and works out which rooms each door joins.
@@ -85,10 +95,7 @@ func build() -> void:
 	_collect_rooms()
 	_collect_doors()
 	_compute_walls()
-	var tile_set : TileSet = FacilityTileSet.shared() #loaded once per process (see WarmUp)
 	for layer : TileMapLayer in [floors, shadows, walls]:
-		layer.tile_set = tile_set
-		layer.scale = Vector2.ONE * FacilityTileSet.ART_SCALE #the tiles are drawn at 4x resolution, like the character sprites
 		layer.clear()
 	_paint_floors()
 	_paint_walls()
@@ -168,14 +175,22 @@ func _door_nodes() -> Array[FacilityDoor]:
 func _collect_rooms() -> void:
 	rooms.clear()
 	floor_cells.clear()
+	var clashes : Dictionary = {} #room id -> another room whose floor it shares
 	for room : FacilityRoom in _room_nodes():
 		var rects : Array[Rect2i] = room.cell_rects(self)
 		for rect : Rect2i in rects:
 			for y in range(rect.position.y, rect.end.y):
 				for x in range(rect.position.x, rect.end.x):
-					floor_cells[Vector2i(x, y)] = room.room_id()
+					var cell : Vector2i = Vector2i(x, y)
+					if floor_cells.has(cell) and floor_cells[cell] != room.room_id():
+						clashes[room.room_id()] = floor_cells[cell]
+						clashes[floor_cells[cell]] = room.room_id()
+					floor_cells[cell] = room.room_id()
 		var label : String = room.display_name if room.display_name != "" else room.room_id().capitalize()
 		rooms[room.room_id()] = {"name": label, "kind": room.kind_name(), "function": room.function_name(), "rects": rects, "exterior": false}
+	if Engine.is_editor_hint(): #the editor says so on a room that overlaps another
+		for room : FacilityRoom in _room_nodes():
+			room.set_clash(clashes.get(room.room_id(), ""))
 
 
 ##Each door's cells join the room on its north or west side (so the floor under the door matches), and the door learns both its rooms.
@@ -195,6 +210,8 @@ func _collect_doors() -> void:
 			second = Vector2i(cells.end.x, cells.position.y + 1)
 		door.room_a = room_cells.get(first, "")
 		door.room_b = room_cells.get(second, "")
+		if Engine.is_editor_hint(): #the editor says so on a door that is not between two different rooms
+			door.set_problem("" if door.room_a != "" and door.room_b != "" and door.room_a != door.room_b else "This door is not in the wall between two different rooms. Drag it onto the one cell gap between them.")
 		door.door_index = index
 		var outside : bool = false
 		for side : String in [door.room_a, door.room_b]:
@@ -258,9 +275,8 @@ func _layout_signature() -> int:
 	var parts : PackedStringArray = []
 	for room : FacilityRoom in _room_nodes():
 		parts.append("%s %s %d %d" % [room.name, room.position, room.kind, room.function])
-		for child : Node in room.get_children():
-			if child is CollisionShape2D and (child as CollisionShape2D).shape is RectangleShape2D:
-				parts.append("%s %s" % [(child as CollisionShape2D).position, ((child as CollisionShape2D).shape as RectangleShape2D).size])
+		for rect : FacilityRoomRect in room.rects():
+			parts.append("%s %s" % [rect.position, rect.size])
 	for door : FacilityDoor in _door_nodes():
 		parts.append("%s %s %s" % [door.name, door.position, door.horizontal])
 	for child : Node in vents_node.get_children():

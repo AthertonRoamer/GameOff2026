@@ -17,11 +17,12 @@ const LENGTH_PX : float = 44.0 #a gate is one metre long and one wall (a quarter
 
 @export var horizontal : bool = true : set = set_horizontal #true: the gate sits in a horizontal wall and is 4 cells wide, false: vertical wall, 4 cells tall
 @export var state : State = State.CLOSED : set = set_state
-@export var exterior : bool = false : set = set_exterior #heavier door with hazard stripes, leads outside (the map sets it from the rooms)
+var exterior : bool = false : set = set_exterior #heavier door with hazard stripes, leads outside. The map works it out from the rooms, so it is not saved
 
 var door_index : int = -1 #its place among the Doors children, set by the map. Every peer loads the same scene, so the index names the same door everywhere
 var room_a : String = "" #the room to the north (horizontal) or west (vertical), set by the map
 var room_b : String = ""
+var problem : String = "" #set by the map when the door is not between two different rooms, shown as a warning on the node in the editor
 
 @onready var _sprite : Sprite2D = $Sprite
 @onready var _shape : CollisionShape2D = $Shape
@@ -31,6 +32,16 @@ var room_b : String = ""
 func _ready() -> void:
 	_apply_orientation()
 	_apply()
+
+
+func set_problem(text : String) -> void:
+	if text != problem:
+		problem = text
+		update_configuration_warnings()
+
+
+func _get_configuration_warnings() -> PackedStringArray:
+	return PackedStringArray([problem]) if problem != "" else PackedStringArray()
 
 
 func set_horizontal(value : bool) -> void:

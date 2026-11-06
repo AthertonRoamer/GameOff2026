@@ -1,8 +1,8 @@
-[gd_resource type="TileSet" format=3]
+[gd_resource type="TileSet" format=3 uid="uid://byrjlb41mftu3"]
 
-[ext_resource type="Texture2D" path="res://night_shift/environment/art/floors.png" id="1_63wl1"]
-[ext_resource type="Texture2D" path="res://night_shift/environment/art/walls.png" id="2_t428s"]
-[ext_resource type="Texture2D" path="res://night_shift/environment/art/shadows.png" id="3_6hfrb"]
+[ext_resource type="Texture2D" uid="uid://c8ybrncsjglod" path="res://night_shift/environment/art/floors.png" id="1_63wl1"]
+[ext_resource type="Texture2D" uid="uid://bf2cb5q0e1qb3" path="res://night_shift/environment/art/walls.png" id="2_t428s"]
+[ext_resource type="Texture2D" uid="uid://dbqyiyust84sj" path="res://night_shift/environment/art/shadows.png" id="3_6hfrb"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_k5h3v"]
 texture = ExtResource("1_63wl1")

@@ -62,5 +62,25 @@ func _ready() -> void:
 			check(room != "" and map.rooms[room]["function"] == (node as ControlPanel).function, "console %s stands in a room whose function is %s (in %s)" % [node.name, (node as ControlPanel).function, room])
 	check(panels > 0, "there is at least one console (%d)" % panels)
 
+	#resizing a room only changes its rectangle: the floor, walls and shadows follow, nothing else is touched
+	check(map.floors.owner == null and map.walls.owner == null and map.shadows.owner == null, "the tile layers are made by the map, not part of the scene file")
+	var archive : FacilityRoom = map.rooms_node.get_node("archive")
+	var rect : FacilityRoomRect = archive.rects()[0]
+	var original_size : Vector2 = rect.size
+	var rows : int = roundi(rect.size.y / FacilityTileSet.TILE)
+	var floor_before : int = map.floor_cells.size()
+	var walls_before : int = map.wall_cells.size()
+	rect.size = original_size - Vector2(2.0 * FacilityTileSet.TILE, 0.0) #two cells narrower
+	map.build()
+	check(map.floor_cells.size() == floor_before - 2 * rows, "a room two cells narrower loses two columns of floor (%d -> %d)" % [floor_before, map.floor_cells.size()])
+	check(map.wall_cells.size() < walls_before, "the walls are rebuilt around the smaller room (%d -> %d)" % [walls_before, map.wall_cells.size()])
+	check(map.floors.get_used_cells().size() == map.floor_cells.size() and map.walls.get_used_cells().size() == map.wall_cells.size(), "the tile layers match the resized room")
+	rect.size = Vector2(50.0, 50.0)
+	rect.position = Vector2(rect.position.x + 3.0, rect.position.y + 4.0)
+	rect.snap_to_grid()
+	check(is_equal_approx(rect.size.x, 55.0) and is_equal_approx(rect.size.y, 55.0) and is_equal_approx(fmod(rect.position.x, FacilityTileSet.TILE), 0.0) and is_equal_approx(fmod(rect.position.y, FacilityTileSet.TILE), 0.0), "a rectangle dragged off the grid snaps to whole cells")
+	rect.size = original_size
+	map.build()
+	check(map.floor_cells.size() == floor_before and map.wall_cells.size() == walls_before, "putting the size back gives the same floor and walls")
 	print("RESULT: %s" % ("PASS" if failures == 0 else "FAIL (%d)" % failures))
 	get_tree().quit(0 if failures == 0 else 1)

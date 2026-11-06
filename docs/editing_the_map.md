@@ -14,7 +14,7 @@ The facility is a scene: `night_shift/environment/facility_map.tscn`. Open it, l
 | `Actors` | where players are added at runtime | leave it |
 | `Floors`, `Walls`, `Shadows` | tile layers the map **fills in itself** from the rooms and doors, in the editor and in the game | do not paint them; they are not saved. There is a *Rebuild* button on the `FacilityMap` node if you want to force it |
 
-Rooms need a one cell gap between them: every empty cell touching a floor cell becomes a wall.
+Rooms need a one cell gap between them: every empty cell touching a floor cell becomes a wall. The editor tells you when something is wrong: a room that overlaps another shows overlaps <room> in red and a warning triangle in the scene tree, and so does a door that is not in the wall between two different rooms.
 
 ## Consoles
 A console is a `ControlPanel` scene (`game/utility/control_panel.tscn`; `door_control_panel.tscn` inherits it and sets `title`, `function = "doors"` and
