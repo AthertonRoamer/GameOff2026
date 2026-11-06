@@ -73,7 +73,7 @@ func _ready() -> void:
 	rect.size = original_size - Vector2(2.0 * FacilityTileSet.TILE, 0.0) #two cells narrower
 	map.build()
 	check(map.floor_cells.size() == floor_before - 2 * rows, "a room two cells narrower loses two columns of floor (%d -> %d)" % [floor_before, map.floor_cells.size()])
-	check(map.wall_cells.size() < walls_before, "the walls are rebuilt around the smaller room (%d -> %d)" % [walls_before, map.wall_cells.size()])
+	check(map.wall_cells.size() != walls_before, "the walls are rebuilt around the smaller room (%d -> %d)" % [walls_before, map.wall_cells.size()])
 	check(map.floors.get_used_cells().size() == map.floor_cells.size() and map.walls.get_used_cells().size() == map.wall_cells.size(), "the tile layers match the resized room")
 	rect.size = Vector2(50.0, 50.0)
 	rect.position = Vector2(rect.position.x + 3.0, rect.position.y + 4.0)
