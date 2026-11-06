@@ -10,10 +10,20 @@
 [ext_resource type="PackedScene" path="res://game/level/night_shift_level.tscn" id="8_level"]
 [ext_resource type="PackedScene" path="res://game/player_hud/player_hud.tscn" id="9_hud"]
 [ext_resource type="Script" path="res://game/debug/debug_remover.gd" id="10_debug"]
+[ext_resource type="Script" path="res://game/roles/role.gd" id="11_role"]
+[ext_resource type="Resource" path="res://game/roles/medic.tres" id="12_medic"]
+[ext_resource type="Resource" path="res://game/roles/gunman.tres" id="13_gunman"]
+[ext_resource type="Resource" path="res://game/roles/engineer.tres" id="14_engineer"]
+[ext_resource type="Resource" path="res://game/roles/scout.tres" id="15_scout"]
+[ext_resource type="Resource" path="res://game/roles/infiltrator.tres" id="16_infiltrator"]
 
 [node name="Game" type="Node2D" unique_id=2090356720]
 script = ExtResource("1_game")
+guard_roles = Array[ExtResource("11_role")]([ExtResource("12_medic"), ExtResource("13_gunman"), ExtResource("14_engineer"), ExtResource("15_scout")])
+intruder_roles = Array[ExtResource("11_role")]([ExtResource("16_infiltrator")])
 debug_respawn_dead_players = true
+debug_show_role_rings = true
+debug_show_team_rings = true
 
 [node name="DebugRemover" type="Node" parent="."]
 script = ExtResource("10_debug")

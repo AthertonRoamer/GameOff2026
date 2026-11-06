@@ -22,6 +22,8 @@ extends CharacterBody2D
 
 var lag_compensator : LagCompensator
 var projectile_manager : ProjectileManager
+var role : Role #public, the same on every peer. Null for a player spawned without one (the playground): the exported stats above are used
+var team : int = Team.UNKNOWN #secret: only set where this peer may know it. Never use it in simulated gameplay, see Team
 var _teleport_to : Variant = null #a position the next tick moves the player to, see teleport()
 
 var player_name : String = "":

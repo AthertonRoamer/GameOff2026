@@ -25,6 +25,14 @@ $unit = (Select-String -Path "$env:TEMP\lagtest.out" -Pattern "RESULT: PASS" -Qu
 $results["lag compensator unit test"] = $unit
 "{0,-62} {1}" -f "lag compensator unit test", $(if ($unit) { "PASS" } else { "FAIL" })
 
+# unit test of role and team assignment
+$p = Start-Process $Godot -ArgumentList "--headless", "--path", "`"$project`"", "res://tests/unit/test_role_assigner.tscn" -NoNewWindow -PassThru `
+	-RedirectStandardOutput "$env:TEMP\roletest.out" -RedirectStandardError "$env:TEMP\roletest.err"
+if (-not $p.WaitForExit(90000)) { Stop-Process -Id $p.Id -Force }
+$unit = (Select-String -Path "$env:TEMP\roletest.out" -Pattern "RESULT: PASS" -Quiet)
+$results["role assigner unit test"] = $unit
+"{0,-62} {1}" -f "role assigner unit test", $(if ($unit) { "PASS" } else { "FAIL" })
+
 Add-SmokeResult "original demo (host, lobby, join, game, end)" (& $smoke -Godot $Godot)
 Add-SmokeResult "all peers start on the same tick (2 players)" (& $smoke -Godot $Godot -Rollback)
 Add-SmokeResult "all peers start on the same tick (3 players)" (& $smoke -Godot $Godot -Rollback -Clients 2 -TimeoutSeconds 120)

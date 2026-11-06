@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="Role" format=3 uid="uid://dquliqopf7cqu"]
+
+[ext_resource type="Script" uid="uid://v21eutcpbg5f" path="res://game/roles/role.gd" id="1_role"]
+[ext_resource type="Script" uid="uid://bko7sp24yavq3" path="res://game/items/item.gd" id="2_item"]
+[ext_resource type="Resource" path="res://game/items/guns/pistol.tres" id="3_pistol"]
+[ext_resource type="Resource" path="res://game/items/guns/rifle.tres" id="4_rifle"]
+
+[resource]
+script = ExtResource("1_role")
+role_name = "Infiltrator"
+kind = 1
+color = Color(1, 0, 0, 1)
+starting_items = Array[ExtResource("2_item")]([ExtResource("3_pistol"), ExtResource("4_rifle")])
