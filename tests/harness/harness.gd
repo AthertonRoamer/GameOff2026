@@ -27,6 +27,8 @@ var rounds : int = 1 #how many games are played back to back in the same lobby
 var leave_mode : bool = false #the acting client leaves gracefully shortly after the game starts
 var kill_mode : bool = false #the runner kills the client process, the host must notice it is gone
 var game_id : String = ""
+var soak_seconds : float = 0.0 #--soak N: the real game runs N seconds with nothing scripted, to watch how sync holds up over time
+var soak_move : bool = false #--soak-move: during a soak every player walks a square (inputs keep changing) instead of standing still
 var main_node : Node
 
 
@@ -41,7 +43,11 @@ func _ready() -> void:
 	use_combat = args.has("--combat")
 	use_hold = args.has("--hold")
 	use_demo = args.has("--demo") or use_moving or use_combat or use_hold or OS.get_cmdline_args().has("--harness-demo")
-	use_night_shift = args.has("--night-shift") or OS.get_cmdline_args().has("--harness-night-shift")
+	idx = args.find("--soak")
+	if idx != -1 and idx + 1 < args.size():
+		soak_seconds = float(args[idx + 1])
+	soak_move = args.has("--soak-move")
+	use_night_shift = args.has("--night-shift") or OS.get_cmdline_args().has("--harness-night-shift") or soak_seconds > 0.0 #a soak plays the real game
 	use_rollback = args.has("--rollback") or use_demo or use_night_shift
 	idx = args.find("--join-port")
 	if idx != -1 and idx + 1 < args.size():
@@ -434,8 +440,28 @@ func night_shift_host() -> void:
 	night_shift_report(game, changes)
 
 
+##Soak: nothing scripted, the game just runs for soak_seconds. With soak_move this peer's player walks a square, a side a second, so its
+##input keeps changing; otherwise it stands still. Logs SOAK_DONE when the time is up.
+func soak_run() -> void:
+	var actions : Array[StringName] = [&"player_right", &"player_down", &"player_left", &"player_up"]
+	var started_msec : int = Time.get_ticks_msec()
+	var step : int = 0
+	while (Time.get_ticks_msec() - started_msec) / 1000.0 < soak_seconds:
+		if soak_move:
+			for action in actions:
+				Input.action_release(action)
+			Input.action_press(actions[step % actions.size()])
+			step += 1
+		await get_tree().create_timer(1.0).timeout
+	for action in actions:
+		Input.action_release(action)
+	log_line("SOAK_DONE seconds=%.0f move=%s %s" % [soak_seconds, soak_move, describe_game()])
+
+
 func run_host_scenario() -> void:
-	if use_night_shift:
+	if soak_seconds > 0.0:
+		await soak_run()
+	elif use_night_shift:
 		await night_shift_host()
 	elif leave_mode or kill_mode:
 		#a player disappears mid-game: the host must see it go, and its own game must keep running
@@ -469,7 +495,9 @@ func run_host_scenario() -> void:
 
 
 func run_client_scenario(mode : ClientMode) -> void:
-	if use_night_shift:
+	if soak_seconds > 0.0:
+		await soak_run()
+	elif use_night_shift:
 		await night_shift_client()
 	elif leave_mode:
 		await get_tree().create_timer(1.0).timeout
@@ -535,7 +563,7 @@ func run_client() -> void:
 				log_line("DONE")
 				get_tree().quit(0)
 				return
-		if not await wait_until(func(): return not mode.lobby.game_manager.in_game):
+		if not await wait_until(func(): return not mode.lobby.game_manager.in_game, TIMEOUT + soak_seconds): #the host ends the game when its soak is over
 			return fail("game never ended")
 		log_line("GAME_ENDED")
 	await get_tree().create_timer(1.0).timeout

@@ -13,6 +13,8 @@ param(
 	[switch]$Kill, #with -Demo: the first client's process is killed; the host must notice (after ENet times it out) and keep running
 	[int]$Clients = 1, #client processes. The first one acts, any others only observe (3 players = -Clients 2)
 	[int]$Rounds = 1, #games played back to back in the same lobby (use with -Demo)
+	[int]$SoakSeconds = 0, #the real game runs this long with nothing scripted (see run_soak.ps1). Set -TimeoutSeconds well above it
+	[switch]$SoakMove, #with -SoakSeconds: every player walks a square instead of standing still
 	[double]$LatencyMs = 0, #one-way delay added to the first client's connection through tests/harness/latency_proxy.py
 	[double]$JitterMs = 0,
 	[double]$LossPercent = 0
@@ -36,6 +38,8 @@ if ($Hold) { $common += "--hold" }
 if ($NightShift) { $common += "--night-shift" }
 if ($Leave) { $common += "--leave" }
 if ($Kill) { $common += "--kill" }
+if ($SoakSeconds -gt 0) { $common += @("--soak", $SoakSeconds) }
+if ($SoakMove) { $common += "--soak-move" }
 $common += @("--players", ($Clients + 1), "--rounds", $Rounds)
 $hostArgs = @("--path", "`"$project`"", $scene, "--", "--role", "host") + $common
 if ($NoLagComp) { $hostArgs += "--no-lagcomp" }
