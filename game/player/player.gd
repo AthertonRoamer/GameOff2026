@@ -11,6 +11,7 @@ extends CharacterBody2D
 @export var set_friction_from_slow_down_time : bool = true
 @export var name_display : Label
 @export var muzzle_distance : float = 28.0 #from the player's middle to the end of the barrel, in pixels: where bullets start and the flash is
+@export var arm_extra : float = 14.0 #how far the hands reach past the barrel end, in pixels: a wall closer than muzzle_distance + this lowers the gun
 @export var starting_items : Array[Item] = []
 
 @onready var input : PlayerInput = $Input
@@ -58,7 +59,7 @@ func _ready() -> void:
 func _process(_delta : float) -> void:
 	#The body no longer turns to face the mouse: the skin turns its own legs (to the way it moves) and torso (to the aim). The gun stays out.
 	var aim_direction : Vector2 = (input.aim - global_position).normalized() if input.aim != Vector2.ZERO else Vector2.ZERO
-	skin.update_visual(velocity, aim_direction, is_aiming(), is_running(), input.interacting)
+	skin.update_visual(velocity, aim_direction, is_aiming() and not is_barrel_blocked(aim_direction), is_running(), input.interacting)
 	if flashlight.on != input.flashlight_on: #the flashlight is part of the synced input, so this shows every player's beam as they set it
 		flashlight.on = input.flashlight_on
 
@@ -100,6 +101,16 @@ func is_running() -> bool:
 ##The gun is drawn while the aim button (right mouse) is held. A holstered gun cannot fire.
 func is_aiming() -> bool:
 	return input.aiming
+
+
+##True when a wall or a closed door is within reach of the gun arms in this direction: the gun is lowered (the skin shows the arms down) and cannot
+##fire, so the arms never poke through a wall or a door and no shot starts on the far side of one.
+func is_barrel_blocked(direction : Vector2) -> bool:
+	if direction.is_zero_approx() or not is_inside_tree():
+		return false
+	var to : Vector2 = global_position + direction.normalized() * (muzzle_distance + arm_extra)
+	var query : PhysicsRayQueryParameters2D = PhysicsRayQueryParameters2D.create(global_position, to, FacilityTileSet.WORLD_LAYER | FacilityTileSet.DOOR_LAYER)
+	return not get_world_2d().direct_space_state.intersect_ray(query).is_empty()
 
 
 func set_active(active : bool) -> void:

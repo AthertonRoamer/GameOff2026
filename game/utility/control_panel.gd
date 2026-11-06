@@ -49,8 +49,14 @@ func _process(delta : float) -> void:
 func _set_look(_value = null) -> void:
 	queue_redraw()
 
+##Close enough, and nothing solid (a wall or a closed door) in between: a console on the other side of a wall cannot be used.
 func is_in_reach(world_position : Vector2, slack : float = 1.0) -> bool:
-	return global_position.distance_to(world_position) <= reach_m * 44.0 * slack
+	if global_position.distance_to(world_position) > reach_m * 44.0 * slack:
+		return false
+	if not is_inside_tree():
+		return true
+	var query : PhysicsRayQueryParameters2D = PhysicsRayQueryParameters2D.create(world_position, global_position, FacilityTileSet.WORLD_LAYER | FacilityTileSet.DOOR_LAYER)
+	return get_world_2d().direct_space_state.intersect_ray(query).is_empty()
 
 
 func get_prompt() -> String:
