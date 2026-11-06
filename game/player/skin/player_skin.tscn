@@ -4,10 +4,34 @@
 [ext_resource type="Script" path="res://game/player/flashlight/flashlight.gd" id="2_flashlight"]
 [ext_resource type="Script" path="res://game/player/skin/muzzle_flash.gd" id="3_muzzle"]
 [ext_resource type="Script" path="res://game/player/skin/shoulder_lamp.gd" id="4_lamp"]
+[ext_resource type="Texture2D" path="res://game/player/flashlight/flashlight_cone.png" id="5_cone"]
+[ext_resource type="SpriteFrames" path="res://game/player/skin/guard/guard_frames.tres" id="6_frames"]
 
 [sub_resource type="Gradient" id="Gradient_shadow"]
 offsets = PackedFloat32Array(0, 1)
 colors = PackedColorArray(0, 0, 0, 0.45, 0, 0, 0, 0)
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_additive"]
+blend_mode = 1
+
+[sub_resource type="Gradient" id="Gradient_halo"]
+colors = PackedColorArray(1, 1, 1, 1, 0, 0, 0, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_muzzle"]
+gradient = SubResource("Gradient_halo")
+width = 128
+height = 128
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_halo"]
+gradient = SubResource("Gradient_halo")
+width = 256
+height = 256
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
 
 [sub_resource type="GradientTexture2D" id="GradientTexture2D_shadow"]
 gradient = SubResource("Gradient_shadow")
@@ -21,6 +45,8 @@ fill_to = Vector2(1, 0.5)
 texture_filter = 4
 scale = Vector2(0.25, 0.25)
 script = ExtResource("1_skin")
+sprite_frames = ExtResource("6_frames")
+sprite_data = "res://game/player/skin/guard/sprites.json"
 
 [node name="Shadow" type="Sprite2D" parent="."]
 position = Vector2(8, 12)
@@ -28,8 +54,14 @@ scale = Vector2(1.1, 0.95)
 texture = SubResource("GradientTexture2D_shadow")
 
 [node name="Legs" type="AnimatedSprite2D" parent="."]
+sprite_frames = ExtResource("6_frames")
+animation = &"legs_idle"
+offset = Vector2(0, -21.2)
 
 [node name="Torso" type="AnimatedSprite2D" parent="."]
+sprite_frames = ExtResource("6_frames")
+animation = &"torso_idle"
+offset = Vector2(0, -21.2)
 
 [node name="Lamp" type="Node2D" parent="Torso"]
 position = Vector2(42, -2)
@@ -40,8 +72,40 @@ position = Vector2(0, -8)
 rotation = -1.5707964
 script = ExtResource("2_flashlight")
 
+[node name="Cone" type="PointLight2D" parent="Torso/Lamp/Flashlight"]
+enabled = false
+color = Color(1, 0.9529412, 0.76862746, 1)
+energy = 1.7
+shadow_enabled = true
+shadow_filter = 1
+offset = Vector2(968, 0)
+texture = ExtResource("5_cone")
+texture_scale = 3.78125
+
+[node name="Halo" type="PointLight2D" parent="Torso/Lamp/Flashlight"]
+enabled = false
+color = Color(1, 0.9529412, 0.76862746, 1)
+energy = 0.55
+shadow_enabled = true
+shadow_filter = 1
+texture = SubResource("GradientTexture2D_halo")
+texture_scale = 2.2
+
 [node name="Muzzle" type="Node2D" parent="Torso"]
+material = SubResource("CanvasItemMaterial_additive")
 position = Vector2(0, -112)
 script = ExtResource("3_muzzle")
 
+[node name="Light" type="PointLight2D" parent="Torso/Muzzle"]
+enabled = false
+color = Color(1, 0.8156863, 0.47843137, 1)
+energy = 1.8
+shadow_enabled = true
+texture = SubResource("GradientTexture2D_muzzle")
+texture_scale = 8.25
+
 [node name="Full" type="AnimatedSprite2D" parent="."]
+visible = false
+sprite_frames = ExtResource("6_frames")
+animation = &"downed"
+offset = Vector2(0, -150.1)

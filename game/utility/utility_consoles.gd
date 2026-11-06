@@ -5,10 +5,10 @@ extends Node
 ##the screen each console opens on a canvas layer of its own. A new kind of console is one more screen script and one more entry here.
 ##Call build() once the map is built. The consoles are interactables (see PlayerInteractor); what their screens change goes through `control`.
 
-##function -> what its console is: the panel's title, the screen's script, and where the panel stands, from the top left of the room's first
-##rect (in world pixels: against the north wall, clear of the room's door).
+##function -> what its console is: the panel scene (which knows its title and the screen it opens, see control_panel.tscn) and where the panel stands,
+##from the top left of the room's first rect (in world pixels: against the north wall, clear of the room's door).
 const CONSOLES : Dictionary = {
-	"doors": {"title": "Door control", "screen": preload("res://game/utility/door_map_screen.gd"), "offset": Vector2(62.0, 22.0)},
+	"doors": {"panel": preload("res://game/utility/door_control_panel.tscn"), "offset": Vector2(62.0, 22.0)},
 }
 const SCREEN_LAYER : int = 20
 
@@ -49,13 +49,11 @@ func is_at_console(function : String, world_position : Vector2, slack : float = 
 
 func _add_console(room_id : String, function : String, spec : Dictionary) -> void:
 	var room : Rect2 = facility.room_rects_px(room_id)[0]
-	var panel : ControlPanel = ControlPanel.new()
-	panel.title = spec["title"]
-	panel.function = function
-	panel.name = "%sPanel" % String(spec["title"]).to_pascal_case()
+	var panel : ControlPanel = (spec["panel"] as PackedScene).instantiate()
+	panel.name = "%sPanel" % panel.title.to_pascal_case()
 	panel.position = room.position + spec["offset"]
-	var screen : Control = (spec["screen"] as GDScript).new()
-	screen.name = "%sScreen" % String(spec["title"]).to_pascal_case()
+	var screen : Control = panel.screen_scene.instantiate()
+	screen.name = "%sScreen" % panel.title.to_pascal_case()
 	screen.set("facility", facility)
 	screen.set("control", control)
 	_screen_layer.add_child(screen)

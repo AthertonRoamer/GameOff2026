@@ -1,41 +1,57 @@
+@tool
 class_name ShoulderLamp
 extends Node2D
 
 ##The flashlight as a thing on the character: a small, black, shoulder-mounted lamp, drawn in code in the same cel style as the character (flat tones
 ##with hard edges, no gradients: a base tone, one shaded band, one lit band, a thin ink outline). It sits under the torso at the right shoulder and
-##points forward (local up, like the sprite sheets). The Flashlight node is its child, at the lens, so the beam comes out of the lamp. The skin slides
-##the lamp between a holstered and a drawn position. Sizes are in the skin's own pixels (the skin is scaled 0.25).
+##points forward (local up, like the sprite sheets). The Flashlight node is its child, at the lens, so the beam comes out of the lamp. The skin moves
+##the lamp along the shoulder as the animation plays (night_shift_character.gd). The colours and size are exports, and the lamp is a tool script, so it
+##shows in the editor and can be restyled there. Sizes are in the skin's own pixels (the skin is scaled 0.25).
 
-const INK : Color = Color("#06080c")
-const BASE : Color = Color("#161b23")
-const SHADE : Color = Color("#0c0f15") #the cel shadow band, on the side away from the light
-const LIT : Color = Color("#313a49") #the cel highlight band, on the lit side and the top edge
-const LENS_OFF : Color = Color("#232b37")
-const LENS_ON : Color = Color("#e9dcae")
+@export var ink : Color = Color("#06080c") : set = _set_colour
+@export var base : Color = Color("#161b23") : set = _set_colour
+@export var shade : Color = Color("#0c0f15") : set = _set_colour #the cel shadow band, on the side away from the light
+@export var lit : Color = Color("#313a49") : set = _set_colour #the cel highlight band, on the lit side and the top edge
+@export var lens_off : Color = Color("#232b37") : set = _set_colour
+@export var lens_on : Color = Color("#e9dcae") : set = _set_colour
+@export var draw_scale : float = 0.5 : set = _set_scale #drawn at a comfortable size, then shrunk to sit quietly on a shoulder
+@export var preview_lens_on : bool = false : set = _set_colour #editor only: shows the lens lit
 
-@onready var flashlight : Flashlight = $Flashlight
+@onready var flashlight : Node = $Flashlight #a Flashlight; untyped so the lamp can also run in the editor, where scripts that are not tools are only placeholders
 
 var _was_on : bool = false
 
 
 func _process(_delta : float) -> void:
+	if Engine.is_editor_hint():
+		return
 	if flashlight.on != _was_on:
 		_was_on = flashlight.on
 		queue_redraw()
 
 
+func _set_colour(_value = null) -> void:
+	queue_redraw()
+
+
+func _set_scale(value : float) -> void:
+	draw_scale = value
+	queue_redraw()
+
+
 func _draw() -> void:
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE * 0.5) #drawn at a comfortable size, then shrunk to sit quietly on a shoulder
+	var lens_is_on : bool = _was_on or (Engine.is_editor_hint() and preview_lens_on)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE * draw_scale)
 	var body : Rect2 = Rect2(-8.0, -11.0, 16.0, 26.0)
 	var shape : PackedVector2Array = _rounded_rect(body, 6.0)
-	draw_colored_polygon(_rounded_rect(body.grow(2.5), 8.0), INK) #ink outline
-	draw_colored_polygon(shape, BASE)
-	_draw_clipped(shape, Rect2(2.0, -11.0, 6.0, 26.0), SHADE) #the shaded side
-	_draw_clipped(shape, Rect2(-8.0, -11.0, 4.0, 26.0), LIT) #the lit side
-	_draw_clipped(shape, Rect2(-8.0, -11.0, 16.0, 3.0), LIT) #the top edge catches the light
-	_draw_clipped(shape, Rect2(-8.0, 10.0, 16.0, 5.0), SHADE) #the shaded back
-	draw_colored_polygon(_rounded_rect(Rect2(-6.5, -14.5, 13.0, 5.0), 2.0), INK)
-	draw_colored_polygon(_rounded_rect(Rect2(-5.0, -13.5, 10.0, 3.0), 1.2), LENS_ON if _was_on else LENS_OFF) #the lens: a plain lit strip, no glow around it
+	draw_colored_polygon(_rounded_rect(body.grow(2.5), 8.0), ink) #ink outline
+	draw_colored_polygon(shape, base)
+	_draw_clipped(shape, Rect2(2.0, -11.0, 6.0, 26.0), shade) #the shaded side
+	_draw_clipped(shape, Rect2(-8.0, -11.0, 4.0, 26.0), lit) #the lit side
+	_draw_clipped(shape, Rect2(-8.0, -11.0, 16.0, 3.0), lit) #the top edge catches the light
+	_draw_clipped(shape, Rect2(-8.0, 10.0, 16.0, 5.0), shade) #the shaded back
+	draw_colored_polygon(_rounded_rect(Rect2(-6.5, -14.5, 13.0, 5.0), 2.0), ink)
+	draw_colored_polygon(_rounded_rect(Rect2(-5.0, -13.5, 10.0, 3.0), 1.2), lens_on if lens_is_on else lens_off) #the lens: a plain lit strip, no glow around it
 
 
 ##A band of flat tone, cut to the lamp's rounded outline so it follows the corners.
