@@ -1,21 +1,528 @@
 [gd_scene format=3 uid="uid://bq6ro63p8oq1b"]
 
-[ext_resource type="Script" uid="uid://cbd2ruuswtvvn" path="res://night_shift/environment/facility_map.gd" id="1_map"]
+[ext_resource type="Script" path="res://night_shift/environment/facility_map.gd" id="1_map"]
+[ext_resource type="TileSet" path="res://night_shift/environment/facility_tileset.tres" id="2_ltj0g"]
+[ext_resource type="Script" path="res://night_shift/environment/facility_room.gd" id="3_j40us"]
+[ext_resource type="PackedScene" path="res://night_shift/environment/facility_door.tscn" id="4_yd85k"]
+[ext_resource type="PackedScene" path="res://game/utility/door_control_panel.tscn" id="6_ieksj"]
 
-[node name="FacilityMap" type="Node2D" unique_id=552762263]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ltj0g"]
+size = Vector2(1331, 99)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_j40us"]
+size = Vector2(99, 88)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_yd85k"]
+size = Vector2(1144, 99)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_c1btn"]
+size = Vector2(88, 88)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ieksj"]
+size = Vector2(99, 440)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_0n7p0"]
+size = Vector2(99, 440)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wsqy3"]
+size = Vector2(319, 209)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_qd1nx"]
+size = Vector2(275, 209)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_kpq7q"]
+size = Vector2(231, 209)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_5c7aj"]
+size = Vector2(253, 209)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_nbqq4"]
+size = Vector2(319, 187)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_gamgl"]
+size = Vector2(319, 187)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_uhdlt"]
+size = Vector2(231, 187)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_lujo3"]
+size = Vector2(209, 187)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_2eruh"]
+size = Vector2(407, 231)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_tw18a"]
+size = Vector2(407, 231)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_1epr8"]
+size = Vector2(539, 231)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ys3mn"]
+size = Vector2(539, 231)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_rmhfs"]
+size = Vector2(319, 209)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_iiadc"]
+size = Vector2(539, 231)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_fgwqg"]
+size = Vector2(165, 363)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_fml5q"]
+size = Vector2(165, 363)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wbvy6"]
+size = Vector2(275, 77)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_4s8ax"]
+size = Vector2(275, 55)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_j1rrj"]
+size = Vector2(77, 143)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ibcdx"]
+size = Vector2(77, 143)
+
+[node name="FacilityMap" type="Node2D" unique_id=577932594]
 texture_filter = 4
 script = ExtResource("1_map")
 
-[node name="Floors" type="TileMapLayer" parent="." unique_id=840902636]
+[node name="Floors" type="TileMapLayer" parent="." unique_id=257048244]
+scale = Vector2(0.25, 0.25)
+tile_set = ExtResource("2_ltj0g")
 
-[node name="Shadows" type="TileMapLayer" parent="."]
+[node name="Shadows" type="TileMapLayer" parent="." unique_id=2138131358]
+scale = Vector2(0.25, 0.25)
+tile_set = ExtResource("2_ltj0g")
 
-[node name="Walls" type="TileMapLayer" parent="." unique_id=1980226533]
+[node name="Walls" type="TileMapLayer" parent="." unique_id=1836707676]
+scale = Vector2(0.25, 0.25)
+tile_set = ExtResource("2_ltj0g")
 
-[node name="Doors" type="Node2D" parent="." unique_id=878524524]
+[node name="Rooms" type="Node2D" parent="." unique_id=492563627]
 
-[node name="Props" type="Node2D" parent="." unique_id=1619350626]
+[node name="ring" type="Area2D" parent="Rooms" unique_id=947017941]
+collision_layer = 0
+collision_mask = 0
+monitoring = false
+monitorable = false
+script = ExtResource("3_j40us")
+display_name = "Main Corridor"
+kind = 0
+
+[node name="Rect1" type="CollisionShape2D" parent="Rooms/ring" unique_id=1848717751]
+position = Vector2(874.5, 346.5)
+shape = SubResource("RectangleShape2D_ltj0g")
+
+[node name="Rect2" type="CollisionShape2D" parent="Rooms/ring" unique_id=2003138256]
+position = Vector2(258.5, 880)
+shape = SubResource("RectangleShape2D_j40us")
+
+[node name="Rect3" type="CollisionShape2D" parent="Rooms/ring" unique_id=695606384]
+position = Vector2(880, 874.5)
+shape = SubResource("RectangleShape2D_yd85k")
+
+[node name="Rect4" type="CollisionShape2D" parent="Rooms/ring" unique_id=1966343138]
+position = Vector2(1496, 880)
+shape = SubResource("RectangleShape2D_c1btn")
+
+[node name="Rect5" type="CollisionShape2D" parent="Rooms/ring" unique_id=778501331]
+position = Vector2(258.5, 616)
+shape = SubResource("RectangleShape2D_ieksj")
+
+[node name="Rect6" type="CollisionShape2D" parent="Rooms/ring" unique_id=1005950095]
+position = Vector2(1490.5, 616)
+shape = SubResource("RectangleShape2D_0n7p0")
+
+[node name="archive" type="Area2D" parent="Rooms" unique_id=345860016]
+collision_layer = 0
+collision_mask = 0
+monitoring = false
+monitorable = false
+script = ExtResource("3_j40us")
+display_name = "Archive"
+kind = 2
+
+[node name="Rect1" type="CollisionShape2D" parent="Rooms/archive" unique_id=683357705]
+position = Vector2(478.5, 511.5)
+shape = SubResource("RectangleShape2D_wsqy3")
+
+[node name="camera_room" type="Area2D" parent="Rooms" unique_id=577295551]
+collision_layer = 0
+collision_mask = 0
+monitoring = false
+monitorable = false
+script = ExtResource("3_j40us")
+display_name = "Camera Room"
+kind = 1
+function = 1
+
+[node name="Rect1" type="CollisionShape2D" parent="Rooms/camera_room" unique_id=413776305]
+position = Vector2(786.5, 511.5)
+shape = SubResource("RectangleShape2D_qd1nx")
+
+[node name="door_control" type="Area2D" parent="Rooms" unique_id=1102785138]
+collision_layer = 0
+collision_mask = 0
+monitoring = false
+monitorable = false
+script = ExtResource("3_j40us")
+display_name = "Door Control"
+kind = 1
+function = 2
+
+[node name="Rect1" type="CollisionShape2D" parent="Rooms/door_control" unique_id=811522509]
+position = Vector2(1050.5, 511.5)
+shape = SubResource("RectangleShape2D_kpq7q")
+
+[node name="light_control" type="Area2D" parent="Rooms" unique_id=77438462]
+collision_layer = 0
+collision_mask = 0
+monitoring = false
+monitorable = false
+script = ExtResource("3_j40us")
+display_name = "Lighting Control"
+kind = 1
+function = 3
+
+[node name="Rect1" type="CollisionShape2D" parent="Rooms/light_control" unique_id=1084854260]
+position = Vector2(1303.5, 511.5)
+shape = SubResource("RectangleShape2D_5c7aj")
+
+[node name="vault" type="Area2D" parent="Rooms" unique_id=1908800730]
+collision_layer = 0
+collision_mask = 0
+monitoring = false
+monitorable = false
+script = ExtResource("3_j40us")
+display_name = "Vault"
+kind = 2
+
+[node name="Rect1" type="CollisionShape2D" parent="Rooms/vault" unique_id=1470357643]
+position = Vector2(478.5, 720.5)
+shape = SubResource("RectangleShape2D_nbqq4")
+
+[node name="generator" type="Area2D" parent="Rooms" unique_id=375588001]
+collision_layer = 0
+collision_mask = 0
+monitoring = false
+monitorable = false
+script = ExtResource("3_j40us")
+display_name = "Generator Room"
+kind = 1
+function = 4
+
+[node name="Rect1" type="CollisionShape2D" parent="Rooms/generator" unique_id=1018601817]
+position = Vector2(808.5, 720.5)
+shape = SubResource("RectangleShape2D_gamgl")
+
+[node name="turret_control" type="Area2D" parent="Rooms" unique_id=2143871300]
+collision_layer = 0
+collision_mask = 0
+monitoring = false
+monitorable = false
+script = ExtResource("3_j40us")
+display_name = "Turret Control"
+kind = 1
+function = 5
+
+[node name="Rect1" type="CollisionShape2D" parent="Rooms/turret_control" unique_id=1548214836]
+position = Vector2(1094.5, 720.5)
+shape = SubResource("RectangleShape2D_uhdlt")
+
+[node name="breaker" type="Area2D" parent="Rooms" unique_id=1896511407]
+collision_layer = 0
+collision_mask = 0
+monitoring = false
+monitorable = false
+script = ExtResource("3_j40us")
+display_name = "Breaker Room"
+kind = 1
+function = 6
+
+[node name="Rect1" type="CollisionShape2D" parent="Rooms/breaker" unique_id=1671007493]
+position = Vector2(1325.5, 720.5)
+shape = SubResource("RectangleShape2D_lujo3")
+
+[node name="break_room" type="Area2D" parent="Rooms" unique_id=1239246593]
+collision_layer = 0
+collision_mask = 0
+monitoring = false
+monitorable = false
+script = ExtResource("3_j40us")
+display_name = "Break Room"
+
+[node name="Rect1" type="CollisionShape2D" parent="Rooms/break_room" unique_id=1498027366]
+position = Vector2(258.5, 170.5)
+shape = SubResource("RectangleShape2D_2eruh")
+
+[node name="locker_room" type="Area2D" parent="Rooms" unique_id=343315909]
+collision_layer = 0
+collision_mask = 0
+monitoring = false
+monitorable = false
+script = ExtResource("3_j40us")
+display_name = "Locker Room"
+kind = 2
+
+[node name="Rect1" type="CollisionShape2D" parent="Rooms/locker_room" unique_id=1010981391]
+position = Vector2(1490.5, 170.5)
+shape = SubResource("RectangleShape2D_tw18a")
+
+[node name="office" type="Area2D" parent="Rooms" unique_id=1968478608]
+collision_layer = 0
+collision_mask = 0
+monitoring = false
+monitorable = false
+script = ExtResource("3_j40us")
+display_name = "Offices"
+
+[node name="Rect1" type="CollisionShape2D" parent="Rooms/office" unique_id=1003513783]
+position = Vector2(324.5, 1050.5)
+shape = SubResource("RectangleShape2D_1epr8")
+
+[node name="records" type="Area2D" parent="Rooms" unique_id=1853741921]
+collision_layer = 0
+collision_mask = 0
+monitoring = false
+monitorable = false
+script = ExtResource("3_j40us")
+display_name = "Records"
+kind = 2
+
+[node name="Rect1" type="CollisionShape2D" parent="Rooms/records" unique_id=2063693481]
+position = Vector2(1424.5, 1050.5)
+shape = SubResource("RectangleShape2D_ys3mn")
+
+[node name="stairwell" type="Area2D" parent="Rooms" unique_id=168041272]
+collision_layer = 0
+collision_mask = 0
+monitoring = false
+monitorable = false
+script = ExtResource("3_j40us")
+display_name = "Roof Stairwell"
+kind = 4
+
+[node name="Rect1" type="CollisionShape2D" parent="Rooms/stairwell" unique_id=701187869]
+position = Vector2(874.5, 181.5)
+shape = SubResource("RectangleShape2D_rmhfs")
+
+[node name="loading_dock" type="Area2D" parent="Rooms" unique_id=1803204713]
+collision_layer = 0
+collision_mask = 0
+monitoring = false
+monitorable = false
+script = ExtResource("3_j40us")
+display_name = "Loading Dock"
+kind = 4
+
+[node name="Rect1" type="CollisionShape2D" parent="Rooms/loading_dock" unique_id=93372361]
+position = Vector2(874.5, 1050.5)
+shape = SubResource("RectangleShape2D_iiadc")
+
+[node name="maintenance_bay" type="Area2D" parent="Rooms" unique_id=946433993]
+collision_layer = 0
+collision_mask = 0
+monitoring = false
+monitorable = false
+script = ExtResource("3_j40us")
+display_name = "Maintenance Bay"
+kind = 4
+
+[node name="Rect1" type="CollisionShape2D" parent="Rooms/maintenance_bay" unique_id=1708910692]
+position = Vector2(115.5, 610.5)
+shape = SubResource("RectangleShape2D_fgwqg")
+
+[node name="cafeteria" type="Area2D" parent="Rooms" unique_id=958548620]
+collision_layer = 0
+collision_mask = 0
+monitoring = false
+monitorable = false
+script = ExtResource("3_j40us")
+display_name = "Cafeteria"
+kind = 4
+
+[node name="Rect1" type="CollisionShape2D" parent="Rooms/cafeteria" unique_id=1835690426]
+position = Vector2(1633.5, 610.5)
+shape = SubResource("RectangleShape2D_fml5q")
+
+[node name="pad_north" type="Area2D" parent="Rooms" unique_id=1410581261]
+collision_layer = 0
+collision_mask = 0
+monitoring = false
+monitorable = false
+script = ExtResource("3_j40us")
+display_name = "Roof"
+kind = 5
+
+[node name="Rect1" type="CollisionShape2D" parent="Rooms/pad_north" unique_id=664764013]
+position = Vector2(874.5, 27.5)
+shape = SubResource("RectangleShape2D_wbvy6")
+
+[node name="pad_south" type="Area2D" parent="Rooms" unique_id=2070215662]
+collision_layer = 0
+collision_mask = 0
+monitoring = false
+monitorable = false
+script = ExtResource("3_j40us")
+display_name = "Loading Yard"
+kind = 5
+
+[node name="Rect1" type="CollisionShape2D" parent="Rooms/pad_south" unique_id=520868398]
+position = Vector2(874.5, 1204.5)
+shape = SubResource("RectangleShape2D_4s8ax")
+
+[node name="pad_west" type="Area2D" parent="Rooms" unique_id=1807911785]
+collision_layer = 0
+collision_mask = 0
+monitoring = false
+monitorable = false
+script = ExtResource("3_j40us")
+display_name = "Car Park"
+kind = 5
+
+[node name="Rect1" type="CollisionShape2D" parent="Rooms/pad_west" unique_id=1295413500]
+position = Vector2(-16.5, 588.5)
+shape = SubResource("RectangleShape2D_j1rrj")
+
+[node name="pad_east" type="Area2D" parent="Rooms" unique_id=495031330]
+collision_layer = 0
+collision_mask = 0
+monitoring = false
+monitorable = false
+script = ExtResource("3_j40us")
+display_name = "Smoking Area"
+kind = 5
+
+[node name="Rect1" type="CollisionShape2D" parent="Rooms/pad_east" unique_id=1571632698]
+position = Vector2(1765.5, 588.5)
+shape = SubResource("RectangleShape2D_ibcdx")
+
+[node name="Doors" type="Node2D" parent="." unique_id=1364101371]
+
+[node name="Door_ring_archive" parent="Doors" unique_id=868430038 instance=ExtResource("4_yd85k")]
+position = Vector2(484, 401.5)
+
+[node name="Door_ring_camera_room" parent="Doors" unique_id=1306907613 instance=ExtResource("4_yd85k")]
+position = Vector2(792, 401.5)
+
+[node name="Door_ring_door_control" parent="Doors" unique_id=337998504 instance=ExtResource("4_yd85k")]
+position = Vector2(1056, 401.5)
+
+[node name="Door_ring_light_control" parent="Doors" unique_id=1422642414 instance=ExtResource("4_yd85k")]
+position = Vector2(1320, 401.5)
+
+[node name="Door_ring_vault" parent="Doors" unique_id=1348353164 instance=ExtResource("4_yd85k")]
+position = Vector2(484, 819.5)
+
+[node name="Door_ring_generator" parent="Doors" unique_id=302050532 instance=ExtResource("4_yd85k")]
+position = Vector2(814, 819.5)
+
+[node name="Door_ring_turret_control" parent="Doors" unique_id=1506400907 instance=ExtResource("4_yd85k")]
+position = Vector2(1100, 819.5)
+
+[node name="Door_ring_breaker" parent="Doors" unique_id=472217347 instance=ExtResource("4_yd85k")]
+position = Vector2(1320, 819.5)
+
+[node name="Door_archive_vault" parent="Doors" unique_id=1547909584 instance=ExtResource("4_yd85k")]
+position = Vector2(484, 621.5)
+
+[node name="Door_camera_room_generator" parent="Doors" unique_id=1112860768 instance=ExtResource("4_yd85k")]
+position = Vector2(792, 621.5)
+
+[node name="Door_door_control_turret_control" parent="Doors" unique_id=1289661015 instance=ExtResource("4_yd85k")]
+position = Vector2(1078, 621.5)
+
+[node name="Door_light_control_breaker" parent="Doors" unique_id=735433015 instance=ExtResource("4_yd85k")]
+position = Vector2(1320, 621.5)
+
+[node name="Door_ring_break_room" parent="Doors" unique_id=1245238109 instance=ExtResource("4_yd85k")]
+position = Vector2(330, 291.5)
+
+[node name="Door_ring_locker_room" parent="Doors" unique_id=1456748649 instance=ExtResource("4_yd85k")]
+position = Vector2(1386, 291.5)
+
+[node name="Door_ring_stairwell" parent="Doors" unique_id=658598241 instance=ExtResource("4_yd85k")]
+position = Vector2(880, 291.5)
+
+[node name="Door_ring_office" parent="Doors" unique_id=1434631891 instance=ExtResource("4_yd85k")]
+position = Vector2(330, 929.5)
+
+[node name="Door_ring_records" parent="Doors" unique_id=1575303182 instance=ExtResource("4_yd85k")]
+position = Vector2(1386, 929.5)
+
+[node name="Door_ring_loading_dock" parent="Doors" unique_id=441362982 instance=ExtResource("4_yd85k")]
+position = Vector2(880, 929.5)
+
+[node name="Door_ring_maintenance_bay" parent="Doors" unique_id=1820688769 instance=ExtResource("4_yd85k")]
+position = Vector2(203.5, 594)
+horizontal = false
+
+[node name="Door_ring_cafeteria" parent="Doors" unique_id=89764953 instance=ExtResource("4_yd85k")]
+position = Vector2(1545.5, 594)
+horizontal = false
+
+[node name="Door_stairwell_pad_north" parent="Doors" unique_id=1559126938 instance=ExtResource("4_yd85k")]
+position = Vector2(880, 71.5)
+
+[node name="Door_loading_dock_pad_south" parent="Doors" unique_id=41629332 instance=ExtResource("4_yd85k")]
+position = Vector2(880, 1171.5)
+
+[node name="Door_maintenance_bay_pad_west" parent="Doors" unique_id=1838685187 instance=ExtResource("4_yd85k")]
+position = Vector2(27.5, 594)
+horizontal = false
+
+[node name="Door_cafeteria_pad_east" parent="Doors" unique_id=500422723 instance=ExtResource("4_yd85k")]
+position = Vector2(1721.5, 594)
+horizontal = false
+
+[node name="Vents" type="Node2D" parent="." unique_id=1423495800]
+
+[node name="Vent1" type="Marker2D" parent="Vents" unique_id=123131024]
+position = Vector2(352, 440)
+
+[node name="Vent2" type="Marker2D" parent="Vents" unique_id=353071235]
+position = Vector2(682, 440)
+
+[node name="Vent3" type="Marker2D" parent="Vents" unique_id=422834643]
+position = Vector2(968, 440)
+
+[node name="Vent4" type="Marker2D" parent="Vents" unique_id=857696748]
+position = Vector2(1386, 440)
+
+[node name="Vent5" type="Marker2D" parent="Vents" unique_id=1400645254]
+position = Vector2(352, 770)
+
+[node name="Vent6" type="Marker2D" parent="Vents" unique_id=1077477681]
+position = Vector2(682, 770)
+
+[node name="Vent7" type="Marker2D" parent="Vents" unique_id=816426923]
+position = Vector2(1386, 770)
+
+[node name="Vent8" type="Marker2D" parent="Vents" unique_id=1386953145]
+position = Vector2(88, 88)
+
+[node name="Vent9" type="Marker2D" parent="Vents" unique_id=407404163]
+position = Vector2(1650, 88)
+
+[node name="Vent10" type="Marker2D" parent="Vents" unique_id=831840373]
+position = Vector2(88, 1122)
+
+[node name="Vent11" type="Marker2D" parent="Vents" unique_id=915822728]
+position = Vector2(1650, 1122)
+
+[node name="Vent12" type="Marker2D" parent="Vents" unique_id=92082446]
+position = Vector2(748, 110)
+
+[node name="Vent13" type="Marker2D" parent="Vents" unique_id=1759064704]
+position = Vector2(638, 1122)
+
+[node name="Props" type="Node2D" parent="." unique_id=818355929]
 y_sort_enabled = true
 
-[node name="Actors" type="Node2D" parent="." unique_id=2125798851]
+[node name="DoorControlPanel" parent="Props" unique_id=219723147 instance=ExtResource("6_ieksj")]
+position = Vector2(997, 429)
+
+[node name="Actors" type="Node2D" parent="." unique_id=286938923]
 y_sort_enabled = true

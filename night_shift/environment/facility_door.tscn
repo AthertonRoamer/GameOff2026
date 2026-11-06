@@ -1,0 +1,25 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://night_shift/environment/facility_door.gd" id="1_door"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_gate"]
+resource_local_to_scene = true
+size = Vector2(44, 11)
+
+[sub_resource type="OccluderPolygon2D" id="OccluderPolygon2D_gate"]
+resource_local_to_scene = true
+polygon = PackedVector2Array(-22, -5.5, 22, -5.5, 22, 5.5, -22, 5.5)
+
+[node name="FacilityDoor" type="StaticBody2D"]
+collision_layer = 8
+collision_mask = 0
+script = ExtResource("1_door")
+
+[node name="Sprite" type="Sprite2D" parent="."]
+scale = Vector2(0.25, 0.25)
+
+[node name="Shape" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_gate")
+
+[node name="Occluder" type="LightOccluder2D" parent="."]
+occluder = SubResource("OccluderPolygon2D_gate")

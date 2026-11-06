@@ -25,6 +25,14 @@ $unit = (Select-String -Path "$env:TEMP\lagtest.out" -Pattern "RESULT: PASS" -Qu
 $results["lag compensator unit test"] = $unit
 "{0,-62} {1}" -f "lag compensator unit test", $(if ($unit) { "PASS" } else { "FAIL" })
 
+# unit test of the facility map scene: rooms, doors and consoles placed in the editor still add up (a scene, because the consoles use autoloads)
+$p = Start-Process $Godot -ArgumentList "--headless", "--path", "`"$project`"", "res://tests/unit/test_facility_map.tscn" -NoNewWindow -PassThru `
+	-RedirectStandardOutput "$env:TEMP\maptest.out" -RedirectStandardError "$env:TEMP\maptest.err"
+if (-not $p.WaitForExit(90000)) { Stop-Process -Id $p.Id -Force }
+$mapPass = (Select-String -Path "$env:TEMP\maptest.out" -Pattern "RESULT: PASS" -Quiet)
+$results["facility map unit test"] = $mapPass
+"{0,-62} {1}" -f "facility map unit test", $(if ($mapPass) { "PASS" } else { "FAIL" })
+if (-not $mapPass) { Select-String -Path "$env:TEMP\maptest.out" -Pattern "FAIL" | ForEach-Object { "      " + $_.Line } }
 Add-SmokeResult "original demo (host, lobby, join, game, end)" (& $smoke -Godot $Godot)
 Add-SmokeResult "all peers start on the same tick (2 players)" (& $smoke -Godot $Godot -Rollback)
 Add-SmokeResult "all peers start on the same tick (3 players)" (& $smoke -Godot $Godot -Rollback -Clients 2 -TimeoutSeconds 120)
