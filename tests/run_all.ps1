@@ -33,6 +33,14 @@ $mapPass = (Select-String -Path "$env:TEMP\maptest.out" -Pattern "RESULT: PASS" 
 $results["facility map unit test"] = $mapPass
 "{0,-62} {1}" -f "facility map unit test", $(if ($mapPass) { "PASS" } else { "FAIL" })
 if (-not $mapPass) { Select-String -Path "$env:TEMP\maptest.out" -Pattern "FAIL" | ForEach-Object { "      " + $_.Line } }
+# unit test of role and team assignment
+$p = Start-Process $Godot -ArgumentList "--headless", "--path", "`"$project`"", "res://tests/unit/test_role_assigner.tscn" -NoNewWindow -PassThru `
+	-RedirectStandardOutput "$env:TEMP\roletest.out" -RedirectStandardError "$env:TEMP\roletest.err"
+if (-not $p.WaitForExit(90000)) { Stop-Process -Id $p.Id -Force }
+$unit = (Select-String -Path "$env:TEMP\roletest.out" -Pattern "RESULT: PASS" -Quiet)
+$results["role assigner unit test"] = $unit
+"{0,-62} {1}" -f "role assigner unit test", $(if ($unit) { "PASS" } else { "FAIL" })
+
 Add-SmokeResult "original demo (host, lobby, join, game, end)" (& $smoke -Godot $Godot)
 Add-SmokeResult "all peers start on the same tick (2 players)" (& $smoke -Godot $Godot -Rollback)
 Add-SmokeResult "all peers start on the same tick (3 players)" (& $smoke -Godot $Godot -Rollback -Clients 2 -TimeoutSeconds 120)
@@ -46,7 +54,7 @@ if (-not $SkipSlow) {
 	Add-SmokeResult "rollback demo: a player's process is killed mid-game" (& $smoke -Godot $Godot -Kill -TimeoutSeconds 200)
 	Add-SmokeResult "rollback demo: 80 ms each way, 2% loss" (& $smoke -Godot $Godot -Demo -LatencyMs 80 -LossPercent 2 -TimeoutSeconds 150)
 	Add-SmokeResult "rollback demo: projectiles and respawn, 80 ms each way, 2% loss" (& $smoke -Godot $Godot -Combat -LatencyMs 80 -LossPercent 2 -TimeoutSeconds 150)
-	$lag = & (Join-Path $here "harness\run_lagcomp_check.ps1") -LatencyMs 120
+	$lag = & (Join-Path $here "harness\run_lagcomp_check.ps1") -Godot $Godot -LatencyMs 120
 	$lagPass = ($lag | Select-String -Pattern "LAGCOMP CHECK: PASS" -Quiet)
 	$results["lag compensation helps at 120 ms each way"] = $lagPass
 	"{0,-62} {1}" -f "lag compensation helps at 120 ms each way", $(if ($lagPass) { "PASS" } else { "FAIL" })
