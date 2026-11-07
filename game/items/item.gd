@@ -7,6 +7,7 @@ extends Resource
 @export var item_name : String = ""
 @export var icon : Texture2D
 @export var cooldown_ticks : int = 0 #ticks before this item can be used again
+@export var drawable : bool = false #held out in the hands (a gun): selecting it draws it, H holsters or draws it, and it can only be used while drawn
 
 
 func use(_user : Player, _tick : int) -> void:

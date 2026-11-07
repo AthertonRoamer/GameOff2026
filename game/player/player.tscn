@@ -4,14 +4,14 @@
 [ext_resource type="Script" uid="uid://v8yulraat58n" path="res://game/player/player_input.gd" id="2_input"]
 [ext_resource type="Script" uid="uid://bko7sp24yavq3" path="res://game/items/item.gd" id="2_j0mij"]
 [ext_resource type="Resource" path="res://game/items/guns/pistol.tres" id="3_gb4gm"]
-[ext_resource type="PackedScene" path="res://game/player/skin/player_skin.tscn" id="3_skin"]
+[ext_resource type="PackedScene" uid="uid://c1exm4vthb4w3" path="res://game/player/skin/player_skin.tscn" id="3_skin"]
 [ext_resource type="Script" uid="uid://d350u8evihs1u" path="res://addons/netfox/rollback/rollback-synchronizer.gd" id="4_rollback"]
 [ext_resource type="Resource" path="res://game/items/guns/rifle.tres" id="4_uv2nh"]
 [ext_resource type="Script" uid="uid://dour8fehaaugp" path="res://addons/netfox/tick-interpolator.gd" id="5_interp"]
 [ext_resource type="Script" uid="uid://cthih2m0x736l" path="res://game/player/inventory.gd" id="6_inventory"]
 [ext_resource type="Script" uid="uid://chr4omg2hy3yu" path="res://addons/netfox/rewindable-action.gd" id="7_action"]
 [ext_resource type="Script" uid="uid://3lbngqcexe0l" path="res://addons/netfox/state-synchronizer.gd" id="8_state"]
-[ext_resource type="Script" path="res://game/player/player_interactor.gd" id="9_interactor"]
+[ext_resource type="Script" uid="uid://dsac5hy6upn17" path="res://game/player/player_interactor.gd" id="9_interactor"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_body"]
 radius = 12.0
@@ -27,6 +27,7 @@ starting_items = Array[ExtResource("2_j0mij")]([ExtResource("3_gb4gm"), ExtResou
 [node name="Skin" parent="." unique_id=669583553 instance=ExtResource("3_skin")]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=730710891]
+visible = false
 shape = SubResource("CircleShape2D_body")
 
 [node name="NameDisplay" type="Label" parent="." unique_id=1103005571]
@@ -44,8 +45,8 @@ script = ExtResource("2_input")
 [node name="RollbackSynchronizer" type="Node" parent="." unique_id=1751885658 node_paths=PackedStringArray("root")]
 script = ExtResource("4_rollback")
 root = NodePath("..")
-state_properties = Array[String]([":position", ":velocity", "Inventory:last_use_tick", "Inventory:active_slot"])
-input_properties = Array[String](["Input:movement", "Input:aim", "Input:use_item", "Input:run", "Input:aiming", "Input:slot_select", "Input:slot_delta", "Input:flashlight_on", "Input:interacting"])
+state_properties = Array[String]([":position", ":velocity", "Inventory:last_use_tick", "Inventory:active_slot", "Inventory:drawn"])
+input_properties = Array[String](["Input:movement", "Input:aim", "Input:use_item", "Input:run", "Input:holster", "Input:slot_select", "Input:slot_delta", "Input:flashlight_on", "Input:interacting"])
 
 [node name="TickInterpolator" type="Node" parent="." unique_id=1495510548 node_paths=PackedStringArray("root")]
 script = ExtResource("5_interp")
@@ -67,5 +68,5 @@ script = ExtResource("6_inventory")
 [node name="UseAction" type="Node" parent="Inventory" unique_id=545507635]
 script = ExtResource("7_action")
 
-[node name="Interactor" type="Node" parent="."]
+[node name="Interactor" type="Node" parent="." unique_id=333458300]
 script = ExtResource("9_interactor")

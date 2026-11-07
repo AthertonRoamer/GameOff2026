@@ -8,6 +8,10 @@ extends Item
 @export var bullet_color : Color = Color.WHITE
 
 
+func _init() -> void:
+	drawable = true
+
+
 func use(user : Player, tick : int) -> void:
 	if user.projectile_manager == null:
 		return

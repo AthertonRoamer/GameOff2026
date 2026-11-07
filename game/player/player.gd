@@ -15,6 +15,7 @@ extends CharacterBody2D
 @export var starting_items : Array[Item] = []
 
 @onready var input : PlayerInput = $Input
+@onready var inventory : Inventory = $Inventory
 @onready var interpolator : TickInterpolator = $TickInterpolator
 @onready var camera : Camera2D = $Camera2D
 @onready var skin : NightShiftCharacter = $Skin
@@ -95,12 +96,12 @@ func _rollback_tick(delta : float, _tick : int, _is_fresh : bool) -> void:
 
 ##Shift held while moving. Drawing the gun (right mouse) while running drops you to a walk with the gun out.
 func is_running() -> bool:
-	return input.run and input.movement != Vector2.ZERO and not input.aiming
+	return input.run and input.movement != Vector2.ZERO and not is_aiming()
 
 
-##The gun is drawn while the aim button (right mouse) is held. A holstered gun cannot fire.
+##The active item (the gun) is out in the hands: chosen in the inventory, H holsters or draws it. A holstered gun cannot fire.
 func is_aiming() -> bool:
-	return input.aiming
+	return inventory.drawn
 
 
 ##True when a wall or a closed door is within reach of the gun arms in this direction: the gun is lowered (the skin shows the arms down) and cannot
