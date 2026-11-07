@@ -32,6 +32,7 @@ var active_item : Item:
 func _ready() -> void:
 	for i in range(mini(player.starting_items.size(), SLOT_COUNT)):
 		slots[i] = player.starting_items[i]
+	drawn = active_item != null and active_item.drawable #the first item starts out in the hands
 
 
 func _rollback_tick(_delta : float, tick : int, _is_fresh : bool) -> void:

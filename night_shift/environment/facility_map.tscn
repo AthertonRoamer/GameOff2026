@@ -1,10 +1,10 @@
-[gd_scene format=4 uid="uid://bq6ro63p8oq1b"]
+[gd_scene format=3 uid="uid://bq6ro63p8oq1b"]
 
 [ext_resource type="Script" uid="uid://cbd2ruuswtvvn" path="res://night_shift/environment/facility_map.gd" id="1_map"]
 [ext_resource type="Script" uid="uid://dc3o76s1verd5" path="res://night_shift/environment/facility_room.gd" id="3_j40us"]
-[ext_resource type="Script" path="res://night_shift/environment/facility_room_rect.gd" id="rect_script"]
 [ext_resource type="PackedScene" path="res://night_shift/environment/facility_door.tscn" id="4_yd85k"]
 [ext_resource type="PackedScene" path="res://game/utility/door_control_panel.tscn" id="6_ieksj"]
+[ext_resource type="Script" uid="uid://cwn71j7krn0x6" path="res://night_shift/environment/facility_room_rect.gd" id="rect_script"]
 
 [node name="FacilityMap" type="Node2D" unique_id=577932594]
 texture_filter = 4
@@ -17,52 +17,70 @@ script = ExtResource("3_j40us")
 display_name = "Main Corridor"
 kind = 0
 
-[node name="Rect1" type="Control" parent="Rooms/ring"]
-layout_mode = 0
-offset_left = 209
-offset_top = 297
-offset_right = 1540
-offset_bottom = 396
+[node name="Rect1" type="Control" parent="Rooms/ring" unique_id=1508108703]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 209.0
+offset_top = 297.0
+offset_right = 1540.0
+offset_bottom = 396.0
+mouse_filter = 2
 script = ExtResource("rect_script")
 
-[node name="Rect2" type="Control" parent="Rooms/ring"]
-layout_mode = 0
-offset_left = 209
-offset_top = 836
-offset_right = 308
-offset_bottom = 924
+[node name="Rect2" type="Control" parent="Rooms/ring" unique_id=1016180552]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 209.0
+offset_top = 836.0
+offset_right = 308.0
+offset_bottom = 924.0
+mouse_filter = 2
 script = ExtResource("rect_script")
 
-[node name="Rect3" type="Control" parent="Rooms/ring"]
-layout_mode = 0
-offset_left = 308
-offset_top = 825
-offset_right = 1452
-offset_bottom = 924
+[node name="Rect3" type="Control" parent="Rooms/ring" unique_id=2052930762]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 308.0
+offset_top = 825.0
+offset_right = 1452.0
+offset_bottom = 924.0
+mouse_filter = 2
 script = ExtResource("rect_script")
 
-[node name="Rect4" type="Control" parent="Rooms/ring"]
-layout_mode = 0
-offset_left = 1452
-offset_top = 836
-offset_right = 1540
-offset_bottom = 924
+[node name="Rect4" type="Control" parent="Rooms/ring" unique_id=1941757867]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1452.0
+offset_top = 836.0
+offset_right = 1540.0
+offset_bottom = 924.0
+mouse_filter = 2
 script = ExtResource("rect_script")
 
-[node name="Rect5" type="Control" parent="Rooms/ring"]
-layout_mode = 0
-offset_left = 209
-offset_top = 396
-offset_right = 308
-offset_bottom = 836
+[node name="Rect5" type="Control" parent="Rooms/ring" unique_id=792447922]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 209.0
+offset_top = 396.0
+offset_right = 308.0
+offset_bottom = 836.0
+mouse_filter = 2
 script = ExtResource("rect_script")
 
-[node name="Rect6" type="Control" parent="Rooms/ring"]
-layout_mode = 0
-offset_left = 1441
-offset_top = 396
-offset_right = 1540
-offset_bottom = 836
+[node name="Rect6" type="Control" parent="Rooms/ring" unique_id=1632274507]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1441.0
+offset_top = 396.0
+offset_right = 1540.0
+offset_bottom = 836.0
+mouse_filter = 2
 script = ExtResource("rect_script")
 
 [node name="archive" type="Node2D" parent="Rooms" unique_id=345860016]
@@ -70,12 +88,15 @@ script = ExtResource("3_j40us")
 display_name = "Archive"
 kind = 2
 
-[node name="Rect1" type="Control" parent="Rooms/archive"]
-layout_mode = 0
-offset_left = 319
-offset_top = 407
-offset_right = 638
-offset_bottom = 616
+[node name="Rect1" type="Control" parent="Rooms/archive" unique_id=2120113852]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 319.0
+offset_top = 407.0
+offset_right = 638.0
+offset_bottom = 616.0
+mouse_filter = 2
 script = ExtResource("rect_script")
 
 [node name="camera_room" type="Node2D" parent="Rooms" unique_id=577295551]
@@ -84,12 +105,15 @@ display_name = "Camera Room"
 kind = 1
 function = 1
 
-[node name="Rect1" type="Control" parent="Rooms/camera_room"]
-layout_mode = 0
-offset_left = 649
-offset_top = 407
-offset_right = 924
-offset_bottom = 616
+[node name="Rect1" type="Control" parent="Rooms/camera_room" unique_id=1591137089]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 649.0
+offset_top = 407.0
+offset_right = 924.0
+offset_bottom = 616.0
+mouse_filter = 2
 script = ExtResource("rect_script")
 
 [node name="door_control" type="Node2D" parent="Rooms" unique_id=1102785138]
@@ -98,12 +122,15 @@ display_name = "Door Control"
 kind = 1
 function = 2
 
-[node name="Rect1" type="Control" parent="Rooms/door_control"]
-layout_mode = 0
-offset_left = 935
-offset_top = 407
-offset_right = 1166
-offset_bottom = 616
+[node name="Rect1" type="Control" parent="Rooms/door_control" unique_id=371796709]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 935.0
+offset_top = 407.0
+offset_right = 1166.0
+offset_bottom = 616.0
+mouse_filter = 2
 script = ExtResource("rect_script")
 
 [node name="light_control" type="Node2D" parent="Rooms" unique_id=77438462]
@@ -112,12 +139,15 @@ display_name = "Lighting Control"
 kind = 1
 function = 3
 
-[node name="Rect1" type="Control" parent="Rooms/light_control"]
-layout_mode = 0
-offset_left = 1177
-offset_top = 407
-offset_right = 1430
-offset_bottom = 616
+[node name="Rect1" type="Control" parent="Rooms/light_control" unique_id=1826064285]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1177.0
+offset_top = 407.0
+offset_right = 1430.0
+offset_bottom = 616.0
+mouse_filter = 2
 script = ExtResource("rect_script")
 
 [node name="vault" type="Node2D" parent="Rooms" unique_id=1908800730]
@@ -125,12 +155,15 @@ script = ExtResource("3_j40us")
 display_name = "Vault"
 kind = 2
 
-[node name="Rect1" type="Control" parent="Rooms/vault"]
-layout_mode = 0
-offset_left = 319
-offset_top = 627
-offset_right = 638
-offset_bottom = 814
+[node name="Rect1" type="Control" parent="Rooms/vault" unique_id=282003298]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 319.0
+offset_top = 627.0
+offset_right = 638.0
+offset_bottom = 814.0
+mouse_filter = 2
 script = ExtResource("rect_script")
 
 [node name="generator" type="Node2D" parent="Rooms" unique_id=375588001]
@@ -139,12 +172,15 @@ display_name = "Generator Room"
 kind = 1
 function = 4
 
-[node name="Rect1" type="Control" parent="Rooms/generator"]
-layout_mode = 0
-offset_left = 649
-offset_top = 627
-offset_right = 968
-offset_bottom = 814
+[node name="Rect1" type="Control" parent="Rooms/generator" unique_id=495621153]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 649.0
+offset_top = 627.0
+offset_right = 968.0
+offset_bottom = 814.0
+mouse_filter = 2
 script = ExtResource("rect_script")
 
 [node name="turret_control" type="Node2D" parent="Rooms" unique_id=2143871300]
@@ -153,12 +189,15 @@ display_name = "Turret Control"
 kind = 1
 function = 5
 
-[node name="Rect1" type="Control" parent="Rooms/turret_control"]
-layout_mode = 0
-offset_left = 979
-offset_top = 627
-offset_right = 1210
-offset_bottom = 814
+[node name="Rect1" type="Control" parent="Rooms/turret_control" unique_id=1155765433]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 979.0
+offset_top = 627.0
+offset_right = 1210.0
+offset_bottom = 814.0
+mouse_filter = 2
 script = ExtResource("rect_script")
 
 [node name="breaker" type="Node2D" parent="Rooms" unique_id=1896511407]
@@ -167,24 +206,30 @@ display_name = "Breaker Room"
 kind = 1
 function = 6
 
-[node name="Rect1" type="Control" parent="Rooms/breaker"]
-layout_mode = 0
-offset_left = 1221
-offset_top = 627
-offset_right = 1430
-offset_bottom = 814
+[node name="Rect1" type="Control" parent="Rooms/breaker" unique_id=2015428858]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1221.0
+offset_top = 627.0
+offset_right = 1430.0
+offset_bottom = 814.0
+mouse_filter = 2
 script = ExtResource("rect_script")
 
 [node name="break_room" type="Node2D" parent="Rooms" unique_id=1239246593]
 script = ExtResource("3_j40us")
 display_name = "Break Room"
 
-[node name="Rect1" type="Control" parent="Rooms/break_room"]
-layout_mode = 0
-offset_left = 55
-offset_top = 55
-offset_right = 462
-offset_bottom = 286
+[node name="Rect1" type="Control" parent="Rooms/break_room" unique_id=27031147]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 55.0
+offset_top = 55.0
+offset_right = 462.0
+offset_bottom = 286.0
+mouse_filter = 2
 script = ExtResource("rect_script")
 
 [node name="locker_room" type="Node2D" parent="Rooms" unique_id=343315909]
@@ -192,24 +237,30 @@ script = ExtResource("3_j40us")
 display_name = "Locker Room"
 kind = 2
 
-[node name="Rect1" type="Control" parent="Rooms/locker_room"]
-layout_mode = 0
-offset_left = 1287
-offset_top = 55
-offset_right = 1694
-offset_bottom = 286
+[node name="Rect1" type="Control" parent="Rooms/locker_room" unique_id=689737789]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1287.0
+offset_top = 121.0
+offset_right = 1859.0
+offset_bottom = 286.0
+mouse_filter = 2
 script = ExtResource("rect_script")
 
 [node name="office" type="Node2D" parent="Rooms" unique_id=1968478608]
 script = ExtResource("3_j40us")
 display_name = "Offices"
 
-[node name="Rect1" type="Control" parent="Rooms/office"]
-layout_mode = 0
-offset_left = 55
-offset_top = 935
-offset_right = 594
-offset_bottom = 1166
+[node name="Rect1" type="Control" parent="Rooms/office" unique_id=1469891176]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 55.0
+offset_top = 935.0
+offset_right = 594.0
+offset_bottom = 1166.0
+mouse_filter = 2
 script = ExtResource("rect_script")
 
 [node name="records" type="Node2D" parent="Rooms" unique_id=1853741921]
@@ -217,12 +268,15 @@ script = ExtResource("3_j40us")
 display_name = "Records"
 kind = 2
 
-[node name="Rect1" type="Control" parent="Rooms/records"]
-layout_mode = 0
-offset_left = 1155
-offset_top = 935
-offset_right = 1694
-offset_bottom = 1166
+[node name="Rect1" type="Control" parent="Rooms/records" unique_id=1076099747]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1155.0
+offset_top = 935.0
+offset_right = 1694.0
+offset_bottom = 1166.0
+mouse_filter = 2
 script = ExtResource("rect_script")
 
 [node name="stairwell" type="Node2D" parent="Rooms" unique_id=168041272]
@@ -230,12 +284,15 @@ script = ExtResource("3_j40us")
 display_name = "Roof Stairwell"
 kind = 4
 
-[node name="Rect1" type="Control" parent="Rooms/stairwell"]
-layout_mode = 0
-offset_left = 715
-offset_top = 77
-offset_right = 1034
-offset_bottom = 286
+[node name="Rect1" type="Control" parent="Rooms/stairwell" unique_id=89890363]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 715.0
+offset_top = 77.0
+offset_right = 1034.0
+offset_bottom = 286.0
+mouse_filter = 2
 script = ExtResource("rect_script")
 
 [node name="loading_dock" type="Node2D" parent="Rooms" unique_id=1803204713]
@@ -243,12 +300,15 @@ script = ExtResource("3_j40us")
 display_name = "Loading Dock"
 kind = 4
 
-[node name="Rect1" type="Control" parent="Rooms/loading_dock"]
-layout_mode = 0
-offset_left = 605
-offset_top = 935
-offset_right = 1144
-offset_bottom = 1166
+[node name="Rect1" type="Control" parent="Rooms/loading_dock" unique_id=1348128560]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 605.0
+offset_top = 935.0
+offset_right = 1144.0
+offset_bottom = 1166.0
+mouse_filter = 2
 script = ExtResource("rect_script")
 
 [node name="maintenance_bay" type="Node2D" parent="Rooms" unique_id=946433993]
@@ -256,12 +316,15 @@ script = ExtResource("3_j40us")
 display_name = "Maintenance Bay"
 kind = 4
 
-[node name="Rect1" type="Control" parent="Rooms/maintenance_bay"]
-layout_mode = 0
-offset_left = 33
-offset_top = 429
-offset_right = 198
-offset_bottom = 792
+[node name="Rect1" type="Control" parent="Rooms/maintenance_bay" unique_id=1247418114]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 33.0
+offset_top = 429.0
+offset_right = 198.0
+offset_bottom = 792.0
+mouse_filter = 2
 script = ExtResource("rect_script")
 
 [node name="cafeteria" type="Node2D" parent="Rooms" unique_id=958548620]
@@ -269,12 +332,15 @@ script = ExtResource("3_j40us")
 display_name = "Cafeteria"
 kind = 4
 
-[node name="Rect1" type="Control" parent="Rooms/cafeteria"]
-layout_mode = 0
-offset_left = 1551
-offset_top = 429
-offset_right = 1716
-offset_bottom = 792
+[node name="Rect1" type="Control" parent="Rooms/cafeteria" unique_id=1723465624]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1551.0
+offset_top = 429.0
+offset_right = 1716.0
+offset_bottom = 792.0
+mouse_filter = 2
 script = ExtResource("rect_script")
 
 [node name="pad_north" type="Node2D" parent="Rooms" unique_id=1410581261]
@@ -282,12 +348,15 @@ script = ExtResource("3_j40us")
 display_name = "Roof"
 kind = 5
 
-[node name="Rect1" type="Control" parent="Rooms/pad_north"]
-layout_mode = 0
-offset_left = 737
-offset_top = -11
-offset_right = 1012
-offset_bottom = 66
+[node name="Rect1" type="Control" parent="Rooms/pad_north" unique_id=1670751982]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 737.0
+offset_top = -11.0
+offset_right = 1012.0
+offset_bottom = 66.0
+mouse_filter = 2
 script = ExtResource("rect_script")
 
 [node name="pad_south" type="Node2D" parent="Rooms" unique_id=2070215662]
@@ -295,12 +364,15 @@ script = ExtResource("3_j40us")
 display_name = "Loading Yard"
 kind = 5
 
-[node name="Rect1" type="Control" parent="Rooms/pad_south"]
-layout_mode = 0
-offset_left = 737
-offset_top = 1177
-offset_right = 1012
-offset_bottom = 1232
+[node name="Rect1" type="Control" parent="Rooms/pad_south" unique_id=2034367262]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 737.0
+offset_top = 1177.0
+offset_right = 1012.0
+offset_bottom = 1232.0
+mouse_filter = 2
 script = ExtResource("rect_script")
 
 [node name="pad_west" type="Node2D" parent="Rooms" unique_id=1807911785]
@@ -308,12 +380,15 @@ script = ExtResource("3_j40us")
 display_name = "Car Park"
 kind = 5
 
-[node name="Rect1" type="Control" parent="Rooms/pad_west"]
-layout_mode = 0
-offset_left = -55
-offset_top = 517
-offset_right = 22
-offset_bottom = 660
+[node name="Rect1" type="Control" parent="Rooms/pad_west" unique_id=1563883957]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = -55.0
+offset_top = 517.0
+offset_right = 22.0
+offset_bottom = 660.0
+mouse_filter = 2
 script = ExtResource("rect_script")
 
 [node name="pad_east" type="Node2D" parent="Rooms" unique_id=495031330]
@@ -321,12 +396,15 @@ script = ExtResource("3_j40us")
 display_name = "Smoking Area"
 kind = 5
 
-[node name="Rect1" type="Control" parent="Rooms/pad_east"]
-layout_mode = 0
-offset_left = 1727
-offset_top = 517
-offset_right = 1804
-offset_bottom = 660
+[node name="Rect1" type="Control" parent="Rooms/pad_east" unique_id=1794148233]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1727.0
+offset_top = 517.0
+offset_right = 1804.0
+offset_bottom = 660.0
+mouse_filter = 2
 script = ExtResource("rect_script")
 
 [node name="Doors" type="Node2D" parent="." unique_id=1364101371]
