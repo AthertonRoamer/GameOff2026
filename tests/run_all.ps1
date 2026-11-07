@@ -46,7 +46,7 @@ if (-not $SkipSlow) {
 	Add-SmokeResult "rollback demo: a player's process is killed mid-game" (& $smoke -Godot $Godot -Kill -TimeoutSeconds 200)
 	Add-SmokeResult "rollback demo: 80 ms each way, 2% loss" (& $smoke -Godot $Godot -Demo -LatencyMs 80 -LossPercent 2 -TimeoutSeconds 150)
 	Add-SmokeResult "rollback demo: projectiles and respawn, 80 ms each way, 2% loss" (& $smoke -Godot $Godot -Combat -LatencyMs 80 -LossPercent 2 -TimeoutSeconds 150)
-	$lag = & (Join-Path $here "harness\run_lagcomp_check.ps1") -LatencyMs 120
+	$lag = & (Join-Path $here "harness\run_lagcomp_check.ps1") -Godot $Godot -LatencyMs 120
 	$lagPass = ($lag | Select-String -Pattern "LAGCOMP CHECK: PASS" -Quiet)
 	$results["lag compensation helps at 120 ms each way"] = $lagPass
 	"{0,-62} {1}" -f "lag compensation helps at 120 ms each way", $(if ($lagPass) { "PASS" } else { "FAIL" })

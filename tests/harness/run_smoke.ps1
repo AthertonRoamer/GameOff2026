@@ -25,7 +25,7 @@ $project = Resolve-Path (Join-Path $PSScriptRoot "..\..")
 $logDir = Join-Path $env:TEMP "godot_smoke"
 New-Item -ItemType Directory -Force $logDir | Out-Null
 $hostOut = Join-Path $logDir "host.out"; $hostErr = Join-Path $logDir "host.err"
-Remove-Item (Join-Path $logDir "*.out"), (Join-Path $logDir "*.err"), (Join-Path $logDir "lobby_hitch.log") -ErrorAction SilentlyContinue
+Remove-Item (Join-Path $logDir "*.out"), (Join-Path $logDir "*.err"), (Join-Path $logDir "lobby_hitch.log"), (Join-Path $logDir "lobby.log") -ErrorAction SilentlyContinue
 
 $scene = "res://tests/harness/harness.tscn"
 $common = @()

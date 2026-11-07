@@ -77,6 +77,8 @@ func _ready() -> void:
 	await get_tree().process_frame
 	await get_tree().process_frame
 	await get_tree().process_frame
+	if OS.has_environment("HARNESS_NO_LOG_LIMIT"): #print every netfox warning, like upstream netfox (for comparison)
+		NetfoxLogger.rate_limit_seconds = 0.0
 	if OS.has_environment("HARNESS_CLOCK"):
 		clock_log_loop()
 	if role == "host":
@@ -109,10 +111,22 @@ func demo_positions(game : Node) -> String:
 	return "me=%d %s" % [multiplayer.get_unique_id(), ";".join(entries)]
 
 
+var _last_frame_usec : int = 0
+var _last_frame_tick : int = 0
+
+
 func _process(delta : float) -> void:
-	#a frame that takes this long freezes the process: it delays clock replies and corrupts a time sync regardless of the network
-	if delta > HITCH_SECONDS:
-		var line : String = "HITCH %.0f ms at unix %.3f" % [delta * 1000.0, Time.get_unix_time_from_system()]
+	#a frame that takes this long freezes the process: it delays clock replies and corrupts a time sync regardless of the network.
+	#Measured both as Godot's delta and as wall time, in case the two disagree
+	var now_usec : int = Time.get_ticks_usec()
+	var wall : float = (now_usec - _last_frame_usec) / 1000000.0 if _last_frame_usec > 0 else 0.0
+	_last_frame_usec = now_usec
+	var ticks : int = NetworkTime.tick - _last_frame_tick
+	_last_frame_tick = NetworkTime.tick
+	if OS.has_environment("HARNESS_CLOCK") and ticks > 3 and ticks < 1000: #netfox ran several ticks in one frame to catch up (1000+: a clock reset)
+		print("[%s] TICKBURST %d ticks in one frame at tick %d unix %.3f" % [role.to_upper(), ticks, NetworkTime.tick, Time.get_unix_time_from_system()])
+	if delta > HITCH_SECONDS or wall > HITCH_SECONDS:
+		var line : String = "HITCH %.0f ms (wall %.0f ms) at unix %.3f" % [delta * 1000.0, wall * 1000.0, Time.get_unix_time_from_system()]
 		if role == "lobby": #the lobby instance's output is not captured, so it appends to a file the runner reads
 			var path : String = OS.get_environment("TEMP") + "/godot_smoke/lobby_hitch.log"
 			var file : FileAccess = FileAccess.open(path, FileAccess.READ_WRITE if FileAccess.file_exists(path) else FileAccess.WRITE)
@@ -159,8 +173,14 @@ func perf_line(seconds : float) -> void:
 
 func clock_log_loop() -> void:
 	#once a second: wall clock, netfox tick, rtt and clock offsets, so peers' clocks can be compared at the same instant
+	print("[%s] NETFOX sync_to_physics=%s tickrate=%d max_ticks_per_frame=%d" % [role.to_upper(), NetworkTime.sync_to_physics, NetworkTime.tickrate, NetworkTime.max_ticks_per_frame])
+	var last_msec : int = Time.get_ticks_msec()
 	while is_inside_tree():
 		await get_tree().create_timer(1.0).timeout
+		var gap : int = Time.get_ticks_msec() - last_msec
+		last_msec = Time.get_ticks_msec()
+		if gap > 1500: #the 1 s timer fired late: this process was not running its frames
+			print("[%s] CLOCKGAP %d ms at unix %.3f" % [role.to_upper(), gap, Time.get_unix_time_from_system()])
 		print("[%s] CLOCK unix=%.3f tick=%d rtt_ms=%.0f offset_ms=%.1f remote_offset_ms=%.1f stretch=%.3f" % [role.to_upper(), Time.get_unix_time_from_system(), NetworkTime.tick, NetworkTime.remote_rtt * 1000.0, NetworkTime.clock_offset * 1000.0, NetworkTime.remote_clock_offset * 1000.0, NetworkTime.clock_stretch_factor])
 
 
@@ -325,6 +345,7 @@ func run_host() -> void:
 		var lobby_args : Array[String] = Main.main.configuration.lobby_args
 		lobby_args.insert(0, "res://tests/harness/harness.tscn")
 		lobby_args.append("--harness-lobby")
+		lobby_args.append_array(["--log-file", OS.get_environment("TEMP") + "/godot_smoke/lobby.log"]) #its stdout isn't captured otherwise
 		if use_demo:
 			lobby_args.append("--harness-demo")
 		if use_night_shift:
