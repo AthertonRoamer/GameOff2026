@@ -57,7 +57,7 @@ func _run_check() -> void:
 		var aim : PackedStringArray = String(_args["aim"]).split(",")
 		player.input.active = false
 		player.input.aim = player.global_position + Vector2(float(aim[0]), float(aim[1])) * 100.0
-		player.input.aiming = true #the gun is drawn, as if the right mouse button were held
+		player.inventory.drawn = true #the gun is out, as if H had been pressed
 	await get_tree().create_timer(1.0).timeout
 	if _args.has("aim2"): #turn on the spot: swing the aim round after the player has settled, and report what the feet do
 		var aim2 : PackedStringArray = String(_args["aim2"]).split(",")
@@ -95,7 +95,7 @@ func _run_check() -> void:
 		await get_tree().create_timer(float(_args.get("hold", 1.0))).timeout
 	get_viewport().get_texture().get_image().save_png(String(_args["shot"]))
 	var door_states : Array = facility.doors.map(func(d : FacilityDoor) -> String: return FacilityDoor.State.keys()[d.state].substr(0, 1))
-	print("PLAYGROUND doors=%s shots_fired=%d projectiles_in_flight=%d aim=%s aiming=%s use=%s interacting=%s active=%s flashlight=%s" % ["".join(door_states), _shots, level.projectiles.get_projectiles().size(), player.input.aim - player.global_position, player.input.aiming, player.input.use_item, player.input.interacting, player.input.active, player.flashlight.on])
+	print("PLAYGROUND doors=%s shots_fired=%d projectiles_in_flight=%d aim=%s drawn=%s use=%s interacting=%s active=%s flashlight=%s" % ["".join(door_states), _shots, level.projectiles.get_projectiles().size(), player.input.aim - player.global_position, player.inventory.drawn, player.input.use_item, player.input.interacting, player.input.active, player.flashlight.on])
 	print("PLAYGROUND start=%s end=%s moved=%.1f legs=%s flip=%s speed_scale=%.1f torso=%s" % [start, player.position, player.position.distance_to(start),
 		player.skin.legs.animation, player.skin.legs.flip_h, player.skin.legs.speed_scale, player.skin.torso.animation])
 	for each : String in action.split(","):

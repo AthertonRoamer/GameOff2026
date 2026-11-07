@@ -1,15 +1,12 @@
 class_name UtilityConsoles
 extends Node
 
-##Puts a control console in every utility room of the facility whose `function` (from facility_layout.json) has an entry in CONSOLES, and builds
-##the screen each console opens on a canvas layer of its own. A new kind of console is one more screen script and one more entry here.
+##Gives every control console in the facility its screen. The consoles are ControlPanel scenes placed in the map scene, under its Props node (the Door
+##Control room has one: drag more in from game/utility/ and set their `title`, `function` and `screen_scene`). build() makes each console's screen from
+##its screen_scene, on a canvas layer of its own, and hands it the map and the facility's control. A new kind of console is a new screen scene and an
+##inherited control_panel.tscn that points at it; nothing needs registering here.
 ##Call build() once the map is built. The consoles are interactables (see PlayerInteractor); what their screens change goes through `control`.
 
-##function -> what its console is: the panel's title, the screen's script, and where the panel stands, from the top left of the room's first
-##rect (in world pixels: against the north wall, clear of the room's door).
-const CONSOLES : Dictionary = {
-	"doors": {"title": "Door control", "screen": preload("res://game/utility/door_map_screen.gd"), "offset": Vector2(62.0, 22.0)},
-}
 const SCREEN_LAYER : int = 20
 
 @export var facility : FacilityMap
@@ -24,10 +21,9 @@ func build() -> void:
 	_screen_layer.name = "Screens"
 	_screen_layer.layer = SCREEN_LAYER
 	add_child(_screen_layer)
-	for room_id : String in facility.rooms_of_kind("utility"):
-		var function : String = facility.rooms[room_id]["function"]
-		if CONSOLES.has(function):
-			_add_console(room_id, function, CONSOLES[function])
+	for node : Node in _descendants(facility.props_node):
+		if node is ControlPanel:
+			_add_console(node)
 
 
 ##The first console that works this function, or null.
@@ -47,18 +43,23 @@ func is_at_console(function : String, world_position : Vector2, slack : float = 
 	return false
 
 
-func _add_console(room_id : String, function : String, spec : Dictionary) -> void:
-	var room : Rect2 = facility.room_rects_px(room_id)[0]
-	var panel : ControlPanel = ControlPanel.new()
-	panel.title = spec["title"]
-	panel.function = function
-	panel.name = "%sPanel" % String(spec["title"]).to_pascal_case()
-	panel.position = room.position + spec["offset"]
-	var screen : Control = (spec["screen"] as GDScript).new()
-	screen.name = "%sScreen" % String(spec["title"]).to_pascal_case()
+func _add_console(panel : ControlPanel) -> void:
+	if panel.screen_scene == null:
+		push_warning("%s has no screen_scene, so using it opens nothing" % panel.get_path())
+		panels.append(panel)
+		return
+	var screen : Control = panel.screen_scene.instantiate()
+	screen.name = "%sScreen" % panel.name
 	screen.set("facility", facility)
 	screen.set("control", control)
 	_screen_layer.add_child(screen)
 	panel.screen = screen
-	facility.props_node.add_child(panel)
 	panels.append(panel)
+
+
+func _descendants(node : Node) -> Array[Node]:
+	var result : Array[Node] = []
+	for child : Node in node.get_children():
+		result.append(child)
+		result.append_array(_descendants(child))
+	return result

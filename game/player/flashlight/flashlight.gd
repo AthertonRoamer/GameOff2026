@@ -5,15 +5,17 @@ extends Node2D
 ##the character stays visible. It lives under the player's torso (see player_skin.tscn), which already turns to face the aim, so the beam comes out of
 ##the front of the torso with nothing else to steer. Only its on/off state is a decision; set `on`.
 ##The beam points along the node's local +X, so the node is turned -90 degrees under the torso, whose "forward" is up in the sprite sheet.
+##
+##The lights are real nodes, so everything about how it looks is set in the editor on the two PointLight2D children: Cone and Halo (colour,
+##energy, shadows, size). This script only switches them on and off. Two numbers are worked out for the scene as it is built, not by the script:
+##  Cone  texture_scale = range in metres * 44 px per metre / CONE_WIDTH / the Skin's scale (0.25)   -> 11 m gives 3.78125
+##        offset        = CONE_WIDTH / 2 * texture_scale (the cone texture's left edge has to sit on the light's origin; Light2D's offset is
+##                        not scaled with the texture)                                              -> (968, 0)
+##  Halo  texture_scale = radius in metres * 44 * 2 / texture width / the Skin's scale             -> 1.6 m gives 2.2
+##Change the cone's size or shape (CONE_HALF_ANGLE, build_cone_image) and run bake_cone() to rewrite flashlight_cone.png.
 
 @export var on : bool = false : set = set_on
-@export var range_m : float = 11.0
-@export var cone_energy : float = 1.7
-@export var halo_radius_m : float = 1.6
-@export var halo_energy : float = 0.55
-@export var color : Color = Color("#fff3c4")
 
-const WORLD_PX_PER_M : float = 44.0
 const CONE_WIDTH : int = 512
 const CONE_HEIGHT : int = 256
 const CONE_HALF_ANGLE : float = deg_to_rad(28.0)
@@ -21,46 +23,24 @@ const CONE_HALF_ANGLE : float = deg_to_rad(28.0)
 const CONE_PATH : String = "res://game/player/flashlight/flashlight_cone.png"
 
 static var _cone_texture : Texture2D
-static var _halo_texture : GradientTexture2D
 
-var _cone : PointLight2D
-var _halo : PointLight2D
+@onready var cone : PointLight2D = $Cone
+@onready var halo : PointLight2D = $Halo
 
 
 func _ready() -> void:
-	#the node sits under a scaled sprite, so the lights are sized against the scale they inherit
-	var inherited : float = global_transform.get_scale().x
-	_cone = PointLight2D.new()
-	_cone.texture = _get_cone_texture()
-	_cone.texture_scale = range_m * WORLD_PX_PER_M / CONE_WIDTH / inherited
-	#the texture's left edge has to be the light's origin. The offset is not scaled with the texture, so it is worked out in the scaled size
-	_cone.offset = Vector2(CONE_WIDTH / 2.0 * _cone.texture_scale, 0.0)
-	_cone.color = color
-	_cone.energy = cone_energy
-	_cone.shadow_enabled = true
-	_cone.shadow_filter = Light2D.SHADOW_FILTER_PCF5
-	add_child(_cone)
-	_halo = PointLight2D.new()
-	_halo.texture = _get_halo_texture()
-	_halo.texture_scale = halo_radius_m * WORLD_PX_PER_M * 2.0 / _halo.texture.get_width() / inherited
-	_halo.color = color
-	_halo.energy = halo_energy
-	_halo.shadow_enabled = true
-	_halo.shadow_filter = Light2D.SHADOW_FILTER_PCF5
-	add_child(_halo)
 	set_on(on)
 
 
 func set_on(value : bool) -> void:
 	on = value
-	if _cone != null:
-		_cone.enabled = value
-		_halo.enabled = value
+	if is_node_ready():
+		cone.enabled = value
+		halo.enabled = value
 
 
 func toggle() -> void:
 	set_on(not on)
-
 
 ##The beam's light texture, loaded from CONE_PATH (baked by bake_cone(); building it here costs about 45 ms, too much while a game loads).
 ##If the file is missing it is built in code instead.
@@ -89,17 +69,3 @@ static func build_cone_image() -> Image:
 				level = pow(1.0 - distance, 1.4) * smoothstep(CONE_HALF_ANGLE, CONE_HALF_ANGLE * 0.55, angle)
 			image.set_pixel(x, y, Color(level, level, level, 1.0))
 	return image
-
-
-static func _get_halo_texture() -> GradientTexture2D:
-	if _halo_texture == null:
-		var gradient : Gradient = Gradient.new()
-		gradient.colors = PackedColorArray([Color.WHITE, Color.BLACK])
-		_halo_texture = GradientTexture2D.new()
-		_halo_texture.gradient = gradient
-		_halo_texture.fill = GradientTexture2D.FILL_RADIAL
-		_halo_texture.fill_from = Vector2(0.5, 0.5)
-		_halo_texture.fill_to = Vector2(1.0, 0.5)
-		_halo_texture.width = 256
-		_halo_texture.height = 256
-	return _halo_texture

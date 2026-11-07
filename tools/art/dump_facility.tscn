@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://tools/art/dump_facility.gd" id="1_dump"]
+
+[node name="DumpFacility" type="Node"]
+script = ExtResource("1_dump")

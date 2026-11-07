@@ -16,6 +16,7 @@ const SOURCE_FLOORS : int = 0
 const SOURCE_WALLS : int = 1
 const SOURCE_SHADOWS : int = 2
 const ART_DIR : String = "res://night_shift/environment/art/"
+const TILESET_PATH : String = "res://night_shift/environment/facility_tileset.tres" #the saved tile set the map's layers use (baked by bake())
 
 const WORLD_LAYER : int = 1 << 1 #physics layer 2: walls and other solid world pieces, stops bodies and projectiles
 const DOOR_LAYER : int = 1 << 3 #physics layer 4: closed doors, stops bodies only
@@ -27,11 +28,17 @@ const NEIGHBOURS : Array[Vector2i] = [Vector2i(0, -1), Vector2i(1, -1), Vector2i
 static var _shared : TileSet
 
 
-##One tile set built once and shared by every map (maps only read it). WarmUp builds it at startup, so loading a game does not.
+##The tile set, loaded once: the saved facility_tileset.tres (the map scene's layers use the same file, so it can be inspected and tweaked in the editor),
+##or built in code if that file is missing. WarmUp loads it at startup, so loading a game does not.
 static func shared() -> TileSet:
 	if _shared == null:
-		_shared = build()
+		_shared = load(TILESET_PATH) if ResourceLoader.exists(TILESET_PATH) else build()
 	return _shared
+
+
+##Saves build() as TILESET_PATH. Run it again after changing the art layout or the wall shapes: godot --headless --script res://tools/art/bake_facility_tileset.gd
+static func bake() -> Error:
+	return ResourceSaver.save(build(), TILESET_PATH)
 
 
 static func build() -> TileSet:

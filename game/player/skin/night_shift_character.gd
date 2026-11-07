@@ -1,13 +1,14 @@
 ## Night Shift character visuals (Godot 4), from the sprite kit (https://claude.ai/artifact/3vjw1tkGREJeaXT8mbr5Mc).
 ## This copy uses the smooth cel-shaded sheets in guard/ (the kit's cel/ folder): pixel_art is off. The sheets are drawn at 176 px per metre,
 ## so the Skin node is scaled 0.25 to fit the world's 44 px per metre. Add other roles by copying their cel/ folder next to guard/.
-## Scene setup: a Node2D with three AnimatedSprite2D children, in this order: Legs, Torso, Full
-## (later children draw on top, so the torso covers the hips).
-## Copy the sprites folder into res://sprites, pick a role, and call update_visual() every frame.
+## Scene setup (player_skin.tscn): a Node2D with three AnimatedSprite2D children, in this order: Legs, Torso, Full (later children draw on top, so the\n## torso covers the hips), with the role's frames assigned. The Lamp, Flashlight and Muzzle are nodes under the Torso. Call update_visual() every frame.
 class_name NightShiftCharacter
 extends Node2D
 
-@export var role := "guard"
+## The role's frames and data. Set in player_skin.tscn (the guard's). Leave sprite_frames empty to load the role named below from sprite_root instead.
+@export var sprite_frames : SpriteFrames
+@export_file("*.json") var sprite_data : String
+@export var role := "guard" #only used when sprite_frames is empty
 @export var sprite_root := "res://game/player/skin"
 ## On for the pixel-art sheets: crisp nearest-neighbour pixels. Off for the smooth cel-shaded sheets.
 @export var pixel_art := false
@@ -63,41 +64,62 @@ var _ghost: AnimatedSprite2D
 var _lamp: Node2D
 
 
-## Sprite sheets loaded and cut into frames, per role folder: {"meta": sprites.json, "frames": SpriteFrames}. Every character of a role shares
-## them (they are only read), so only the first one pays for loading the sheets. WarmUp fills this at startup, before any networked game.
+## The frames and data of a role (guard, medic...). The Skin scene has the guard's frames assigned in the editor (`sprite_frames`, a saved SpriteFrames
+## resource, so every animation can be previewed on the Legs, Torso and Full nodes) and the role's sprites.json as `sprite_data` (per-animation offsets
+## and the shoulder positions). Another role is one more pair of files made the same way: tools/rig renders the sheets and sprites.json, and
+## bake_frames() (run through game/player/skin/bake_skin_frames.gd) turns them into the SpriteFrames resource.
+## load_role() is the code path for a role that has no baked file yet, and what WarmUp calls at startup to have the sheets loaded before a game.
 static var _role_cache: Dictionary = {}
 
 
-## Loads a role's sheets and builds its frames, once; later calls return the cached ones.
+## The role's sprites.json and its SpriteFrames, loaded once: the baked <role>_frames.tres when it exists, otherwise cut from the sheets in code.
 static func load_role(root: String, role_name: String) -> Dictionary:
 	var key := "%s/%s" % [root, role_name]
 	if not _role_cache.has(key):
 		var role_meta: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("%s/sprites.json" % key))
-		var frames := SpriteFrames.new()
-		frames.remove_animation("default")
-		for anim_name in role_meta.keys():
-			var m: Dictionary = role_meta[anim_name]
-			var tex: Texture2D = load("%s/%s" % [key, m["file"]])
-			var size := int(m["frame_size"])
-			var cols := int(m["hframes"])
-			frames.add_animation(anim_name)
-			frames.set_animation_speed(anim_name, m["fps"])
-			frames.set_animation_loop(anim_name, m["loop"])
-			for i in int(m["frames"]):
-				var at := AtlasTexture.new()
-				at.atlas = tex
-				at.region = Rect2((i % cols) * size, (i / cols) * size, size, size)
-				frames.add_frame(anim_name, at)
-		_role_cache[key] = {"meta": role_meta, "frames": frames}
+		var baked := "%s/%s_frames.tres" % [key, role_name]
+		_role_cache[key] = {"meta": role_meta, "frames": load(baked) if ResourceLoader.exists(baked) else build_frames(key, role_meta)}
 	return _role_cache[key]
 
 
+## Cuts a role's sheets into a SpriteFrames, from its sprites.json: one animation per entry, with the fps and looping the file says.
+static func build_frames(folder: String, role_meta: Dictionary) -> SpriteFrames:
+	var frames := SpriteFrames.new()
+	frames.remove_animation("default")
+	for anim_name in role_meta.keys():
+		var m: Dictionary = role_meta[anim_name]
+		var tex: Texture2D = load("%s/%s" % [folder, m["file"]])
+		var size := int(m["frame_size"])
+		var cols := int(m["hframes"])
+		frames.add_animation(anim_name)
+		frames.set_animation_speed(anim_name, m["fps"])
+		frames.set_animation_loop(anim_name, m["loop"])
+		for i in int(m["frames"]):
+			var at := AtlasTexture.new()
+			at.atlas = tex
+			at.region = Rect2((i % cols) * size, (i / cols) * size, size, size)
+			frames.add_frame(anim_name, at)
+	return frames
+
+
+## Saves a role's SpriteFrames as <folder>/<role>_frames.tres, so it can be assigned in the editor.
+static func bake_frames(root: String, role_name: String) -> Error:
+	var folder := "%s/%s" % [root, role_name]
+	var role_meta: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("%s/sprites.json" % folder))
+	return ResourceSaver.save(build_frames(folder, role_meta), "%s/%s_frames.tres" % [folder, role_name])
+
+
 func _ready() -> void:
-	var loaded := load_role(sprite_root, role)
-	meta = loaded["meta"]
-	var frames: SpriteFrames = loaded["frames"]
+	if sprite_frames != null and sprite_data != "":
+		meta = JSON.parse_string(FileAccess.get_file_as_string(sprite_data))
+		for s in [legs, torso, full]:
+			s.sprite_frames = sprite_frames
+	else: #no frames set in the editor: load the role named in `role`
+		var loaded := load_role(sprite_root, role)
+		meta = loaded["meta"]
+		for s in [legs, torso, full]:
+			s.sprite_frames = loaded["frames"]
 	for s in [legs, torso, full]:
-		s.sprite_frames = frames
 		s.centered = true
 		if pixel_art:
 			s.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
@@ -106,7 +128,6 @@ func _ready() -> void:
 	_play(legs, "legs_idle")
 	_play(torso, "torso_idle")
 	_ready_done = true
-
 
 ## move_vel: current velocity. aim_dir: direction the player is aiming.
 ## aiming: aim button held (gun out). running: sprint held (forces holster).

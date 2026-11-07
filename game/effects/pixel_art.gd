@@ -9,7 +9,7 @@ signal toggled(on : bool)
 
 const DEBUG_SETTINGS : Array[StringName] = [&"can_toggle_pixel_art"] #turned off by DebugRemover (it also strips autoloads)
 
-@export var enabled : bool = true : set = set_enabled
+@export var enabled : bool = false : set = set_enabled
 @export var pixel_size : float = 3.0 : set = set_pixel_size #one big pixel, in screen pixels
 
 @export_group("Debug")
