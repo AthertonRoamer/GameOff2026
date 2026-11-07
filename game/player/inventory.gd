@@ -20,6 +20,7 @@ var drawn : bool = false: #the active item is out in the hands. Selecting a draw
 		if value != drawn:
 			drawn = value
 			drawn_changed.emit(value)
+var redraw_after_run : bool = false #the item was put away by running, so it comes back out when the run ends
 var last_use_tick : int = -1000
 
 @onready var player : Player = get_parent()
@@ -45,10 +46,18 @@ func _rollback_tick(_delta : float, tick : int, _is_fresh : bool) -> void:
 	var can_draw : bool = item != null and item.drawable
 	if active_slot != previous_slot: #choosing an item brings it out (a gun) or puts the last one away
 		drawn = can_draw
+		redraw_after_run = false
 	elif player.input.holster:
 		drawn = can_draw and not drawn
+		redraw_after_run = false
 	elif drawn and not can_draw:
 		drawn = false
+	if player.is_running() and drawn: #running puts the item away, and it comes back out when the run stops
+		drawn = false
+		redraw_after_run = true
+	elif redraw_after_run and not player.is_running():
+		drawn = can_draw
+		redraw_after_run = false
 
 	var wants_to_use : bool = can_draw and drawn and player.input.use_item and tick - last_use_tick >= item.cooldown_ticks
 	use_action.set_active(wants_to_use)

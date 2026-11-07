@@ -53,7 +53,6 @@ scale = Vector2(1.1, 0.95)
 texture = SubResource("GradientTexture2D_shadow")
 
 [node name="Legs" type="AnimatedSprite2D" parent="." unique_id=1972005756]
-visible = false
 sprite_frames = ExtResource("6_frames")
 animation = &"legs_idle"
 offset = Vector2(0, -21.2)

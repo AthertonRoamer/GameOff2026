@@ -94,9 +94,9 @@ func _rollback_tick(delta : float, _tick : int, _is_fresh : bool) -> void:
 	velocity /= NetworkTime.physics_factor
 
 
-##Shift held while moving. Drawing the gun (right mouse) while running drops you to a walk with the gun out.
+##Shift held while moving. Running holsters the gun (Inventory), and it comes back out when the run stops.
 func is_running() -> bool:
-	return input.run and input.movement != Vector2.ZERO and not is_aiming()
+	return input.run and input.movement != Vector2.ZERO
 
 
 ##The active item (the gun) is out in the hands: chosen in the inventory, H holsters or draws it. A holstered gun cannot fire.
