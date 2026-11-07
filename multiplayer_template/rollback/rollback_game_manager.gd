@@ -61,6 +61,12 @@ func load_game() -> void:
 		await NetworkTime.after_sync
 		if not is_inside_tree():
 			return
+	if is_instance_valid(game) and game.has_method("is_setup_complete") and not game.is_setup_complete():
+		#the game still has setup to finish (for example waiting for data from the lobby before spawning players). It emits setup_complete
+		Main.output("Rollback: waiting for the game to finish its setup before reporting game loaded")
+		await game.setup_complete
+		if not is_inside_tree():
+			return
 	is_game_loaded = true
 	game_loaded.emit()
 

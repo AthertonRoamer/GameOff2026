@@ -2,7 +2,7 @@ class_name PlayerSetup
 extends Node
 
 ##Handles everything about a freshly spawned player that RollbackPlayerSpawner itself doesn't:
-##starting position, display name, lag compensation tracking. Put this in the game scene next
+##starting position, display name, role and team, lag compensation tracking. Put this in the game scene next
 ##to the Spawner and LagCompensator, and call setup_player() from player_spawned.
 
 @export var spawn_point : Vector2 = Vector2.ZERO #the middle of the starting line (the game sets it to the level's spawn room)
@@ -12,9 +12,14 @@ extends Node
 @export var projectile_manager : ProjectileManager
 
 
-func setup_player(player : Node, member : LobbyMember, index : int, member_count : int) -> void:
+##Runs before the player enters the tree, so the role's stats are in place for the player's own _ready.
+func setup_player(player : Node, member : LobbyMember, index : int, member_count : int, role : Role = null, team : int = Team.UNKNOWN) -> void:
 	player.position = spawn_point + Vector2((index - (member_count - 1) / 2.0) * spawn_spacing, 0.0)
 	player.player_name = member.name
 	player.lag_compensator = lag_compensator
 	player.projectile_manager = projectile_manager
+	player.role = role
+	player.team = team
+	if role != null:
+		role.apply(player)
 	lag_compensator.track(player, &"position", hit_radius)

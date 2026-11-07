@@ -154,7 +154,10 @@ func info(text: String, values: Array = []):
 ## has gone wrong, but is recoverable.
 func warning(text: String, values: Array = []):
 	if _check_log_level(LOG_WARN):
-		var formatted_text = _format_text(text, values, LOG_WARN)
+		var suppressed := _take_rate_limit(text)
+		if suppressed < 0:
+			return
+		var formatted_text = _format_text(text, values, LOG_WARN) + _suppressed_note(suppressed)
 		if push_to_debugger:
 			push_warning(formatted_text)
 
@@ -168,12 +171,40 @@ func warning(text: String, values: Array = []):
 ## can't be recovered from.
 func error(text: String, values: Array = []):
 	if _check_log_level(LOG_ERROR):
-		var formatted_text = _format_text(text, values, LOG_ERROR)
+		var suppressed := _take_rate_limit(text)
+		if suppressed < 0:
+			return
+		var formatted_text = _format_text(text, values, LOG_ERROR) + _suppressed_note(suppressed)
 		if push_to_debugger:
 			push_error(formatted_text)
 
 		# Print so it shows up in the Output panel too
 		print(formatted_text)
+
+## GameOff2026 change (not upstream netfox): rate limit for warnings and errors.
+## The same message (same logger, same text before its values are filled in) is printed at most once per
+## [member rate_limit_seconds]; the copies in between are counted, and the next printed copy says how many were
+## skipped. A flood of thousands per second (each one printed and pushed to the debugger with a backtrace) stalls
+## the process, which makes whatever caused the flood worse. 0 turns the limit off.
+static var rate_limit_seconds := 1.0
+static var _rate_limits: Dictionary = {} #key -> [last printed msec, skipped since]
+
+## -1: skip this message. Otherwise print it; the value is how many copies were skipped before it.
+func _take_rate_limit(text: String) -> int:
+	if rate_limit_seconds <= 0.:
+		return 0
+	var key := "%s::%s::%s" % [module, name, text]
+	var now := Time.get_ticks_msec()
+	var entry = _rate_limits.get(key)
+	if entry != null and now - entry[0] < rate_limit_seconds * 1000.:
+		entry[1] += 1
+		return -1
+	var skipped: int = entry[1] if entry != null else 0
+	_rate_limits[key] = [now, 0]
+	return skipped
+
+func _suppressed_note(skipped: int) -> String:
+	return " (and %d more like this since the last one)" % [skipped] if skipped > 0 else ""
 
 func _check_log_level(level: int) -> bool:
 	var cmp_level = log_level

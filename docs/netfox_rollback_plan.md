@@ -6,7 +6,7 @@ Goal: add client-side prediction and rollback (netfox 1.35.3, Godot 4.7.1, 2D) t
 - Existing files change only when unavoidable (`configuration.gd` new exports with off-by-default values, `project.godot` netfox time settings, and the configuration used by `main.tscn`).
 - New code lives in `multiplayer_template/rollback/`. The base `GameManager`, `Lobby`, `LateLoadLobby`, modes, `NorayManager` and `Network` are subclassed or hooked, never edited.
 - The existing demo (`DemoOne`) must keep working. Run the smoke harness after every phase.
-- Tickrate target: 60 ticks/s with `netfox/time/sync_to_physics` on. Keep all game code tick-agnostic (`NetworkTime.ticktime`), and re-evaluate with `NetworkPerformance` measurements in Phase 4.
+- Tickrate target: 60 ticks/s (`netfox/time/tickrate`). `netfox/time/sync_to_physics` was on at first and is now **off**: measured, it let slow frames spiral into lost sync (see "Sync stability" at the end). Keep all game code tick-agnostic (`NetworkTime.ticktime`, `NetworkTime.physics_factor`).
 
 ## Smoke harness
 `tests/harness/` drives the real host and join code in two processes, with no menu clicks.
@@ -106,3 +106,23 @@ Still not done: `PeerVisibilityFilter`, line-of-sight for the instant shot, non-
 2. **Rollback demo**: new 2D demo and new configuration, `CharacterBody2D` player with `RollbackSynchronizer` and `TickInterpolator`.
 3. **Actions**: `RewindableAction` shooting, projectile spawner with deterministic names, server-side lag-compensated hitscan, `StateSynchronizer` for server-owned state, optional `PeerVisibilityFilter`.
 4. **Hardening**: mid-game leave/disconnect, return-to-lobby, packet-loss tests, bandwidth and rollback cost, two-machine Noray run, template README.
+
+## Sync stability: `sync_to_physics` off, netfox log rate limit
+Symptom: after 30-60 s of a 3-player game (even with nobody touching anything), every peer started rejecting data "older than 64 frames" and rolling back "past the history limit", thousands of times, and often never recovered. Players freeze or rubber-band and actions are lost while it lasts.
+
+Measured with `tests/harness/run_soak.ps1` (90 s games, 3 players, per-process clock, frame-time and tick-burst logs):
+- Cause: a CPU spiral. With `sync_to_physics` on, netfox runs its catch-up ticks (up to 8) inside every physics step, and Godot runs up to 8 physics steps after a slow frame, so one frame could run up to 64 ticks, each with rollback re-simulation. That made the next frame slower still (seen: 4 -> 20 -> 61 ticks per frame, 333 -> 962 ms frames), until a peer was over a second behind.
+- Amplifier: each rejected message was printed and pushed to the debugger with a backtrace, thousands per second, slowing the process further.
+- `sync_to_physics` on: 4 of 8 runs kept sync, up to 64 ticks in one frame, 5-54 frames over 250 ms per process. Off: 8 of 8 kept sync, never more than 8 ticks in one frame, 0-1 slow frames per process.
+- Log rate limit alone (still on physics): 7 of 8 kept sync against 5 of 8 without it.
+
+Changes:
+- `project.godot`: `netfox/time/sync_to_physics=false`. Ticks run from the frame loop, capped at `max_ticks_per_frame` (8). Player movement stays correct through `NetworkTime.physics_factor`.
+- `addons/netfox.internals/logger.gd` (marked as a local change, not upstream): identical netfox warnings and errors print at most once per second, and the next printed copy says how many were skipped. Nothing is hidden; set `NetfoxLogger.rate_limit_seconds = 0` for every message.
+
+Consequences for game code that runs in ticks (`_rollback_tick`, `NetworkTime.on_tick`):
+- Use direct physics queries (`get_world_2d().direct_space_state.intersect_ray()` and friends). They see bodies where ticks just moved them. `RayCast2D`, `ShapeCast2D` and `Area2D` overlaps only refresh once per physics step, so inside ticks they are stale (they were during rollback re-simulation even with `sync_to_physics` on); use `force_raycast_update()` or direct queries instead.
+- Direct queries outside the physics step are fine while 2D physics does not run on a separate thread.
+- Physics-engine-driven objects (`RigidBody2D`, joints) would no longer step together with the network ticks. Revisit this setting if the game ever needs those to stay in sync.
+
+Checking it again: `run_soak.ps1 -Runs 8 -Seconds 90` (add `-Move` for walking players, `-NoLogLimit` for upstream logging) ends with "SOAK: n of m runs kept sync".

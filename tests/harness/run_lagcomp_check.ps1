@@ -1,4 +1,5 @@
 param(
+	[string]$Godot = "C:\Users\yello\Downloads\Godot_v4.7.1-stable_win64.exe\Godot_v4.7.1-stable_win64_console.exe",
 	[double]$LatencyMs = 120,
 	[int]$TimeoutSeconds = 120
 )
@@ -12,8 +13,8 @@ function Get-Hits($lines) {
 	return [int]$Matches[1]
 }
 
-$on = & $smoke -Moving -LatencyMs $LatencyMs -TimeoutSeconds $TimeoutSeconds
-$off = & $smoke -Moving -NoLagComp -LatencyMs $LatencyMs -TimeoutSeconds $TimeoutSeconds
+$on = & $smoke -Godot $Godot -Moving -LatencyMs $LatencyMs -TimeoutSeconds $TimeoutSeconds
+$off = & $smoke -Godot $Godot -Moving -NoLagComp -LatencyMs $LatencyMs -TimeoutSeconds $TimeoutSeconds
 $hitsOn = Get-Hits $on
 $hitsOff = Get-Hits $off
 $on | Where-Object { $_ -match "^MOVING|SMOKE" }

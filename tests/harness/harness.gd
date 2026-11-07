@@ -27,6 +27,8 @@ var rounds : int = 1 #how many games are played back to back in the same lobby
 var leave_mode : bool = false #the acting client leaves gracefully shortly after the game starts
 var kill_mode : bool = false #the runner kills the client process, the host must notice it is gone
 var game_id : String = ""
+var soak_seconds : float = 0.0 #--soak N: the real game runs N seconds with nothing scripted, to watch how sync holds up over time
+var soak_move : bool = false #--soak-move: during a soak every player walks a square (inputs keep changing) instead of standing still
 var main_node : Node
 
 
@@ -41,7 +43,11 @@ func _ready() -> void:
 	use_combat = args.has("--combat")
 	use_hold = args.has("--hold")
 	use_demo = args.has("--demo") or use_moving or use_combat or use_hold or OS.get_cmdline_args().has("--harness-demo")
-	use_night_shift = args.has("--night-shift") or OS.get_cmdline_args().has("--harness-night-shift")
+	idx = args.find("--soak")
+	if idx != -1 and idx + 1 < args.size():
+		soak_seconds = float(args[idx + 1])
+	soak_move = args.has("--soak-move")
+	use_night_shift = args.has("--night-shift") or OS.get_cmdline_args().has("--harness-night-shift") or soak_seconds > 0.0 #a soak plays the real game
 	use_rollback = args.has("--rollback") or use_demo or use_night_shift
 	idx = args.find("--join-port")
 	if idx != -1 and idx + 1 < args.size():
@@ -71,6 +77,8 @@ func _ready() -> void:
 	await get_tree().process_frame
 	await get_tree().process_frame
 	await get_tree().process_frame
+	if OS.has_environment("HARNESS_NO_LOG_LIMIT"): #print every netfox warning, like upstream netfox (for comparison)
+		NetfoxLogger.rate_limit_seconds = 0.0
 	if OS.has_environment("HARNESS_CLOCK"):
 		clock_log_loop()
 	if role == "host":
@@ -103,10 +111,22 @@ func demo_positions(game : Node) -> String:
 	return "me=%d %s" % [multiplayer.get_unique_id(), ";".join(entries)]
 
 
+var _last_frame_usec : int = 0
+var _last_frame_tick : int = 0
+
+
 func _process(delta : float) -> void:
-	#a frame that takes this long freezes the process: it delays clock replies and corrupts a time sync regardless of the network
-	if delta > HITCH_SECONDS:
-		var line : String = "HITCH %.0f ms at unix %.3f" % [delta * 1000.0, Time.get_unix_time_from_system()]
+	#a frame that takes this long freezes the process: it delays clock replies and corrupts a time sync regardless of the network.
+	#Measured both as Godot's delta and as wall time, in case the two disagree
+	var now_usec : int = Time.get_ticks_usec()
+	var wall : float = (now_usec - _last_frame_usec) / 1000000.0 if _last_frame_usec > 0 else 0.0
+	_last_frame_usec = now_usec
+	var ticks : int = NetworkTime.tick - _last_frame_tick
+	_last_frame_tick = NetworkTime.tick
+	if OS.has_environment("HARNESS_CLOCK") and ticks > 3 and ticks < 1000: #netfox ran several ticks in one frame to catch up (1000+: a clock reset)
+		print("[%s] TICKBURST %d ticks in one frame at tick %d unix %.3f" % [role.to_upper(), ticks, NetworkTime.tick, Time.get_unix_time_from_system()])
+	if delta > HITCH_SECONDS or wall > HITCH_SECONDS:
+		var line : String = "HITCH %.0f ms (wall %.0f ms) at unix %.3f" % [delta * 1000.0, wall * 1000.0, Time.get_unix_time_from_system()]
 		if role == "lobby": #the lobby instance's output is not captured, so it appends to a file the runner reads
 			var path : String = OS.get_environment("TEMP") + "/godot_smoke/lobby_hitch.log"
 			var file : FileAccess = FileAccess.open(path, FileAccess.READ_WRITE if FileAccess.file_exists(path) else FileAccess.WRITE)
@@ -153,8 +173,14 @@ func perf_line(seconds : float) -> void:
 
 func clock_log_loop() -> void:
 	#once a second: wall clock, netfox tick, rtt and clock offsets, so peers' clocks can be compared at the same instant
+	print("[%s] NETFOX sync_to_physics=%s tickrate=%d max_ticks_per_frame=%d" % [role.to_upper(), NetworkTime.sync_to_physics, NetworkTime.tickrate, NetworkTime.max_ticks_per_frame])
+	var last_msec : int = Time.get_ticks_msec()
 	while is_inside_tree():
 		await get_tree().create_timer(1.0).timeout
+		var gap : int = Time.get_ticks_msec() - last_msec
+		last_msec = Time.get_ticks_msec()
+		if gap > 1500: #the 1 s timer fired late: this process was not running its frames
+			print("[%s] CLOCKGAP %d ms at unix %.3f" % [role.to_upper(), gap, Time.get_unix_time_from_system()])
 		print("[%s] CLOCK unix=%.3f tick=%d rtt_ms=%.0f offset_ms=%.1f remote_offset_ms=%.1f stretch=%.3f" % [role.to_upper(), Time.get_unix_time_from_system(), NetworkTime.tick, NetworkTime.remote_rtt * 1000.0, NetworkTime.clock_offset * 1000.0, NetworkTime.remote_clock_offset * 1000.0, NetworkTime.clock_stretch_factor])
 
 
@@ -319,6 +345,7 @@ func run_host() -> void:
 		var lobby_args : Array[String] = Main.main.configuration.lobby_args
 		lobby_args.insert(0, "res://tests/harness/harness.tscn")
 		lobby_args.append("--harness-lobby")
+		lobby_args.append_array(["--log-file", OS.get_environment("TEMP") + "/godot_smoke/lobby.log"]) #its stdout isn't captured otherwise
 		if use_demo:
 			lobby_args.append("--harness-demo")
 		if use_night_shift:
@@ -434,8 +461,28 @@ func night_shift_host() -> void:
 	night_shift_report(game, changes)
 
 
+##Soak: nothing scripted, the game just runs for soak_seconds. With soak_move this peer's player walks a square, a side a second, so its
+##input keeps changing; otherwise it stands still. Logs SOAK_DONE when the time is up.
+func soak_run() -> void:
+	var actions : Array[StringName] = [&"player_right", &"player_down", &"player_left", &"player_up"]
+	var started_msec : int = Time.get_ticks_msec()
+	var step : int = 0
+	while (Time.get_ticks_msec() - started_msec) / 1000.0 < soak_seconds:
+		if soak_move:
+			for action in actions:
+				Input.action_release(action)
+			Input.action_press(actions[step % actions.size()])
+			step += 1
+		await get_tree().create_timer(1.0).timeout
+	for action in actions:
+		Input.action_release(action)
+	log_line("SOAK_DONE seconds=%.0f move=%s %s" % [soak_seconds, soak_move, describe_game()])
+
+
 func run_host_scenario() -> void:
-	if use_night_shift:
+	if soak_seconds > 0.0:
+		await soak_run()
+	elif use_night_shift:
 		await night_shift_host()
 	elif leave_mode or kill_mode:
 		#a player disappears mid-game: the host must see it go, and its own game must keep running
@@ -469,7 +516,9 @@ func run_host_scenario() -> void:
 
 
 func run_client_scenario(mode : ClientMode) -> void:
-	if use_night_shift:
+	if soak_seconds > 0.0:
+		await soak_run()
+	elif use_night_shift:
 		await night_shift_client()
 	elif leave_mode:
 		await get_tree().create_timer(1.0).timeout
@@ -535,7 +584,7 @@ func run_client() -> void:
 				log_line("DONE")
 				get_tree().quit(0)
 				return
-		if not await wait_until(func(): return not mode.lobby.game_manager.in_game):
+		if not await wait_until(func(): return not mode.lobby.game_manager.in_game, TIMEOUT + soak_seconds): #the host ends the game when its soak is over
 			return fail("game never ended")
 		log_line("GAME_ENDED")
 	await get_tree().create_timer(1.0).timeout
