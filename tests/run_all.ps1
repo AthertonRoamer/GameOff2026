@@ -40,6 +40,34 @@ if (-not $p.WaitForExit(90000)) { Stop-Process -Id $p.Id -Force }
 $unit = (Select-String -Path "$env:TEMP\roletest.out" -Pattern "RESULT: PASS" -Quiet)
 $results["role assigner unit test"] = $unit
 "{0,-62} {1}" -f "role assigner unit test", $(if ($unit) { "PASS" } else { "FAIL" })
+# unit test of the game clock
+$p = Start-Process $Godot -ArgumentList "--headless", "--path", "`"$project`"", "res://tests/unit/test_game_clock.tscn" -NoNewWindow -PassThru `
+	-RedirectStandardOutput "$env:TEMP\clocktest.out" -RedirectStandardError "$env:TEMP\clocktest.err"
+if (-not $p.WaitForExit(90000)) { Stop-Process -Id $p.Id -Force }
+$unit = (Select-String -Path "$env:TEMP\clocktest.out" -Pattern "RESULT: PASS" -Quiet)
+$results["game clock unit test"] = $unit
+"{0,-62} {1}" -f "game clock unit test", $(if ($unit) { "PASS" } else { "FAIL" })
+# unit test of the win rules and the end screen
+$p = Start-Process $Godot -ArgumentList "--headless", "--path", "`"$project`"", "res://tests/unit/test_match_director.tscn" -NoNewWindow -PassThru `
+	-RedirectStandardOutput "$env:TEMP\matchtest.out" -RedirectStandardError "$env:TEMP\matchtest.err"
+if (-not $p.WaitForExit(90000)) { Stop-Process -Id $p.Id -Force }
+$unit = (Select-String -Path "$env:TEMP\matchtest.out" -Pattern "RESULT: PASS" -Quiet)
+$results["match director unit test"] = $unit
+"{0,-62} {1}" -f "match director unit test", $(if ($unit) { "PASS" } else { "FAIL" })
+# every artifact has a unique name and image
+$p = Start-Process $Godot -ArgumentList "--headless", "--path", "`"$project`"", "res://tests/unit/test_artifacts.tscn" -NoNewWindow -PassThru `
+	-RedirectStandardOutput "$env:TEMP\artifacttest.out" -RedirectStandardError "$env:TEMP\artifacttest.err"
+if (-not $p.WaitForExit(90000)) { Stop-Process -Id $p.Id -Force }
+$unit = (Select-String -Path "$env:TEMP\artifacttest.out" -Pattern "RESULT: PASS" -Quiet)
+$results["artifacts unit test"] = $unit
+"{0,-62} {1}" -f "artifacts unit test", $(if ($unit) { "PASS" } else { "FAIL" })
+# pickups: placement, who may take an artifact, the item reaching the inventory
+$p = Start-Process $Godot -ArgumentList "--headless", "--path", "`"$project`"", "res://tests/unit/test_pickups.tscn" -NoNewWindow -PassThru `
+	-RedirectStandardOutput "$env:TEMP\pickuptest.out" -RedirectStandardError "$env:TEMP\pickuptest.err"
+if (-not $p.WaitForExit(90000)) { Stop-Process -Id $p.Id -Force }
+$unit = (Select-String -Path "$env:TEMP\pickuptest.out" -Pattern "RESULT: PASS" -Quiet)
+$results["pickups unit test"] = $unit
+"{0,-62} {1}" -f "pickups unit test", $(if ($unit) { "PASS" } else { "FAIL" })
 
 Add-SmokeResult "original demo (host, lobby, join, game, end)" (& $smoke -Godot $Godot)
 Add-SmokeResult "all peers start on the same tick (2 players)" (& $smoke -Godot $Godot -Rollback)

@@ -11,6 +11,7 @@ The facility is a scene: `night_shift/environment/facility_map.tscn`. Open it, l
 | `Doors` > `facility_door.tscn` | a sliding gate, 4 cells (1 m) wide | drag into the wall between two rooms (the wall is the one cell gap between them). Tick `horizontal` off for a gate in a vertical wall. Which rooms it joins, and whether it leads outside, are worked out from what is on each side |
 | `Vents` > `Marker2D` | vent position (top left of a 2 x 2 cell grille) | move the marker |
 | `Props` | things that stand on the floor, y-sorted | drag in `game/utility/door_control_panel.tscn` (or any `ControlPanel` scene) |
+| `ArtifactLocations` > `ArtifactLocation` | a spot where an artifact can be. `ArtifactPlacer` (in `game.tscn`) puts a different random artifact on each one every match | move the marker, or add another `ArtifactLocation` node. There must not be more of them than artifacts |
 | `Actors` | where players are added at runtime | leave it |
 | (`Floors`, `Walls`, `Shadows`) | tile layers the map **makes and fills in itself** from the rooms and doors, in the editor and in the game. They are not in the scene file, so you cannot select or paint them, and resizing a room never touches the art | a moment after you change a room or door they are rebuilt; the *Rebuild* button on the `FacilityMap` node forces it |
 

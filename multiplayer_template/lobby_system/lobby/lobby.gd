@@ -325,7 +325,7 @@ func trigger_end_game() -> void:
 	end_game.rpc()
 	
 
-@rpc("call_local")
+@rpc("call_local", "reliable")
 func end_game() -> void:
 	Main.output("Ending game")
 	game_manager.end_game()

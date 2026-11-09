@@ -5,6 +5,7 @@
 [ext_resource type="PackedScene" path="res://night_shift/environment/facility_door.tscn" id="4_yd85k"]
 [ext_resource type="PackedScene" path="res://game/utility/door_control_panel.tscn" id="6_ieksj"]
 [ext_resource type="Script" uid="uid://cwn71j7krn0x6" path="res://night_shift/environment/facility_room_rect.gd" id="rect_script"]
+[ext_resource type="Script" path="res://game/pickups/artifact_location.gd" id="7_artifact_location"]
 
 [node name="FacilityMap" type="Node2D" unique_id=577932594]
 texture_filter = 4
@@ -525,6 +526,20 @@ position = Vector2(748, 110)
 
 [node name="Vent13" type="Marker2D" parent="Vents" unique_id=1759064704]
 position = Vector2(638, 1122)
+
+[node name="ArtifactLocations" type="Node2D" parent="."]
+
+[node name="ArchiveArtifact" type="Marker2D" parent="ArtifactLocations"]
+position = Vector2(478, 511)
+script = ExtResource("7_artifact_location")
+
+[node name="VaultArtifact" type="Marker2D" parent="ArtifactLocations"]
+position = Vector2(478, 720)
+script = ExtResource("7_artifact_location")
+
+[node name="RecordsArtifact" type="Marker2D" parent="ArtifactLocations"]
+position = Vector2(1424, 1050)
+script = ExtResource("7_artifact_location")
 
 [node name="Props" type="Node2D" parent="." unique_id=818355929]
 y_sort_enabled = true

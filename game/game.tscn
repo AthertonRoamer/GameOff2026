@@ -9,26 +9,39 @@
 [ext_resource type="Script" uid="uid://c524g0r61fjy5" path="res://game/player_setup/player_setup.gd" id="7_setup"]
 [ext_resource type="PackedScene" path="res://game/level/night_shift_level.tscn" id="8_level"]
 [ext_resource type="PackedScene" path="res://game/player_hud/player_hud.tscn" id="9_hud"]
-[ext_resource type="Script" path="res://game/debug/debug_remover.gd" id="10_debug"]
-[ext_resource type="Script" path="res://game/roles/role.gd" id="11_role"]
+[ext_resource type="Script" uid="uid://ctg5p7cke1xx0" path="res://game/debug/debug_remover.gd" id="10_debug"]
+[ext_resource type="Script" uid="uid://v21eutcpbg5f" path="res://game/roles/role.gd" id="11_role"]
 [ext_resource type="Resource" path="res://game/roles/medic.tres" id="12_medic"]
 [ext_resource type="Resource" path="res://game/roles/gunman.tres" id="13_gunman"]
 [ext_resource type="Resource" path="res://game/roles/engineer.tres" id="14_engineer"]
 [ext_resource type="Resource" path="res://game/roles/scout.tres" id="15_scout"]
-[ext_resource type="Resource" path="res://game/roles/infiltrator.tres" id="16_infiltrator"]
+[ext_resource type="Resource" uid="uid://dquliqopf7cqu" path="res://game/roles/infiltrator.tres" id="16_infiltrator"]
+[ext_resource type="Script" uid="uid://btvnha0eauwou" path="res://game/game_clock/game_clock.gd" id="17_clock"]
+[ext_resource type="Script" uid="uid://deaaby2ofvrar" path="res://game/match_director/match_director.gd" id="18_director"]
+[ext_resource type="PackedScene" path="res://game/end_screen/end_screen.tscn" id="19_end"]
+[ext_resource type="Script" path="res://game/pickups/pickup_control.gd" id="20_pickups"]
+[ext_resource type="PackedScene" path="res://game/pickups/pickup.tscn" id="21_pickup"]
+[ext_resource type="Script" path="res://game/pickups/artifact_placer.gd" id="22_placer"]
+[ext_resource type="Script" path="res://game/items/artifact.gd" id="23_artifact"]
+[ext_resource type="Resource" path="res://game/items/artifacts/obsidian_idol.tres" id="24_idol"]
+[ext_resource type="Resource" path="res://game/items/artifacts/gilded_scarab.tres" id="25_scarab"]
+[ext_resource type="Resource" path="res://game/items/artifacts/moonstone_orb.tres" id="26_orb"]
+[ext_resource type="Resource" path="res://game/items/artifacts/bronze_mask.tres" id="27_mask"]
+[ext_resource type="Resource" path="res://game/items/artifacts/ruby_chalice.tres" id="28_chalice"]
+[ext_resource type="Resource" path="res://game/items/artifacts/jade_dagger.tres" id="29_dagger"]
+[ext_resource type="Script" path="res://game/pickups/target_artifact_chooser.gd" id="30_chooser"]
 
 [node name="Game" type="Node2D" unique_id=2090356720]
 script = ExtResource("1_game")
 guard_roles = Array[ExtResource("11_role")]([ExtResource("12_medic"), ExtResource("13_gunman"), ExtResource("14_engineer"), ExtResource("15_scout")])
 intruder_roles = Array[ExtResource("11_role")]([ExtResource("16_infiltrator")])
-debug_respawn_dead_players = true
 debug_show_role_rings = true
 debug_show_team_rings = true
 
-[node name="DebugRemover" type="Node" parent="."]
+[node name="DebugRemover" type="Node" parent="." unique_id=1674820963]
 script = ExtResource("10_debug")
 
-[node name="Level" parent="." instance=ExtResource("8_level")]
+[node name="Level" parent="." unique_id=787857879 instance=ExtResource("8_level")]
 can_toggle_darkness = true
 
 [node name="Spawner" type="Node" parent="." unique_id=335399860]
@@ -44,8 +57,32 @@ script = ExtResource("7_setup")
 [node name="NetworkUnloader" type="Node" parent="." unique_id=1938974698]
 script = ExtResource("3_unloader")
 
+[node name="GameClock" type="Node" parent="." unique_id=1714341309]
+script = ExtResource("17_clock")
+
+[node name="MatchDirector" type="Node" parent="." unique_id=621785788]
+script = ExtResource("18_director")
+
+[node name="PickupControl" type="Node" parent="."]
+script = ExtResource("20_pickups")
+pickup_scene = ExtResource("21_pickup")
+
+[node name="ArtifactPlacer" type="Node" parent="." node_paths=PackedStringArray("pickups")]
+script = ExtResource("22_placer")
+artifacts = Array[ExtResource("23_artifact")]([ExtResource("24_idol"), ExtResource("25_scarab"), ExtResource("26_orb"), ExtResource("27_mask"), ExtResource("28_chalice"), ExtResource("29_dagger")])
+pickups = NodePath("../PickupControl")
+
+[node name="TargetArtifactChooser" type="Node" parent="." node_paths=PackedStringArray("placer")]
+script = ExtResource("30_chooser")
+placer = NodePath("../ArtifactPlacer")
+
+[node name="EndScreen" parent="." unique_id=1748445485 instance=ExtResource("19_end")]
+
 [node name="EscapeMenu" parent="." unique_id=1642261372 instance=ExtResource("5_escape")]
 
 [node name="PlayerHud" parent="." unique_id=793943031 instance=ExtResource("9_hud")]
 
 [connection signal="cease_rpcs_request_received" from="NetworkUnloader" to="." method="_on_network_unloader_cease_rpcs_request_received"]
+[connection signal="finished" from="GameClock" to="MatchDirector" method="on_time_up"]
+[connection signal="match_ended" from="MatchDirector" to="." method="_on_match_ended"]
+[connection signal="return_to_lobby" from="MatchDirector" to="." method="_on_match_director_return_to_lobby"]

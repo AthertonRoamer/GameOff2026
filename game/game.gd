@@ -34,11 +34,19 @@ signal setup_complete #the players have been spawned with their roles and teams
 @onready var player_setup : PlayerSetup = $PlayerSetup
 @onready var player_hud : CanvasLayer = $PlayerHud
 @onready var lag_compensator : LagCompensator = $LagCompensator
+@onready var game_clock : GameClock = $GameClock
+@onready var match_director : MatchDirector = $MatchDirector
+@onready var end_screen : EndScreen = $EndScreen
+@onready var pickups : PickupControl = $PickupControl
+@onready var artifact_placer : ArtifactPlacer = $ArtifactPlacer
+@onready var target_chooser : TargetArtifactChooser = $TargetArtifactChooser
 
 var role_assigner : RoleAssigner = RoleAssigner.new()
 var assignment : Dictionary = {} #lobby: every member's role and team. The win check will use it
 var _roles : Dictionary = {} #member id -> role index, every member
 var _known_teams : Dictionary = {} #member id -> Team, only the teams this peer may know
+var _artifact_picks : PackedInt32Array = PackedInt32Array() #lobby: which artifact goes on each location, see ArtifactPlacer
+var _target_artifact : int = -1 #lobby: the artifact the attackers are after, see TargetArtifactChooser
 var _setup_complete : bool = false
 var _spawned_members : Dictionary = {} #lobby: members whose game has spawned the players
 
@@ -47,12 +55,15 @@ func _ready() -> void:
 	spawner.spawn_parent = level.actors
 	spawner.player_spawned.connect(_on_player_spawned)
 	level.player_lookup = func(peer_id : int) -> Player: return spawner.players.get(peer_id)
+	pickups.spawn_parent = level.actors
+	pickups.player_lookup = level.player_lookup
 	level.projectiles.lag_compensator = lag_compensator
 	level.projectiles.can_hit = func(target : Node) -> bool: return target.is_alive()
 	level.projectiles.projectile_hit.connect(_on_projectile_hit)
 	player_setup.lag_compensator = lag_compensator
 	player_setup.projectile_manager = level.projectiles
 	player_setup.spawn_point = level.spawn_position()
+	player_hud.bind_clock(game_clock)
 	_configure_role_assigner()
 	if debug_show_role_rings or debug_show_team_rings:
 		_add_debug_rings()
@@ -62,6 +73,7 @@ func _ready() -> void:
 		if lobby.is_master:
 			_ensure_assignment()
 			lobby.member_left.connect(func(_m : LobbyMember) -> void: _spawn_on_lobby_when_ready())
+			lobby.member_left.connect(func(_m : LobbyMember) -> void: match_director.check_elimination())
 			_spawn_on_lobby_when_ready() #no members: spawns now
 		else:
 			_request_assignment.rpc_id(1)
@@ -70,9 +82,13 @@ func _ready() -> void:
 func start() -> void:
 	level.control.broadcast_snapshot() #lobby only: every peer starts from the lobby's doors
 	set_players_active(true)
+	game_clock.start((get_parent() as RollbackGameManager).start_tick)
+	if spawner.lobby.is_master:
+		match_director.begin(assignment["teams"], _build_roster(), _is_in_play)
 
 
 func end() -> void:
+	game_clock.stop()
 	$NetworkUnloader.initiate_unload()
 
 
@@ -106,6 +122,8 @@ func _ensure_assignment() -> void:
 	var rng : RandomNumberGenerator = RandomNumberGenerator.new()
 	rng.randomize()
 	assignment = role_assigner.assign(member_ids, rng)
+	_artifact_picks = artifact_placer.roll(rng)
+	_target_artifact = target_chooser.choose(_artifact_picks, rng)
 
 
 ##Client -> lobby. Asked instead of pushed: the lobby's game always exists by the time a client's request arrives, whereas a pushed
@@ -116,12 +134,15 @@ func _request_assignment() -> void:
 	if not spawner.lobby.is_master or not spawner.lobby.has_member_with_id(sender):
 		return
 	_ensure_assignment()
-	_receive_assignment.rpc_id(sender, assignment["roles"], role_assigner.teams_visible_to(sender, assignment))
+	var target_for_sender : int = _target_artifact if assignment["teams"].get(sender) == Team.ATTACKERS else -1 #defenders are never sent it
+	_receive_assignment.rpc_id(sender, assignment["roles"], role_assigner.teams_visible_to(sender, assignment), _artifact_picks, target_for_sender)
 
 
 @rpc("authority", "call_remote", "reliable")
-func _receive_assignment(roles : Dictionary, known_teams : Dictionary) -> void:
+func _receive_assignment(roles : Dictionary, known_teams : Dictionary, artifact_picks : PackedInt32Array, target_artifact : int) -> void:
 	if not _setup_complete:
+		artifact_placer.place(artifact_picks)
+		target_chooser.set_target(target_artifact)
 		_spawn_players(roles, known_teams)
 		_confirm_spawned.rpc_id(1)
 
@@ -141,6 +162,8 @@ func _spawn_on_lobby_when_ready() -> void:
 	for member in spawner.lobby.members:
 		if not _spawned_members.has(member.id):
 			return
+	artifact_placer.place(_artifact_picks)
+	target_chooser.set_target(_target_artifact)
 	_spawn_players(assignment["roles"], assignment["teams"]) #the lobby knows every team
 
 
@@ -171,6 +194,10 @@ func _on_player_spawned(player : Node, member : LobbyMember, index : int) -> voi
 	player_setup.setup_player(player, member, index, spawner.lobby.members.size(), role, _known_teams.get(member.id, Team.UNKNOWN))
 	if player == spawner.local_player:
 		player_hud.bind_player(player)
+		if player.team == Team.ATTACKERS:
+			player_hud.show_target(target_chooser.target)
+	if spawner.lobby.is_master:
+		player.died.connect(match_director.check_elimination)
 	if debug_respawn_dead_players:
 		player.died.connect(_on_player_died.bind(player))
 		player.health_changed.connect(_on_player_health_changed.bind(player))
@@ -193,9 +220,39 @@ func _on_projectile_hit(projectile : Dictionary, target : Node) -> void:
 	target.take_damage(projectile["damage"])
 
 
+##Lobby only. Who played what, for the end screen. Built when the match starts so players who leave part way through are still listed.
+func _build_roster() -> Array:
+	var roster : Array = []
+	for member in spawner.lobby.members:
+		var role : Role = role_assigner.role_at(assignment["roles"].get(member.id, -1))
+		roster.append({"id": member.id, "name": member.name, "role": role.role_name if role else "No role", "team": assignment["teams"].get(member.id, Team.UNKNOWN)})
+	return roster
+
+
+##A player who left is out. So is a dead one, unless debug_respawn_dead_players is going to bring them back.
+func _is_in_play(member_id : int) -> bool:
+	var player : Variant = spawner.players.get(member_id)
+	return is_instance_valid(player) and (debug_respawn_dead_players or player.is_alive())
+
+
+func _on_match_ended(reason : int, roster : Array) -> void:
+	game_clock.stop()
+	if is_instance_valid(spawner.local_player):
+		spawner.local_player.interactor.close_screen() #first: closing a screen gives the player control back
+	set_players_active(false)
+	player_hud.visible = false
+	end_screen.show_result(reason, roster, multiplayer.get_unique_id(), match_director.results_seconds)
+
+
+func _on_match_director_return_to_lobby() -> void:
+	if spawner.lobby.game_manager.in_game: #the host may have quit from the escape menu during the results
+		spawner.lobby.trigger_end_game()
+
+
 func _on_network_unloader_cease_rpcs_request_received() -> void:
 	set_players_active(false)
 	level.projectiles.quiesce()
 	level.control.quiesce()
+	pickups.quiesce()
 	spawner.quiesce()
 	($NetworkUnloader as NetworkUnloader).register_as_ceased()
