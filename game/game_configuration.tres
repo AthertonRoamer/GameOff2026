@@ -15,6 +15,7 @@
 
 [resource]
 script = ExtResource("1_cfg")
+use_debug_menu = true
 menu_scene = ExtResource("2_menu")
 lobby_scene = ExtResource("3_lobby")
 lobby_args = Array[String](["--mode lobby", "--debug-menu", "--headless"])

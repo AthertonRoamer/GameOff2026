@@ -6,6 +6,9 @@ extends CanvasLayer
 @onready var health_bar : ProgressBar = $HealthBar
 @onready var slots_box : HBoxContainer = $InventorySlots
 @onready var interact_prompt : Label = $InteractPrompt #"E   use the ..." while a console is in reach
+@onready var inventory_full_label : Label = $InventoryFullLabel #while an item in reach can't be taken for lack of room
+@onready var target_label : Label = $TargetLabel #attackers only: which artifact they are after
+@onready var clock_label : Label = $ClockLabel #hidden until bind_clock(): the playground has no clock
 
 var _slot_panels : Array[PanelContainer] = []
 var _slot_icons : Array[TextureRect] = []
@@ -33,8 +36,22 @@ func bind_player(player : Player) -> void:
 	health_bar.max_value = player.starting_health
 	health_bar.value = player.health
 	player.health_changed.connect(func(h : float) -> void: health_bar.value = h)
-	(player.get_node("Interactor") as PlayerInteractor).prompt_changed.connect(_show_prompt) #by node: the player is not in the tree yet, so its @onready vars are unset
+	var interactor : PlayerInteractor = player.get_node("Interactor") #by node: the player is not in the tree yet, so its @onready vars are unset
+	interactor.prompt_changed.connect(_show_prompt)
+	interactor.inventory_full_changed.connect(inventory_full_label.set_visible)
 	call_deferred("_bind_inventory", player) #player hasn't entered the tree yet, so Inventory._ready() hasn't populated slots
+
+
+func bind_clock(clock : GameClock) -> void:
+	clock_label.text = clock.get_time_text()
+	clock_label.visible = true
+	clock.time_changed.connect(clock_label.set_text)
+
+
+func show_target(artifact : Artifact) -> void:
+	target_label.visible = artifact != null
+	if artifact != null:
+		target_label.text = "Target: %s" % artifact.item_name
 
 
 func _bind_inventory(player : Player) -> void:
@@ -42,6 +59,7 @@ func _bind_inventory(player : Player) -> void:
 	_refresh_icons()
 	_highlight_slot(_inventory.active_slot)
 	_inventory.active_slot_changed.connect(_highlight_slot)
+	_inventory.items_changed.connect(_refresh_icons)
 
 
 func _show_prompt(text : String) -> void:

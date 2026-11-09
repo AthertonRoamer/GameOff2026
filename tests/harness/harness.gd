@@ -467,6 +467,7 @@ func soak_run() -> void:
 	var actions : Array[StringName] = [&"player_right", &"player_down", &"player_left", &"player_up"]
 	var started_msec : int = Time.get_ticks_msec()
 	var step : int = 0
+	Main.mode.get_game().game_clock.real_minutes = soak_seconds / 60.0 + 60.0 #the game must outlast the soak
 	while (Time.get_ticks_msec() - started_msec) / 1000.0 < soak_seconds:
 		if soak_move:
 			for action in actions:

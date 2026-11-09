@@ -9,6 +9,7 @@ const SLOT_COUNT : int = 4
 
 signal active_slot_changed(slot : int)
 signal drawn_changed(drawn : bool)
+signal items_changed
 
 @export var slots : Array[Item] = [null, null, null, null]
 var active_slot : int = 0:
@@ -34,6 +35,16 @@ func _ready() -> void:
 	for i in range(mini(player.starting_items.size(), SLOT_COUNT)):
 		slots[i] = player.starting_items[i]
 	drawn = active_item != null and active_item.drawable #the first item starts out in the hands
+
+
+##The first empty slot, or -1 when the inventory is full.
+func first_free_slot() -> int:
+	return slots.find(null)
+
+
+func put_in_slot(slot : int, item : Item) -> void:
+	slots[slot] = item
+	items_changed.emit()
 
 
 func _rollback_tick(_delta : float, tick : int, _is_fresh : bool) -> void:

@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="Artifact" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://game/items/artifact.gd" id="1_artifact"]
+[ext_resource type="Texture2D" path="res://game/items/artifacts/icons/jade_dagger.svg" id="2_icon"]
+
+[resource]
+script = ExtResource("1_artifact")
+item_name = "Jade Dagger"
+icon = ExtResource("2_icon")
