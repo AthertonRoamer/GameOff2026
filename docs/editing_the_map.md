@@ -1,6 +1,6 @@
 # Editing the map in the editor
 
-The facility is a scene: `night_shift/environment/facility_map.tscn`. Open it, look at the 2D view, and edit nodes. (It used to be built at runtime from
+The facility is a scene: `game/environment/facility_map.tscn`. Open it, look at the 2D view, and edit nodes. (It used to be built at runtime from
 `facility_layout.json`; `tools/art/convert_layout_to_scene.gd` made the scene from that file once, and the JSON, `tools/art/check_layout.py` and
 `convert_layout_to_quarter_metre.py` are only history now.)
 
@@ -24,11 +24,11 @@ starts and gives it its screen; nothing is registered in code. A new kind of con
 `closed` signal), plus an inherited `control_panel.tscn` pointing at it.
 
 ## Player visuals
-`game/player/skin/player_skin.tscn` is a real scene now: `Legs`, `Torso` and `Full` have the guard's `SpriteFrames` (`guard/guard_frames.tres`) assigned, so
-every animation can be previewed; the `Flashlight` has `Cone` and `Halo` `PointLight2D` children, the `Muzzle` has its `Light`, and the shoulder lamp and
-muzzle star are tool scripts that draw in the editor with colours you can change. After the sheets or `sprites.json` change (`tools/rig`), re-run
-`godot --headless --script res://tools/art/bake_skin_frames.gd` to rebuild `guard_frames.tres`. Another role's skin = another frames resource and
-`sprites.json`, assigned on the Skin node (`sprite_frames`, `sprite_data`).
+`game/player/skin/player_skin.tscn` is a real scene: `Legs`, `Torso` and `Full` have the guard's `SpriteFrames` (`guard/guard_frames.tres`) assigned, so every
+animation can be previewed; `HitReaction` (flinch and blood) and `Death` (the fall) are nodes with their own settings; the `Flashlight` has `Cone` and `Halo`
+`PointLight2D` children, the `Muzzle` has its `Light`, and the shoulder lamp and muzzle star are tool scripts that draw in the editor with colours you can change.
+The sheets come from Blender: `tools/rig/build_skin.ps1` renders and packs them and has Godot bake `guard_frames.tres` (see `tools/rig/README.md`). Another role's
+skin = another frames resource and `sprites.json`, assigned on the Skin node (`sprite_frames`, `sprite_data`).
 
 ## Tools (godot --headless --path . --script res://tools/art/<name>.gd)
 - `bake_facility_tileset.gd`: rewrites `facility_tileset.tres` (the wall/floor/shadow tile set, with its collision and light occluders)

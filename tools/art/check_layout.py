@@ -1,4 +1,4 @@
-"""Checks night_shift/environment/facility_layout.json: rooms do not overlap, every door opens a wall cell between the two rooms
+"""Checks game/environment/facility_layout.json: rooms do not overlap, every door opens a wall cell between the two rooms
 it names, and every room can be reached from every other through doors.  Run:  py -3 tools/art/check_layout.py"""
 import json
 import os

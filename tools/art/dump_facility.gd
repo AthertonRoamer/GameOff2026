@@ -5,7 +5,7 @@ extends Node
 ##(a scene, not --script: the map's consoles use the game's autoloads)
 
 func _ready() -> void:
-	var map : FacilityMap = (load("res://night_shift/environment/facility_map.tscn") as PackedScene).instantiate()
+	var map : FacilityMap = (load("res://game/environment/facility_map.tscn") as PackedScene).instantiate()
 	add_child(map)
 	await get_tree().process_frame
 	await get_tree().process_frame

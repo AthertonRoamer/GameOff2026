@@ -6,14 +6,9 @@ extends Node2D
 ##the scene that owns it puts players into `actors` and tells it how to find a peer's player (player_lookup), which the lobby needs to check
 ##that someone asking to work the doors is really standing at the door console.
 
-const DEBUG_SETTINGS : Array[StringName] = [&"can_toggle_darkness"] #turned off by DebugRemover
-
 const CONSOLE_REACH_SLACK : float = 1.5 #the lobby's view of a player can be a few ticks behind, so its reach check is a little looser
 
 @export var spawn_room : String = "ring" #players start in the middle of this room
-
-@export_group("Debug")
-@export var can_toggle_darkness : bool = false #N turns the darkness on and off (only on this peer)
 
 @onready var facility : FacilityMap = $FacilityMap
 @onready var darkness : CanvasModulate = $Darkness
@@ -44,7 +39,3 @@ func _can_operate(peer_id : int, function : String) -> bool:
 	var player : Player = player_lookup.call(peer_id)
 	return player != null and player.is_alive() and consoles.is_at_console(function, player.global_position, CONSOLE_REACH_SLACK)
 
-
-func _unhandled_key_input(event : InputEvent) -> void:
-	if can_toggle_darkness and event.is_pressed() and not event.is_echo() and (event as InputEventKey).keycode == KEY_N:
-		darkness.visible = not darkness.visible

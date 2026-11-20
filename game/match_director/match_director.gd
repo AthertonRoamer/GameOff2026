@@ -46,6 +46,14 @@ func begin(teams : Dictionary, roster : Array, is_in_play : Callable) -> void:
 	_running = true
 
 
+##Lobby only, debug: a member's role or team changed, so the end screen lists the new one.
+func update_roster(member_id : int, role_name : String, team : int) -> void:
+	for entry : Dictionary in _roster:
+		if entry["id"] == member_id:
+			entry["role"] = role_name
+			entry["team"] = team
+
+
 func on_time_up() -> void:
 	_decide(Reason.TIME_UP)
 

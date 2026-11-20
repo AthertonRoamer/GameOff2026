@@ -32,9 +32,16 @@ var active_item : Item:
 
 
 func _ready() -> void:
-	for i in range(mini(player.starting_items.size(), SLOT_COUNT)):
-		slots[i] = player.starting_items[i]
+	set_items(player.starting_items)
+
+
+##Fills the slots with these items (the rest empty) and takes the first one out, as at the start.
+func set_items(items : Array[Item]) -> void:
+	for i in SLOT_COUNT:
+		slots[i] = items[i] if i < items.size() else null
+	active_slot = 0
 	drawn = active_item != null and active_item.drawable #the first item starts out in the hands
+	items_changed.emit()
 
 
 ##The first empty slot, or -1 when the inventory is full.

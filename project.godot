@@ -33,6 +33,10 @@ WarmUp="*res://game/warm_up.gd"
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 
+[gui]
+
+theme/custom="res://game/ui/night_shift_theme.tres"
+
 [editor_plugins]
 
 enabled=PackedStringArray("res://addons/netfox.internals/plugin.cfg", "res://addons/netfox.noray/plugin.cfg", "res://addons/netfox/plugin.cfg")
@@ -133,3 +137,4 @@ time/sync_to_physics=false
 rendering_device/driver.windows="d3d12"
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
+textures/vram_compression/import_s3tc_bptc=true

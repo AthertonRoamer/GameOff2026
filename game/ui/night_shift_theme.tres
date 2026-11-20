@@ -1,0 +1,141 @@
+[gd_resource type="Theme" format=3]
+
+[ext_resource type="FontFile" path="res://game/ui/fonts/ChakraPetch-Medium.ttf" id="font_text"]
+[ext_resource type="FontFile" path="res://game/ui/fonts/ChakraPetch-SemiBold.ttf" id="font_button"]
+
+[sub_resource type="StyleBoxFlat" id="panel"]
+content_margin_left = 10.0
+content_margin_top = 8.0
+content_margin_right = 10.0
+content_margin_bottom = 8.0
+bg_color = Color(0.0627, 0.0745, 0.102, 0.94)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.149, 0.1725, 0.2118, 1)
+
+[sub_resource type="StyleBoxFlat" id="button"]
+content_margin_left = 14.0
+content_margin_top = 6.0
+content_margin_right = 14.0
+content_margin_bottom = 6.0
+bg_color = Color(0.1333, 0.1569, 0.2, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.2275, 0.2627, 0.3216, 1)
+
+[sub_resource type="StyleBoxFlat" id="button_hover"]
+content_margin_left = 14.0
+content_margin_top = 6.0
+content_margin_right = 14.0
+content_margin_bottom = 6.0
+bg_color = Color(0.1647, 0.1922, 0.2392, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.949, 0.7098, 0.2667, 1)
+
+[sub_resource type="StyleBoxFlat" id="button_pressed"]
+content_margin_left = 14.0
+content_margin_top = 6.0
+content_margin_right = 14.0
+content_margin_bottom = 6.0
+bg_color = Color(0.949, 0.7098, 0.2667, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.949, 0.7098, 0.2667, 1)
+
+[sub_resource type="StyleBoxFlat" id="button_disabled"]
+content_margin_left = 14.0
+content_margin_top = 6.0
+content_margin_right = 14.0
+content_margin_bottom = 6.0
+bg_color = Color(0.0824, 0.098, 0.1255, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.1333, 0.1569, 0.2, 1)
+
+[sub_resource type="StyleBoxFlat" id="focus"]
+draw_center = false
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.5608, 0.702, 0.8784, 1)
+
+[sub_resource type="StyleBoxFlat" id="bar_background"]
+bg_color = Color(0.0471, 0.0549, 0.0706, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.149, 0.1725, 0.2118, 1)
+
+[sub_resource type="StyleBoxFlat" id="bar_fill"]
+bg_color = Color(0.949, 0.7098, 0.2667, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.0471, 0.0549, 0.0706, 1)
+
+[sub_resource type="StyleBoxFlat" id="line_edit"]
+content_margin_left = 8.0
+content_margin_top = 4.0
+content_margin_right = 8.0
+content_margin_bottom = 4.0
+bg_color = Color(0.0275, 0.0353, 0.0471, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.149, 0.1725, 0.2118, 1)
+
+[sub_resource type="StyleBoxFlat" id="line_edit_focus"]
+content_margin_left = 8.0
+content_margin_top = 4.0
+content_margin_right = 8.0
+content_margin_bottom = 4.0
+bg_color = Color(0.0275, 0.0353, 0.0471, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.949, 0.7098, 0.2667, 1)
+
+[resource]
+default_font = ExtResource("font_text")
+default_font_size = 18
+Button/fonts/font = ExtResource("font_button")
+Button/colors/font_color = Color(0.9059, 0.8902, 0.8471, 1)
+Button/colors/font_hover_color = Color(1, 0.9529, 0.7686, 1)
+Button/colors/font_pressed_color = Color(0.0471, 0.0549, 0.0706, 1)
+Button/colors/font_disabled_color = Color(0.3529, 0.3922, 0.4588, 1)
+Button/colors/font_focus_color = Color(0.9059, 0.8902, 0.8471, 1)
+Button/styles/disabled = SubResource("button_disabled")
+Button/styles/focus = SubResource("focus")
+Button/styles/hover = SubResource("button_hover")
+Button/styles/normal = SubResource("button")
+Button/styles/pressed = SubResource("button_pressed")
+Label/colors/font_color = Color(0.9059, 0.8902, 0.8471, 1)
+Label/colors/font_outline_color = Color(0.0235, 0.0314, 0.0471, 1)
+Label/constants/outline_size = 4
+LineEdit/colors/caret_color = Color(0.949, 0.7098, 0.2667, 1)
+LineEdit/colors/font_color = Color(0.9059, 0.8902, 0.8471, 1)
+LineEdit/colors/font_placeholder_color = Color(0.3529, 0.3922, 0.4588, 1)
+LineEdit/colors/selection_color = Color(0.949, 0.7098, 0.2667, 0.35)
+LineEdit/styles/focus = SubResource("line_edit_focus")
+LineEdit/styles/normal = SubResource("line_edit")
+Panel/styles/panel = SubResource("panel")
+PanelContainer/styles/panel = SubResource("panel")
+ProgressBar/styles/background = SubResource("bar_background")
+ProgressBar/styles/fill = SubResource("bar_fill")
+RichTextLabel/colors/default_color = Color(0.9059, 0.8902, 0.8471, 1)

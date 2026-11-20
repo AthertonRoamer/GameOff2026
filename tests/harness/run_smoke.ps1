@@ -5,6 +5,7 @@ param(
 	[switch]$Rollback, #use RollbackGameManager and the probe game, and check every peer starts on the scheduled tick
 	[switch]$Demo, #run the rollback demo: the first client shoots and moves, then every peer's view of every player must agree
 	[switch]$NightShift, #the real game (game/game.tscn): the client works the door console from the lobby-checked spot; every peer must agree on doors (and the tick they changed on), flashlight and interact
+	[switch]$KillKey, #the real game: the client taps the debug kill key (K) twice; the client and the host must both see the player die (and the fall play) and then come back
 	[switch]$Hold, #the client and then the host hold each weapon for 3 s; prints every shot event each saw (diagnostic, no pass/fail on cadence)
 	[switch]$Combat, #the first client kills the host's player with projectiles; every peer must see it die and respawn at the same place
 	[switch]$Moving, #shooter and target run side by side and the shooter fires at where it sees the target; reports how many shots hit
@@ -36,6 +37,7 @@ if ($Moving) { $common += "--moving" }
 if ($Combat) { $common += "--combat" }
 if ($Hold) { $common += "--hold" }
 if ($NightShift) { $common += "--night-shift" }
+if ($KillKey) { $common += @("--night-shift", "--killkey") }
 if ($Leave) { $common += "--leave" }
 if ($Kill) { $common += "--kill" }
 if ($SoakSeconds -gt 0) { $common += @("--soak", $SoakSeconds) }
@@ -119,6 +121,43 @@ if ($Rollback) {
 }
 
 
+if ($KillKey) {
+	# whichever peer drew the attackers' side presses K (the match ends when the last attacker is out, so that is the death that could end it)
+	$actorFile = (@($hostOut) + $clientOuts) | Where-Object { Select-String -Path $_ -Pattern "KILLKEY_ACTOR" -Quiet } | Select-Object -First 1
+	if ($null -eq $actorFile) { "KILLKEY: no peer played the attacker"; $ok = $false } else {
+		$watcherFile = (@($hostOut) + $clientOuts) | Where-Object { $_ -ne $actorFile } | Select-Object -First 1
+		"KILLKEY: the attacker is $(Split-Path $actorFile -Leaf)"
+		$line = (Select-String -Path $actorFile -Pattern "KILLKEY_ACTOR after_K died=(\w+) health=(\d+) skin=(\w+) frame=(\d+) playing=(\w+) legs_visible=(\w+) match_ended=(\w+) end_screen=(\w+)").Matches
+		if ($line.Count -eq 0) { "KILLKEY: the attacker reported nothing"; $ok = $false } else {
+			$g = $line[0].Groups
+			"KILLKEY: after K: died=$($g[1].Value) health=$($g[2].Value) pose=$($g[3].Value) frame $($g[4].Value) still playing=$($g[5].Value) legs visible=$($g[6].Value) match ended=$($g[7].Value) end screen=$($g[8].Value)"
+			if ($g[1].Value -ne "True" -or $g[2].Value -ne "0") { "KILLKEY: the player did not die"; $ok = $false }
+			if ($g[3].Value -ne "death_front" -or $g[5].Value -ne "False" -or $g[6].Value -ne "False") { "KILLKEY: the first kill (shot from the front) should play death_front, play out and hold"; $ok = $false }
+			if ($g[7].Value -ne "false" -and $g[7].Value -ne "False") { "KILLKEY: the match ended over the debug kill"; $ok = $false }
+			if ($g[8].Value -ne "false" -and $g[8].Value -ne "False") { "KILLKEY: the end screen came up over the debug kill"; $ok = $false }
+		}
+		$back = (Select-String -Path $actorFile -Pattern "KILLKEY_ACTOR after_second_K back=(\w+) health=(\d+) legs_visible=(\w+) active=(\w+)").Matches
+		if ($back.Count -eq 0) { "KILLKEY: no report after the second K"; $ok = $false } else {
+			$g = $back[0].Groups
+			"KILLKEY: after the second K: back=$($g[1].Value) health=$($g[2].Value) legs visible=$($g[3].Value) active=$($g[4].Value)"
+			if ($g[1].Value -ne "True" -or $g[2].Value -ne "100" -or $g[3].Value -ne "True" -or $g[4].Value -ne "True") { "KILLKEY: the player did not come back"; $ok = $false }
+		}
+		$second = (Select-String -Path $actorFile -Pattern "KILLKEY_ACTOR second_kill died=(\w+) fall=(\w+) mirrored=(\w+) frame=(\d+) match_ended=(\w+)").Matches
+		if ($second.Count -eq 0) { "KILLKEY: no report of the second kill"; $ok = $false } else {
+			$g = $second[0].Groups
+			"KILLKEY: second kill (from 45 degrees right): died=$($g[1].Value) fall=$($g[2].Value) mirrored=$($g[3].Value) frame $($g[4].Value) match ended=$($g[5].Value)"
+			if ($g[1].Value -ne "True" -or $g[2].Value -ne "death_front_right" -or $g[3].Value -match "(?i)true" -or $g[5].Value -match "(?i)true") { "KILLKEY: the second kill should fall from the front right, not mirrored, without ending the match"; $ok = $false }
+		}
+		$saw = @(Get-Content $watcherFile | Select-String "KILLKEY_WATCHER saw_health=(\d+) skin_dead=(\w+) fall=(\S+) mirrored=(\w+)" | ForEach-Object { "health $($_.Matches[0].Groups[1].Value) dead=$($_.Matches[0].Groups[2].Value)" + $(if ($_.Matches[0].Groups[3].Value -ne "-") { " fall=$($_.Matches[0].Groups[3].Value)" } else { "" }) })
+		"KILLKEY: the other peer saw the attacker's player: $($saw -join ' -> ')"
+		if (-not ($saw -contains "health 0 dead=True fall=death_front") -or -not ($saw -contains "health 0 dead=True fall=death_front_right") -or -not ($saw -contains "health 100 dead=False")) { "KILLKEY: the other peer did not see the death and the return"; $ok = $false }
+		$fin = (Select-String -Path $watcherFile -Pattern "KILLKEY_WATCHER final match_ended=(\w+) end_screen=(\w+)").Matches
+		if ($fin.Count -gt 0) {
+			"KILLKEY: the other peer: match ended=$($fin[0].Groups[1].Value) end screen=$($fin[0].Groups[2].Value)"
+			if ($fin[0].Groups[1].Value -match "(?i)true" -or $fin[0].Groups[2].Value -match "(?i)true") { "KILLKEY: the other peer saw the match end"; $ok = $false }
+		}
+	}
+}
 if ($NightShift) {
 	$reports = @()
 	foreach ($file in (@($hostOut) + $clientOuts[0])) {

@@ -7,5 +7,4 @@
 # Blender rig tooling (tools/rig): python venv, downloaded models and render output stay local
 tools/rig/venv/
 tools/rig/out/
-tools/rig/*.glb
-tools/rig/clips/
+tools/rig/assets/

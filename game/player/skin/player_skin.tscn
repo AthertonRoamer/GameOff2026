@@ -5,7 +5,9 @@
 [ext_resource type="Script" uid="uid://d2ntnnmv76omq" path="res://game/player/skin/muzzle_flash.gd" id="3_muzzle"]
 [ext_resource type="Script" uid="uid://bsq04gq0t83fa" path="res://game/player/skin/shoulder_lamp.gd" id="4_lamp"]
 [ext_resource type="Texture2D" uid="uid://chpjkbvf4yw84" path="res://game/player/flashlight/flashlight_cone.png" id="5_cone"]
-[ext_resource type="SpriteFrames" uid="uid://dg0nh38ss6mik" path="res://game/player/skin/guard/guard_frames.tres" id="6_frames"]
+[ext_resource type="SpriteFrames" uid="uid://b5x2dmfx4vik5" path="res://game/player/skin/guard/guard_frames.tres" id="6_frames"]
+[ext_resource type="Script" uid="uid://df8ov28pynswa" path="res://game/player/skin/skin_hit_reaction.gd" id="7_hit"]
+[ext_resource type="Script" uid="uid://ckte55olqsrto" path="res://game/player/skin/skin_death.gd" id="8_death"]
 
 [sub_resource type="Gradient" id="Gradient_shadow"]
 colors = PackedColorArray(0, 0, 0, 0.45, 0, 0, 0, 0)
@@ -53,6 +55,7 @@ scale = Vector2(1.1, 0.95)
 texture = SubResource("GradientTexture2D_shadow")
 
 [node name="Legs" type="AnimatedSprite2D" parent="." unique_id=1972005756]
+scale = Vector2(0.8, 0.8)
 sprite_frames = ExtResource("6_frames")
 animation = &"legs_idle"
 offset = Vector2(0, -21.2)
@@ -106,5 +109,11 @@ texture_scale = 8.25
 [node name="Full" type="AnimatedSprite2D" parent="." unique_id=422307510]
 visible = false
 sprite_frames = ExtResource("6_frames")
-animation = &"downed"
+animation = &"death_front"
 offset = Vector2(0, -150.1)
+
+[node name="HitReaction" type="Node" parent="." unique_id=889212103]
+script = ExtResource("7_hit")
+
+[node name="Death" type="Node" parent="." unique_id=881100720]
+script = ExtResource("8_death")

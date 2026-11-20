@@ -1,0 +1,31 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://game/debug/debug_console.gd" id="1_console"]
+
+[node name="DebugConsole" type="CanvasLayer"]
+layer = 70
+visible = false
+script = ExtResource("1_console")
+
+[node name="Panel" type="PanelContainer" parent="."]
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -220.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="Box" type="VBoxContainer" parent="Panel"]
+layout_mode = 2
+
+[node name="Log" type="RichTextLabel" parent="Panel/Box"]
+custom_minimum_size = Vector2(0, 180)
+layout_mode = 2
+focus_mode = 0
+bbcode_enabled = true
+scroll_following = true
+
+[node name="Input" type="LineEdit" parent="Panel/Box"]
+layout_mode = 2
+placeholder_text = "command (help lists them)"

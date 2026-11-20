@@ -3,20 +3,21 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://chqkibdet4kov"
-path="res://.godot/imported/torso_idle_aim.png-08072cdace6b3a320361ac5181d76ef8.ctex"
+path.bptc="res://.godot/imported/torso_idle_aim.png-08072cdace6b3a320361ac5181d76ef8.bptc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://game/player/skin/guard/torso_idle_aim.png"
-dest_files=["res://.godot/imported/torso_idle_aim.png-08072cdace6b3a320361ac5181d76ef8.ctex"]
+dest_files=["res://.godot/imported/torso_idle_aim.png-08072cdace6b3a320361ac5181d76ef8.bptc.ctex"]
 
 [params]
 
-compress/mode=0
-compress/high_quality=false
+compress/mode=2
+compress/high_quality=true
 compress/lossy_quality=0.7
 compress/uastc_level=0
 compress/rdo_quality_loss=0.0

@@ -10,11 +10,25 @@ extends Node2D
 ##the flash lights the room is edited there (colour, energy, size, shadows). The star is drawn here; it is a tool script, so the editor shows it
 ##at full strength while `preview` is on. Its sizes are in the skin's own pixels (the skin is scaled 0.25).
 
-@export var length : float = 76.0 : set = _set_shape #about 16 px in the world
-@export var width : float = 52.0 : set = _set_shape
+##about 16 px in the world
+@export var length : float = 76.0 :
+	set(value):
+		length = value
+		queue_redraw()
+@export var width : float = 52.0 :
+	set(value):
+		width = value
+		queue_redraw()
 @export var duration : float = 0.07
-@export var color : Color = Color("#ffd07a") : set = _set_colour
-@export var preview : bool = true : set = _set_colour #editor only: draws the star so it can be seen and adjusted
+@export var color : Color = Color("#ffd07a") :
+	set(value):
+		color = value
+		queue_redraw()
+##editor only: draws the star so it can be seen and adjusted
+@export var preview : bool = true :
+	set(value):
+		preview = value
+		queue_redraw()
 
 var _flash_left : float = 0.0
 var _scale : float = 1.0

@@ -3,10 +3,10 @@ extends CanvasLayer
 
 ##Shows how the match ended: victory or defeat for this player, why, and who was really on which side. Teams are secret until this screen.
 
-const WIN_COLOR : Color = Color(0.9490196, 0.70980394, 0.26666668)
-const LOSE_COLOR : Color = Color(0.85, 0.25, 0.22)
-const DEFENDER_COLOR : Color = Color(0.55, 0.85, 0.6)
-const ATTACKER_COLOR : Color = Color(0.9, 0.45, 0.4)
+const WIN_COLOR : Color = Palette.BACKUP
+const LOSE_COLOR : Color = Palette.ALARM
+const DEFENDER_COLOR : Color = Palette.OK
+const ATTACKER_COLOR : Color = Palette.WARM
 
 @onready var title_label : Label = $Center/Box/Title
 @onready var reason_label : Label = $Center/Box/Reason
@@ -54,7 +54,7 @@ func _make_roster_line(entry : Dictionary) -> Label:
 	line.text = "%s  -  %s  -  %s" % [entry["name"], entry["role"], Team.name_of(entry["team"])]
 	line.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	line.add_theme_color_override("font_color", ATTACKER_COLOR if entry["team"] == Team.ATTACKERS else DEFENDER_COLOR)
-	line.add_theme_color_override("font_outline_color", Color(0.023529412, 0.03137255, 0.047058824))
+	line.add_theme_color_override("font_outline_color", Palette.VOID)
 	line.add_theme_constant_override("outline_size", 6)
 	line.add_theme_font_size_override("font_size", 18)
 	return line

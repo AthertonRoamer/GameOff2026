@@ -5,9 +5,9 @@ extends SceneTree
 ## the same. After this the scene is what you edit, and the JSON is only history. (The scene has no tile layers: FacilityMap makes them itself.)
 ##   godot --headless --path . --script res://tools/art/convert_layout_to_scene.gd
 
-const LAYOUT : String = "res://night_shift/environment/facility_layout.json"
-const SCENE : String = "res://night_shift/environment/facility_map.tscn"
-const DOOR_SCENE : PackedScene = preload("res://night_shift/environment/facility_door.tscn")
+const LAYOUT : String = "res://game/environment/facility_layout.json"
+const SCENE : String = "res://game/environment/facility_map.tscn"
+const DOOR_SCENE : PackedScene = preload("res://game/environment/facility_door.tscn")
 const PANEL_SCENE : PackedScene = preload("res://game/utility/door_control_panel.tscn")
 const TILE : float = 11.0
 

@@ -16,6 +16,7 @@ var use_rollback : bool = false
 var use_demo : bool = false
 var use_moving : bool = false #shooter and target run side by side, the shooter fires at where it sees the target
 var use_combat : bool = false #the acting client kills the host's player with projectiles, then everyone checks the respawn
+var use_killkey : bool = false #the real game: the client taps the debug kill key (K) twice; every peer must see it die and come back
 var use_hold : bool = false #the client, then the host, hold fire for 3 s each and report every shot event they saw
 var use_night_shift : bool = false #the real game (game/game.tscn): the client works the door console; every peer reports doors, flashlight, interact
 var no_lagcomp : bool = false #the lobby does not rewind targets, for comparison
@@ -41,6 +42,7 @@ func _ready() -> void:
 	use_moving = args.has("--moving")
 	no_lagcomp = args.has("--no-lagcomp")
 	use_combat = args.has("--combat")
+	use_killkey = args.has("--killkey")
 	use_hold = args.has("--hold")
 	use_demo = args.has("--demo") or use_moving or use_combat or use_hold or OS.get_cmdline_args().has("--harness-demo")
 	idx = args.find("--soak")
@@ -480,9 +482,71 @@ func soak_run() -> void:
 	log_line("SOAK_DONE seconds=%.0f move=%s %s" % [soak_seconds, soak_move, describe_game()])
 
 
+##Kill key (the real game): the player on the attackers' side (there is exactly one with two players, and the match ends when the last attacker is out, so
+##it is the one whose death could end it) taps K, which must kill it on every peer (the lobby owns a player's health, so a client cannot just set it
+##itself) WITHOUT ending the match or showing the end screen, and a second K must bring it back. The other peer reports what it sees of that player.
+func killkey_run() -> void:
+	var game : Game = Main.mode.get_game()
+	if not await wait_until(func(): return game.spawner.players.size() >= 2 and game.spawner.local_player != null and game.spawner.local_player.input.active, 90.0):
+		return fail("the players never became active")
+	var me : Player = game.spawner.local_player
+	var ended : Array = [false]
+	game.match_director.match_ended.connect(func(_reason : int, _roster : Array) -> void: ended[0] = true)
+	if me.team == Team.ATTACKERS:
+		await killkey_actor(game, me, ended)
+	else:
+		await killkey_watcher(game, me, ended)
+
+
+func killkey_actor(game : Game, me : Player, ended : Array) -> void:
+	await get_tree().create_timer(3.0).timeout #the other peer starts watching first
+	log_line("KILLKEY_ACTOR before alive=%s health=%.0f team=%s" % [me.is_alive(), me.health, Team.name_of(me.team)])
+	await tap_key(KEY_K)
+	var died : bool = await wait_until(func(): return not me.is_alive() and me.skin.dead, 6.0)
+	await get_tree().create_timer(3.0).timeout #long enough for the match director to decide, and for the fall to finish
+	log_line("KILLKEY_ACTOR after_K died=%s health=%.0f skin=%s frame=%d playing=%s legs_visible=%s match_ended=%s end_screen=%s" % [died, me.health, me.skin.full.animation, me.skin.full.frame, me.skin.full.is_playing(), me.skin.legs.visible, ended[0], is_instance_valid(game) and game.end_screen.visible])
+	await tap_key(KEY_K)
+	var back : bool = await wait_until(func(): return me.is_alive() and not me.skin.dead, 6.0)
+	await get_tree().create_timer(2.0).timeout
+	log_line("KILLKEY_ACTOR after_second_K back=%s health=%.0f legs_visible=%s active=%s" % [back, me.health, me.skin.legs.visible, me.input.active])
+	await tap_key(KEY_K) #the next kill comes from the next direction round the player (45 degrees to the right of straight ahead)
+	var died_again : bool = await wait_until(func(): return not me.is_alive() and me.skin.dead, 6.0)
+	await get_tree().create_timer(2.5).timeout
+	log_line("KILLKEY_ACTOR second_kill died=%s fall=%s mirrored=%s frame=%d match_ended=%s" % [died_again, me.skin.full.animation, me.skin.full.flip_h, me.skin.full.frame, ended[0]])
+	await tap_key(KEY_K)
+	await wait_until(func(): return me.is_alive() and not me.skin.dead, 6.0)
+	await get_tree().create_timer(1.0).timeout
+
+
+func killkey_watcher(game : Game, me : Player, ended : Array) -> void:
+	var other : Player
+	for p : Player in game.spawner.players.values():
+		if p != me:
+			other = p
+	var last : Array = [-1.0, false]
+	other.health_changed.connect(func(h : float) -> void: #the health sync re-applies the value every tick, so only a change is worth a line
+		if h != last[0] or other.skin.dead != last[1]:
+			last[0] = h
+			last[1] = other.skin.dead
+			log_line("KILLKEY_WATCHER saw_health=%.0f skin_dead=%s fall=%s mirrored=%s puff=%s" % [h, other.skin.dead, other.skin.full.animation if other.skin.dead else "-", other.skin.full.flip_h if other.skin.dead else false, other.skin.get_children().any(func(c : Node) -> bool: return c is CPUParticles2D)])) #(a drop in health is a hit: a puff of blood comes with it)
+	await get_tree().create_timer(22.0).timeout
+	log_line("KILLKEY_WATCHER final match_ended=%s end_screen=%s" % [ended[0], is_instance_valid(game) and game.end_screen.visible]) #(the game can already be gone)
+
+func tap_key(code : Key) -> void:
+	for pressed : bool in [true, false]:
+		var event : InputEventKey = InputEventKey.new()
+		event.keycode = code
+		event.physical_keycode = code
+		event.pressed = pressed
+		Input.parse_input_event(event)
+		await get_tree().process_frame
+
+
 func run_host_scenario() -> void:
 	if soak_seconds > 0.0:
 		await soak_run()
+	elif use_killkey:
+		await killkey_run()
 	elif use_night_shift:
 		await night_shift_host()
 	elif leave_mode or kill_mode:
@@ -519,6 +583,8 @@ func run_host_scenario() -> void:
 func run_client_scenario(mode : ClientMode) -> void:
 	if soak_seconds > 0.0:
 		await soak_run()
+	elif use_killkey:
+		await killkey_run()
 	elif use_night_shift:
 		await night_shift_client()
 	elif leave_mode:
