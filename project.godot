@@ -33,10 +33,6 @@ WarmUp="*res://game/warm_up.gd"
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 
-[gui]
-
-theme/custom="res://game/ui/night_shift_theme.tres"
-
 [editor_plugins]
 
 enabled=PackedStringArray("res://addons/netfox.internals/plugin.cfg", "res://addons/netfox.noray/plugin.cfg", "res://addons/netfox/plugin.cfg")
@@ -44,6 +40,10 @@ enabled=PackedStringArray("res://addons/netfox.internals/plugin.cfg", "res://add
 [filesystem]
 
 import/blender/enabled=false
+
+[gui]
+
+theme/custom="res://game/ui/night_shift_theme.tres"
 
 [input]
 

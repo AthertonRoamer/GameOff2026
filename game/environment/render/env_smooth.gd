@@ -84,7 +84,8 @@ static func floor_shadow(mask : int) -> Image:
 					if inside:
 						cast += SHADOW_STRENGTH * (1.0 - t / SHADOW_REACH) / 5.0
 						break
-					t += 0.015			image.set_pixel(px, py, Color(0.0, 0.0, 0.0, clampf(maxf(ao, cast), 0.0, 0.7)))
+					t += 0.015
+			image.set_pixel(px, py, Color(0.0, 0.0, 0.0, clampf(maxf(ao, cast), 0.0, 0.7)))
 	return image
 
 
