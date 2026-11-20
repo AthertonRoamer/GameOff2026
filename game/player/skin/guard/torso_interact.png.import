@@ -3,20 +3,21 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://b3v0cim62ntie"
-path="res://.godot/imported/torso_interact.png-e093e002dc2e036a497b4bbbd83e0b0b.ctex"
+path.bptc="res://.godot/imported/torso_interact.png-e093e002dc2e036a497b4bbbd83e0b0b.bptc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://game/player/skin/guard/torso_interact.png"
-dest_files=["res://.godot/imported/torso_interact.png-e093e002dc2e036a497b4bbbd83e0b0b.ctex"]
+dest_files=["res://.godot/imported/torso_interact.png-e093e002dc2e036a497b4bbbd83e0b0b.bptc.ctex"]
 
 [params]
 
-compress/mode=0
-compress/high_quality=false
+compress/mode=2
+compress/high_quality=true
 compress/lossy_quality=0.7
 compress/uastc_level=0
 compress/rdo_quality_loss=0.0

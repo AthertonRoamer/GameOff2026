@@ -14,16 +14,21 @@ var _slot_panels : Array[PanelContainer] = []
 var _slot_icons : Array[TextureRect] = []
 var _normal_style : StyleBoxFlat
 var _active_style : StyleBoxFlat
+var _fill_style : StyleBoxFlat #the health bar's fill: the accent, alarm red when low
 var _inventory : Inventory
 
 
 func _ready() -> void:
-	_normal_style = StyleBoxFlat.new()
-	_normal_style.bg_color = Color(0, 0, 0, 0.4)
+	_normal_style = StyleBoxFlat.new() #a slot is a dark panel, and the selected one has the accent's border
+	_normal_style.bg_color = Color(Palette.SHADOW, 0.8)
+	_normal_style.border_color = Palette.PANEL_LINE
+	_normal_style.set_border_width_all(2)
 	_active_style = StyleBoxFlat.new()
-	_active_style.bg_color = Color(1, 1, 1, 0.5)
-	_active_style.border_color = Color.WHITE
+	_active_style.bg_color = Palette.DEEP
+	_active_style.border_color = Palette.BACKUP
 	_active_style.set_border_width_all(2)
+	_fill_style = health_bar.get_theme_stylebox("fill").duplicate()
+	health_bar.add_theme_stylebox_override("fill", _fill_style)
 
 	for slot in slots_box.get_children():
 		var panel : PanelContainer = slot as PanelContainer
@@ -34,12 +39,17 @@ func _ready() -> void:
 
 func bind_player(player : Player) -> void:
 	health_bar.max_value = player.starting_health
-	health_bar.value = player.health
-	player.health_changed.connect(func(h : float) -> void: health_bar.value = h)
+	_show_health(player.health)
+	player.health_changed.connect(_show_health)
 	var interactor : PlayerInteractor = player.get_node("Interactor") #by node: the player is not in the tree yet, so its @onready vars are unset
 	interactor.prompt_changed.connect(_show_prompt)
 	interactor.inventory_full_changed.connect(inventory_full_label.set_visible)
 	call_deferred("_bind_inventory", player) #player hasn't entered the tree yet, so Inventory._ready() hasn't populated slots
+
+
+func _show_health(health : float) -> void:
+	health_bar.value = health
+	_fill_style.bg_color = Palette.ALARM if health < health_bar.max_value * 0.3 else Palette.BACKUP
 
 
 func bind_clock(clock : GameClock) -> void:

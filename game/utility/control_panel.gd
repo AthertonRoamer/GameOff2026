@@ -15,15 +15,42 @@ extends StaticBody2D
 @export var reach_m : float = 1.7 #how close the player has to be, from the middle of the console
 
 @export_group("Look")
-@export var ink : Color = Color("#06080c") : set = _set_look
-@export var steel : Color = Color("#2a313d") : set = _set_look
-@export var steel_lit : Color = Color("#4a5568") : set = _set_look
-@export var steel_shade : Color = Color("#1a1f27") : set = _set_look
-@export var screen_dark : Color = Color("#0a1118") : set = _set_look
-@export var screen_line : Color = Color("#6fd3e8") : set = _set_look
-@export var amber : Color = Color("#f2b544") : set = _set_look
-@export var red : Color = Color("#e5484d") : set = _set_look
-@export var green : Color = Color("#4be38a") : set = _set_look
+@export var ink : Color = Color("#06080c") :
+	set(value):
+		ink = value
+		queue_redraw()
+@export var steel : Color = Color("#2a313d") :
+	set(value):
+		steel = value
+		queue_redraw()
+@export var steel_lit : Color = Color("#3a4352") :
+	set(value):
+		steel_lit = value
+		queue_redraw()
+@export var steel_shade : Color = Color("#1a1f27") :
+	set(value):
+		steel_shade = value
+		queue_redraw()
+@export var screen_dark : Color = Color("#0c0e12") :
+	set(value):
+		screen_dark = value
+		queue_redraw()
+@export var screen_line : Color = Color("#6fd3e8") :
+	set(value):
+		screen_line = value
+		queue_redraw()
+@export var amber : Color = Color("#f2b544") :
+	set(value):
+		amber = value
+		queue_redraw()
+@export var red : Color = Color("#e5484d") :
+	set(value):
+		red = value
+		queue_redraw()
+@export var green : Color = Color("#4be38a") :
+	set(value):
+		green = value
+		queue_redraw()
 
 var screen : Control #the opened screen's instance, set by whoever places the console (UtilityConsoles)
 

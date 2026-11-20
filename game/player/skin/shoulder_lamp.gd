@@ -8,14 +8,38 @@ extends Node2D
 ##the lamp along the shoulder as the animation plays (night_shift_character.gd). The colours and size are exports, and the lamp is a tool script, so it
 ##shows in the editor and can be restyled there. Sizes are in the skin's own pixels (the skin is scaled 0.25).
 
-@export var ink : Color = Color("#06080c") : set = _set_colour
-@export var base : Color = Color("#161b23") : set = _set_colour
-@export var shade : Color = Color("#0c0f15") : set = _set_colour #the cel shadow band, on the side away from the light
-@export var lit : Color = Color("#313a49") : set = _set_colour #the cel highlight band, on the lit side and the top edge
-@export var lens_off : Color = Color("#232b37") : set = _set_colour
-@export var lens_on : Color = Color("#e9dcae") : set = _set_colour
+@export var ink : Color = Color("#06080c") :
+	set(value):
+		ink = value
+		queue_redraw()
+@export var base : Color = Color("#161b23") :
+	set(value):
+		base = value
+		queue_redraw()
+##the cel shadow band, on the side away from the light
+@export var shade : Color = Color("#0c0f15") :
+	set(value):
+		shade = value
+		queue_redraw()
+##the cel highlight band, on the lit side and the top edge
+@export var lit : Color = Color("#313a49") :
+	set(value):
+		lit = value
+		queue_redraw()
+@export var lens_off : Color = Color("#232b37") :
+	set(value):
+		lens_off = value
+		queue_redraw()
+@export var lens_on : Color = Color("#e9dcae") :
+	set(value):
+		lens_on = value
+		queue_redraw()
 @export var draw_scale : float = 0.5 : set = _set_scale #drawn at a comfortable size, then shrunk to sit quietly on a shoulder
-@export var preview_lens_on : bool = false : set = _set_colour #editor only: shows the lens lit
+##editor only: shows the lens lit
+@export var preview_lens_on : bool = false :
+	set(value):
+		preview_lens_on = value
+		queue_redraw()
 
 @onready var flashlight : Node = $Flashlight #a Flashlight; untyped so the lamp can also run in the editor, where scripts that are not tools are only placeholders
 

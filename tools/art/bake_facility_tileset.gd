@@ -1,6 +1,6 @@
 extends SceneTree
 
-## Saves the facility's TileSet as night_shift/environment/facility_tileset.tres (see FacilityTileSet.bake()):
+## Saves the facility's TileSet as game/environment/facility_tileset.tres (see FacilityTileSet.bake()):
 ##   godot --headless --path . --script res://tools/art/bake_facility_tileset.gd
 
 func _init() -> void:

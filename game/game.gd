@@ -180,6 +180,70 @@ func _spawn_players(roles : Dictionary, known_teams : Dictionary) -> void:
 	setup_complete.emit()
 
 
+##Lobby only, for the debug commands: whether roles and teams can be changed now (the players exist).
+func can_change_roles() -> bool:
+	return spawner.lobby.is_master and _setup_complete and not assignment.is_empty()
+
+
+##Lobby only, debug: gives a member another role. Roles are public, so every peer is told. An intruder role makes the member an attacker, and leaving one
+## makes them a defender. A role changes who may know whose team (an intruder's team is public), so the teams are sent out again.
+func debug_set_role(member_id : int, role_index : int) -> void:
+	var was_intruder : bool = is_intruder(member_id)
+	assignment["roles"][member_id] = role_index
+	_apply_role.rpc(member_id, role_index)
+	if is_intruder(member_id):
+		assignment["teams"][member_id] = Team.ATTACKERS
+	elif was_intruder:
+		assignment["teams"][member_id] = Team.DEFENDERS
+	_send_teams(member_id)
+
+
+##Lobby only, debug: puts a member on a team. Teams are secret, so each peer is sent only what RoleAssigner.teams_visible_to lets it know.
+func debug_set_team(member_id : int, team : int) -> void:
+	assignment["teams"][member_id] = team
+	_send_teams(member_id)
+
+
+func is_intruder(member_id : int) -> bool:
+	var role : Role = role_assigner.role_at(assignment["roles"].get(member_id, -1))
+	return role != null and role.is_intruder()
+
+
+func _send_teams(changed_member_id : int) -> void:
+	var role : Role = role_assigner.role_at(assignment["roles"].get(changed_member_id, -1))
+	match_director.update_roster(changed_member_id, role.role_name if role else "No role", assignment["teams"][changed_member_id])
+	_apply_teams(assignment["teams"]) #the lobby knows every team
+	for member in spawner.lobby.members:
+		if member.id != multiplayer.get_unique_id():
+			var is_attacker : bool = assignment["teams"].get(member.id) == Team.ATTACKERS
+			_receive_teams.rpc_id(member.id, role_assigner.teams_visible_to(member.id, assignment), _target_artifact if is_attacker else -1)
+
+
+@rpc("authority", "call_local", "reliable")
+func _apply_role(member_id : int, role_index : int) -> void:
+	_roles[member_id] = role_index
+	var player : Player = spawner.players.get(member_id)
+	if is_instance_valid(player):
+		player.change_role(role_assigner.role_at(role_index))
+
+
+@rpc("authority", "call_remote", "reliable")
+func _receive_teams(known_teams : Dictionary, target_artifact : int) -> void:
+	target_chooser.set_target(target_artifact)
+	_apply_teams(known_teams)
+
+
+func _apply_teams(known_teams : Dictionary) -> void:
+	_known_teams = known_teams
+	for id : int in spawner.players:
+		var player : Player = spawner.players[id]
+		if is_instance_valid(player):
+			player.team = known_teams.get(id, Team.UNKNOWN)
+	var local : Player = spawner.local_player
+	if is_instance_valid(local):
+		player_hud.show_target(target_chooser.target if local.team == Team.ATTACKERS else null)
+
+
 func _add_debug_rings() -> void:
 	var rings : DebugPlayerRings = DebugPlayerRings.new()
 	rings.name = "DebugPlayerRings"
@@ -217,7 +281,7 @@ func _on_player_health_changed(h : float, player : Node) -> void:
 
 
 func _on_projectile_hit(projectile : Dictionary, target : Node) -> void:
-	target.take_damage(projectile["damage"])
+	target.take_damage(projectile["damage"], projectile["direction"]) #the direction decides how a player killed by it falls
 
 
 ##Lobby only. Who played what, for the end screen. Built when the match starts so players who leave part way through are still listed.
@@ -232,7 +296,7 @@ func _build_roster() -> Array:
 ##A player who left is out. So is a dead one, unless debug_respawn_dead_players is going to bring them back.
 func _is_in_play(member_id : int) -> bool:
 	var player : Variant = spawner.players.get(member_id)
-	return is_instance_valid(player) and (debug_respawn_dead_players or player.is_alive())
+	return is_instance_valid(player) and (debug_respawn_dead_players or player.is_alive() or player.debug_killed) #(a player killed with the debug K key still counts)
 
 
 func _on_match_ended(reason : int, roster : Array) -> void:

@@ -60,7 +60,7 @@ zoom = Vector2(2, 2)
 [node name="HealthSynchronizer" type="Node" parent="." unique_id=882105411 node_paths=PackedStringArray("root")]
 script = ExtResource("8_state")
 root = NodePath("..")
-properties = Array[String]([":health"])
+properties = Array[String]([":hit_direction", ":health"])
 
 [node name="Inventory" type="Node" parent="." unique_id=984158519]
 script = ExtResource("6_inventory")

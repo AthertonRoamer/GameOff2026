@@ -1,7 +1,7 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://game/level/night_shift_level.gd" id="1_level"]
-[ext_resource type="PackedScene" uid="uid://bq6ro63p8oq1b" path="res://night_shift/environment/facility_map.tscn" id="2_map"]
+[ext_resource type="PackedScene" uid="uid://bq6ro63p8oq1b" path="res://game/environment/facility_map.tscn" id="2_map"]
 [ext_resource type="Script" uid="uid://dxvlk0rkeiwfe" path="res://multiplayer_template/rollback/projectile_manager.gd" id="3_projectiles"]
 [ext_resource type="Script" path="res://game/level/facility_control.gd" id="4_control"]
 [ext_resource type="Script" path="res://game/utility/utility_consoles.gd" id="5_consoles"]

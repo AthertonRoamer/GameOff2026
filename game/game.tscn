@@ -30,6 +30,8 @@
 [ext_resource type="Resource" path="res://game/items/artifacts/ruby_chalice.tres" id="28_chalice"]
 [ext_resource type="Resource" path="res://game/items/artifacts/jade_dagger.tres" id="29_dagger"]
 [ext_resource type="Script" path="res://game/pickups/target_artifact_chooser.gd" id="30_chooser"]
+[ext_resource type="Script" path="res://game/debug/debug_commands.gd" id="31_commands"]
+[ext_resource type="PackedScene" path="res://game/debug/debug_console.tscn" id="32_console"]
 
 [node name="Game" type="Node2D" unique_id=2090356720]
 script = ExtResource("1_game")
@@ -42,7 +44,6 @@ debug_show_team_rings = true
 script = ExtResource("10_debug")
 
 [node name="Level" parent="." unique_id=787857879 instance=ExtResource("8_level")]
-can_toggle_darkness = true
 
 [node name="Spawner" type="Node" parent="." unique_id=335399860]
 script = ExtResource("2_spawner")
@@ -81,6 +82,11 @@ placer = NodePath("../ArtifactPlacer")
 [node name="EscapeMenu" parent="." unique_id=1642261372 instance=ExtResource("5_escape")]
 
 [node name="PlayerHud" parent="." unique_id=793943031 instance=ExtResource("9_hud")]
+
+[node name="DebugCommands" type="Node" parent="."]
+script = ExtResource("31_commands")
+
+[node name="DebugConsole" parent="." instance=ExtResource("32_console")]
 
 [connection signal="cease_rpcs_request_received" from="NetworkUnloader" to="." method="_on_network_unloader_cease_rpcs_request_received"]
 [connection signal="finished" from="GameClock" to="MatchDirector" method="on_time_up"]

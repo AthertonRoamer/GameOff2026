@@ -9,16 +9,15 @@ extends Control
 signal closed
 
 const BG_DIM : Color = Color(0.03, 0.04, 0.05, 0.78)
-const PANEL : Color = Color("#10131a")
-const LINE : Color = Color("#262c36")
-const TEXT : Color = Color("#e7e3d8")
-const MUTED : Color = Color("#a9a495")
-const ACCENT : Color = Color("#f2b544")
-const OPEN_COLOUR : Color = Color("#4be38a")
-const CLOSED_COLOUR : Color = Color("#e5484d")
-const LOCKED_COLOUR : Color = Color("#f2b544")
-const ROOM_FILL : Dictionary = {"corridor": Color("#1a1f27"), "utility": Color("#223a4a"), "item": Color("#26303f"), "office": Color("#1f2733"),
-	"exterior_room": Color("#2a2d33"), "outdoor": Color("#12151a")}
+const PANEL : Color = Palette.PANEL
+const LINE : Color = Palette.PANEL_LINE
+const TEXT : Color = Palette.TEXT
+const MUTED : Color = Palette.MUTED
+const ACCENT : Color = Palette.BACKUP
+const OPEN_COLOUR : Color = Palette.OK
+const CLOSED_COLOUR : Color = Palette.ALARM
+const LOCKED_COLOUR : Color = Palette.BACKUP
+const ROOM_FILL : Dictionary = {"corridor": Palette.FLOOR, "utility": Palette.WALL_TOP, "item": Palette.WALL, "office": Palette.LINE, "exterior_room": Palette.DEEP, "outdoor": Palette.SHADOW}
 const MARGIN : float = 36.0
 
 var facility : FacilityMap
@@ -37,7 +36,7 @@ func _ready() -> void:
 	visible = false
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
-	_font = ThemeDB.fallback_font
+	_font = get_theme_default_font() #the theme's (night_shift_theme.tres)
 
 
 func open(tracked : Node2D = null) -> void:
@@ -162,7 +161,7 @@ func _draw() -> void:
 	#close button
 	var close_hover : bool = _close_rect.has_point(get_local_mouse_position())
 	draw_rect(_close_rect, ACCENT if close_hover else LINE)
-	draw_string(_font, _close_rect.position + Vector2(0.0, 19.0), "CLOSE", HORIZONTAL_ALIGNMENT_CENTER, _close_rect.size.x, 14, Color("#0c0e12") if close_hover else TEXT)
+	draw_string(_font, _close_rect.position + Vector2(0.0, 19.0), "CLOSE", HORIZONTAL_ALIGNMENT_CENTER, _close_rect.size.x, 14, Palette.SHADOW if close_hover else TEXT)
 	#rooms
 	for id : String in facility.rooms:
 		var room : Dictionary = facility.rooms[id]
@@ -171,7 +170,7 @@ func _draw() -> void:
 			var top_left : Vector2 = _to_screen(rect.position)
 			var screen_rect : Rect2 = Rect2(top_left, rect.size * _scale)
 			draw_rect(screen_rect, fill)
-			draw_rect(screen_rect, Color("#4a5568") if room["kind"] != "outdoor" else Color("#222833"), false, 1.5)
+			draw_rect(screen_rect, Palette.METAL if room["kind"] != "outdoor" else Palette.LINE, false, 1.5)
 	for id : String in facility.rooms: #names over the rooms, big enough ones only
 		var room : Dictionary = facility.rooms[id]
 		if room["kind"] == "corridor" or room["kind"] == "outdoor":
@@ -179,7 +178,7 @@ func _draw() -> void:
 		var rects : Array[Rect2] = facility.room_rects_px(id)
 		var centre : Vector2 = _to_screen(rects[0].get_center())
 		var label_colour : Color = ACCENT if room["function"] == "doors" else MUTED
-		draw_string(_font, centre + Vector2(-60.0, 4.0), String(room["name"]).to_upper(), HORIZONTAL_ALIGNMENT_CENTER, 120.0, 9, label_colour)
+		draw_string(_font, centre + Vector2(-60.0, 4.0), String(room["name"]).to_upper(), HORIZONTAL_ALIGNMENT_CENTER, 120.0, 10, label_colour)
 	#doors
 	for door in facility.doors:
 		var rect : Rect2 = _door_rect(door)
@@ -189,13 +188,13 @@ func _draw() -> void:
 		var hovered : bool = door == _hover
 		if hovered:
 			draw_rect(rect.grow(4.0), Color(colour, 0.35))
-		draw_rect(rect.grow(1.5), Color("#06080c"))
+		draw_rect(rect.grow(1.5), Palette.VOID)
 		draw_rect(rect, colour)
 	#the player
 	if player != null:
 		var at : Vector2 = _to_screen(player.global_position)
 		draw_circle(at, 6.0, Color(ACCENT, 0.3))
-		draw_circle(at, 3.5, Color("#6fd3e8"))
+		draw_circle(at, 3.5, Palette.ITEM)
 	#legend
 	var y : float = _panel_rect.end.y - 18.0
 	var x : float = _panel_rect.position.x + 20.0

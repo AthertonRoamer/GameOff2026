@@ -9,6 +9,6 @@ func _init() -> void:
 	var args : PackedStringArray = OS.get_cmdline_user_args()
 	if args.size() > 0:
 		role = args[0]
-	var error : Error = NightShiftCharacter.bake_frames("res://game/player/skin", role)
+	var error : Error = SkinFrames.bake("res://game/player/skin", role)
 	print("bake_skin_frames: %s -> %s" % [role, error_string(error)])
 	quit(0 if error == OK else 1)

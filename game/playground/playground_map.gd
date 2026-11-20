@@ -4,9 +4,8 @@ extends Node2D
 ##A single-player testing ground: the same Level as the game (game/level/night_shift_level.tscn) with one player in the guard skin and the HUD.
 ##No lobby and no network: netfox's clock is started offline, so the player's rollback tick, input and interpolation run exactly as they do in a
 ##game, and the local peer is the lobby, so door requests go through FacilityControl just like in a game.
-##  WASD move, shift runs (and holsters the gun), hold right mouse to draw the gun and aim (the torso follows the mouse, the legs follow the movement), left mouse fires the drawn gun (1-4 or the wheel pick the slot),
-##  P turns the pixel art pass on and off (it covers the whole game, see game/effects/pixel_art.gd),
-##  F turns the flashlight on and off, N turns the darkness on and off (the Level's can_toggle_darkness is on here).
+##  WASD move, shift runs (and holsters the gun), H draws or holsters the gun (the torso follows the mouse, the legs follow the movement), left mouse fires the drawn gun (1-4 or the wheel pick the slot),
+##  F turns the flashlight on and off.
 ##Doors are open at the start (they need power to stay shut) and cannot be worked by hand. The Door Control room has a control panel: stand next to
 ##it and press E to open its screen, a minimap of the facility where a click on a door opens or closes it. E or Esc leaves the screen.
 ##Command line (after --), for screenshots and checks:  --shot=<png> [--press=<action>] [--hold=<seconds>] [--aim=dx,dy] [--at=x,y] [--flash=off] [--dark=off]
@@ -44,7 +43,7 @@ func _ready() -> void:
 		player.position = Vector2(float(at[0]), float(at[1]))
 	player.set_active(true)
 	level.darkness.visible = String(_args.get("dark", "on")) != "off"
-	PixelArt.enabled = String(_args.get("pixel", "on")) != "off" #P turns the pixel art pass on and off
+	PixelArt.enabled = String(_args.get("pixel", "off")) == "on"
 	player.camera.zoom = Vector2.ONE * float(_args.get("zoom", camera_zoom))
 	player.shot_fired.connect(func() -> void: _shots += 1)
 	if _args.has("shot"):

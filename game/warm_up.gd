@@ -12,7 +12,7 @@ extends Node
 
 func _ready() -> void:
 	var started : int = Time.get_ticks_usec()
-	NightShiftCharacter.load_role("res://game/player/skin", "guard") #the sheets and frames every guard skin shares
+	SkinFrames.load_role("res://game/player/skin", "guard") #the sheets and frames every guard skin shares
 	FacilityTileSet.shared() #the map's tile set (its art and wall shapes)
 	Flashlight._get_cone_texture() #the beam's light texture
 	print_verbose("WarmUp: %.0f ms" % ((Time.get_ticks_usec() - started) / 1000.0))

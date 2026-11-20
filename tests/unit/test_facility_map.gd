@@ -1,10 +1,10 @@
 extends Node
 
-# Offline test of the facility map scene (night_shift/environment/facility_map.tscn): the things that can silently break when it is edited in the
+# Offline test of the facility map scene (game/environment/facility_map.tscn): the things that can silently break when it is edited in the
 # editor. Run as a scene so the project autoloads exist (the map has consoles that use them):
 #   Godot_console.exe --headless --path . res://tests/unit/test_facility_map.tscn
 
-const MAP_SCENE : PackedScene = preload("res://night_shift/environment/facility_map.tscn")
+const MAP_SCENE : PackedScene = preload("res://game/environment/facility_map.tscn")
 
 var failures : int = 0
 

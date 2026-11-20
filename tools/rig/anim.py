@@ -3,7 +3,7 @@
 Renders three kinds of sprite, all top-down with the character facing up:
   legs_*   bottom layer, rotates to movement direction
   torso_*  top layer, rotates to aim direction (same camera as legs, so they stack exactly)
-  downed   full-body sprite that replaces both layers
+  death_*  full-body sprite of a fall, which replaces both layers
 
 Usage:  python3 anim.py -- <role|all> [outdir] [state,state,...]
 Edit PAL or ROLES and re-run to change colours or gear; every frame re-renders in the new look.
@@ -15,10 +15,11 @@ args = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
 ROLE_ARG = args[0] if args else 'all'
 OUT = args[1] if len(args) > 1 else 'anim'
 ONLY = set(args[2].split(',')) if len(args) > 2 else None
-HERE = os.path.dirname(os.path.abspath(__file__))
+ASSETS = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets')  # the models and the Mixamo clips
 SMOOTH = os.environ.get('SHADE') == 'smooth'   # soft shading for the pixel-art pass
 SHOULDERS = os.environ.get('SHOULDERS') == '1'  # no pictures: only write where the shoulders are in every frame (shoulders.json), for the game's shoulder lamp
 SHOULDER_POS = {}
+HEAD_POS = {}
 INK = os.environ.get('INK', '1') != '0'         # 3D ink hull; the pixel pass draws its own outline
 
 # ------------------------------------------------------------------ palette A
@@ -47,32 +48,148 @@ ROLES = {
     'intruder': dict(jacket=(PAL['i0'], PAL['i1'], PAL['i2']), pants=(PAL['void'], PAL['i0'], PAL['i1']), hands=PAL['i2'], head=PAL['i1'], gear='nvg', weapon='suppressed'),
 }
 
-# name, layer, action, frames, mode, extras
+# The states rendered by hand-made recipes, named as the sheets are in the game (game/player/skin/<role>/): <layer>_<what>. The gait cycles are Mixamo clips from the
+# locomotion pack, all timed so the lead foot comes down at the same point of the cycle, so any two of them can be switched or blended at the same frame.
 STATES = [
     dict(name='legs_idle', layer='legs', action='idle', n=8, mode='free'),
-    dict(name='legs_walk', layer='legs', action='walk', n=12, mode='free', blend=0.6),
-    dict(name='legs_run', layer='legs', action='run', n=12, mode='free'),
     dict(name='torso_idle', layer='torso', action='idle', n=8, mode='holster'),
     dict(name='torso_idle_aim', layer='torso', action='idle', n=8, mode='aim'),
-    dict(name='torso_walk', layer='torso', action='walk', n=12, mode='holster', blend=0.6),
-    dict(name='torso_walk_aim', layer='torso', action='walk', n=12, mode='aim', blend=0.6),
-    dict(name='torso_run', layer='torso', action='run', n=12, mode='holster'),
+    dict(name='torso_draw', layer='torso', action='idle', n=8, mode='draw'),
     dict(name='torso_interact', layer='torso', action='idle', n=12, mode='interact'),
-    dict(name='downed', layer='full', action='idle', n=8, mode='downed'),
-    # a turn on the spot, from a Mixamo clip: a right turn of about 96 degrees that starts and ends in the standing stance, with the body's
-    # yaw baked into the frames. The game leaves the legs node alone while the sheet plays, turns it by 96 degrees at the end, and mirrors the sheet for a left turn.
+    # a turn on the spot, from a Mixamo clip (Right Turn.fbx, which is no longer in clips/): a right turn of about 96 degrees that starts and ends in the standing
+    # stance, with the body's yaw baked into the frames. The game leaves the legs node alone while the sheet plays, turns it by 96 degrees at the end, and mirrors the
+    # sheet for a left turn.
     dict(name='legs_turn', layer='legs', action='turn', n=16, mode='free', clip='Right Turn.fbx', yaw_offset=-6),
-    # strafing to the character's right while facing forward (the game mirrors the sheet for a left strafe). Both clips travel along the way they
-    # strafe and loop (the last frame is the first again); the travel itself is cancelled by recenter(), the game moves the player.
-    # (a wider frame than the other leg sheets: a strafing run reaches nearly a metre to the side, which the 1.45 m frame cuts off)
-    dict(name='legs_strafe_walk', layer='legs', action='strafe_walk', n=12, mode='free', clip='Walk Strafe Right.fbx', loop=True, yaw_offset=29, ortho=2.0),
-    dict(name='legs_strafe_run', layer='legs', action='strafe_run', n=12, mode='free', clip='Right Strafe.fbx', loop=True, yaw_offset=65, ortho=2.0),
-    # and the upper body of the same clips: holstered, gun out (aim, the arms are posed on the gun as in torso_walk_aim), and running (holstered)
-    dict(name='torso_strafe_walk', layer='torso', action='strafe_walk', n=12, mode='holster', clip='Walk Strafe Right.fbx', loop=True, yaw_offset=29),
-    dict(name='torso_strafe_walk_aim', layer='torso', action='strafe_walk', n=12, mode='aim', clip='Walk Strafe Right.fbx', loop=True, yaw_offset=29),
-    dict(name='torso_strafe_run', layer='torso', action='strafe_run', n=12, mode='holster', clip='Right Strafe.fbx', loop=True, yaw_offset=65),
+    dict(name='legs_walk', layer='legs', action='pack_walk', n=12, mode='free', clip='locomotion_pack/walking.fbx', loop=True, yaw_offset=7, blend=0.6),
+    dict(name='legs_run', layer='legs', action='pack_run', n=12, mode='free', clip='locomotion_pack/running.fbx', loop=True, yaw_offset=5),
+    dict(name='torso_walk', layer='torso', action='pack_walk', n=12, mode='holster', clip='locomotion_pack/walking.fbx', loop=True, yaw_offset=7, blend=0.6),
+    dict(name='torso_run', layer='torso', action='pack_run', n=12, mode='holster', clip='locomotion_pack/running.fbx', loop=True, yaw_offset=5),
 ]
-IDLE_SPINE = Vector((0.0, 0.0, 1.323))
+
+# ------------------------------------------------------------------ the locomotion kit: clips blended on the skeleton
+# Every gait clip is sampled so its left foot is at its highest (mid swing) at LIFT of the cycle, and clips can be blended pose by pose ('mix'
+# states): the in-between cycles and the starts and stops are then drawn from real blended poses, not faded in the game.
+# lift: where in the clip's own cycle its left foot is highest (measured with clip_lift.py). Lift timing is the same whichever way the clip travels, unlike which foot is furthest ahead. yaw_legs / yaw_torso: degrees to turn the
+# body about the hips so the sheet starts square (legs: the hips and travel; torso: the shoulders). damp: pull the pose towards the idle pose (a gentler stride).
+LIFT = 0.90
+CLIPSPEC = {
+    'walk': dict(clip='locomotion_pack/walking.fbx', lift=0.90, yaw_legs=7, yaw_torso=7, damp=0.6),
+    'run': dict(clip='locomotion_pack/running.fbx', lift=0.90, yaw_legs=5, yaw_torso=5),
+    'strafe': dict(clip='locomotion_pack/right strafe walking.fbx', lift=0.90, yaw_legs=0, yaw_torso=6), #yaw_torso 47 would square the shoulders, but the head looks 41 degrees off them: 6 squares the head (clip_head.py)
+    'strafe_run': dict(clip='locomotion_pack/right strafe.fbx', lift=0.95, yaw_legs=0, yaw_torso=3), #53 would square the shoulders; the head looks 50 degrees off them
+    # the legs for moving sideways: a shuffle made with IK (see shuffle_pose), not a clip: the feet slide in turn on their own side of the body
+    'shuffle': dict(shuffle=dict(c=0.20, a=0.12, lift=0.05)),
+    'shuffle_run': dict(shuffle=dict(c=0.19, a=0.17, lift=0.09)),
+    # the same two strafes as the mirror image, timed half a cycle later: what the sheet looks like when the game flips it for the other side (a mirror lifts the other foot).
+    # Used to blend one side into the other (see _flip)
+    'strafe_l': dict(clip='locomotion_pack/right strafe walking.fbx', lift=0.40, yaw_legs=0, yaw_torso=6, mirror=True),
+    'strafe_run_l': dict(clip='locomotion_pack/right strafe.fbx', lift=0.45, yaw_legs=0, yaw_torso=3, mirror=True),
+    'back': dict(clip='Walking Backwards (1).fbx', lift=0.07, yaw_legs=3, yaw_torso=3),
+    # the death clips (one shot, not a cycle: 'once' samples them from their first frame to their last, without the footfall alignment the cycles use)
+    'death_front': dict(clip='Death From The Front.fbx', lift=0.0, yaw_legs=55, yaw_torso=55, once=True), #the whole clip faces 55 degrees off forward
+    'death_right': dict(clip='Death From Right.fbx', lift=0.0, yaw_legs=55, yaw_torso=55, once=True), #the whole clip faces 55 degrees off forward
+    'death_back': dict(clip='Death From The Back.fbx', lift=0.0, yaw_legs=55, yaw_torso=55, once=True), #the whole clip faces 55 degrees off forward
+    # a backwards run: there is no such clip, so it is the backwards walk with its swing pushed beyond the original (damp above 1 goes past the clip's own
+    # pose, away from the idle pose): longer strides and bigger arms, played at the run's pace
+    'back_run': dict(clip='Walking Backwards (1).fbx', lift=0.07, yaw_legs=3, yaw_torso=3, damp=1.6),
+}
+
+
+def _cycle(name, layer, mode, parts, **extra):
+    """A looping 12 frame cycle that is a blend of clips: parts = [(clip name, weight)]."""
+    return dict(name=name, layer=layer, action='mix', n=12, mode=mode, loop=True, mix=lambda i, n, parts=parts: [(c, i / n, w) for c, w in parts], **extra)
+
+
+def _flip(name, comp, quarter, n=6):
+    """The upper body going from a sideways cycle to its mirror image (a strafe to the left after one to the right), starting from the sheet frame `quarter`*3
+    of 12. Frame i is a blend of the right hand cycle and its mirror image, one cycle frame further on each time, ending wholly on the mirror image: the
+    torso sways across instead of jumping to the other side. The mirror image is the cycle that the game shows once it flips the sheet."""
+    def sample(i, n, comp=comp, quarter=quarter):
+        u = (quarter * 3 + 1 + i) / 12.0
+        s = smooth((i + 1) / float(n))
+        return [(comp, u, 1.0 - s), (comp + '_l', u, s)]
+    return dict(name=name, layer='torso', action='mix', n=n, mode='holster', loop=False, mix=sample)
+
+
+TRANSITION_GAITS = {'walk': 'walk', 'run': 'run', 'side_walk': 'strafe', 'side_run': 'strafe_run', 'back': 'back', 'back_run': 'back_run'}  # the game's gait -> the clip it is made from
+TRANSITION_LEGS = {'side_walk': 'shuffle', 'side_run': 'shuffle_run'}  # the legs move sideways as a shuffle (shuffle_pose), not with the strafe clips
+# which gaits the game goes between directly (both ways): speed changes and direction changes
+TRANSITION_EDGES = [('walk', 'run'), ('side_walk', 'side_run'), ('back', 'back_run'), ('walk', 'side_walk'), ('run', 'side_run'), ('back', 'side_walk'),
+    ('back_run', 'side_run'), ('walk', 'back'), ('run', 'back_run')]
+
+
+def _transition(layer, a, b, f0, n=6):
+    """From gait a to gait b (either may be 'idle'), starting where a is at sheet frame f0 of 12: frame i blends a and b one cycle frame further on each time,
+    and the last is wholly b at frame f0 + n (the game carries on from the next one). From idle, b starts at its first frame. Named <layer>_tr_<a>_<b>_<f0>."""
+    def sample(i, n, a=a, b=b, f0=f0):
+        u = (f0 + 1 + i) / 12.0
+        s = smooth((i + 1) / float(n))
+        comp = lambda g: TRANSITION_LEGS.get(g, TRANSITION_GAITS[g]) if layer == 'legs' else TRANSITION_GAITS[g]
+        parts = [('idle', 0.0, 1.0 - s) if a == 'idle' else (comp(a), u, 1.0 - s)]
+        parts.append(('idle', 0.0, s) if b == 'idle' else (comp(b), u, s))
+        return parts
+    wide = any(g in ('side_walk', 'side_run', 'back_run') for g in (a, b)) and layer == 'legs'
+    return dict(name=f'{layer}_tr_{a}_{b}_{f0}', layer=layer, action='mix', n=n, mode='free' if layer == 'legs' else 'holster', loop=False, mix=sample, **(dict(ortho=2.0) if wide else {}))
+
+
+def _transitions():
+    """Between idle and every gait (the upper body and the legs), and between the gaits next to each other (the upper body only: the legs' sheets are turned
+    in the game to run along the movement, so they are not blended). Starting from idle is one sheet; from a gait, from two points of the stride."""
+    states = []
+    for layer in ('torso', 'legs'):
+        for gait in TRANSITION_GAITS:
+            states.append(_transition(layer, 'idle', gait, 0))
+            for f0 in (0, 6):
+                states.append(_transition(layer, gait, 'idle', f0))
+    for a, b in TRANSITION_EDGES:
+        for f0 in (0, 6):
+            states.append(_transition('torso', a, b, f0))
+            states.append(_transition('torso', b, a, f0))
+    return states
+
+
+def _death(name, parts, n=18, lead=3, u_end=0.8, ortho=3.8):
+    """A death from a clip (or a blend of clips), full body, seen from above. It starts on the idle pose and blends into the clip over the first `lead` frames
+    (so it starts exactly where the standing character is), then plays the clip through to its last frame, where the body lies. The clip's own movement is kept (keep_travel): the body falls away from the spot the feet stood on, which is the sprite's pivot."""
+    def sample(i, n, parts=parts, lead=lead):
+        u = i / (n - 1) * u_end #the clips are 3 seconds, most of it the body lying still: only the fall and the settling are used
+        idle_weight = max(0.0, 1.0 - i / float(lead)) if lead > 0 else 0.0
+        out = [('idle', 0.0, idle_weight)] if idle_weight > 0.0 else []
+        out += [(c, u, w * (1.0 - idle_weight)) for c, w in parts]
+        return out
+    return dict(name=name, layer='full', action='mix', n=n, mode='holster', loop=False, mix=sample, ortho=ortho, keep_travel=True) #ortho: the width of the frame in metres; the body travels up to a metre and a half from the spot
+
+
+def _gaits():
+    """The rest of the gait cycles, blends of the clips above on the skeleton (the upper body at the same frames as the legs, so arms and legs swing together)."""
+    wide = dict(ortho=2.0) #the sideways steps and the backwards run reach nearly a metre, wider than the 1.45 m frame
+    states = [
+        _cycle('legs_side_walk', 'legs', 'free', [('shuffle', 1.0)], **wide), #sideways, a step to the right (the game mirrors it for the left)
+        _cycle('legs_side_run', 'legs', 'free', [('shuffle_run', 1.0)], **wide),
+        _cycle('legs_back', 'legs', 'free', [('back', 1.0)]),
+        _cycle('legs_back_run', 'legs', 'free', [('back_run', 1.0)], **wide),
+        _cycle('torso_side_walk', 'torso', 'holster', [('strafe', 1.0)]),
+        _cycle('torso_side_run', 'torso', 'holster', [('strafe_run', 1.0)]),
+        _cycle('torso_back', 'torso', 'holster', [('back', 1.0)]),
+        _cycle('torso_back_run', 'torso', 'holster', [('back_run', 1.0)]),
+    ]
+    for kind, comp in (('walk', 'strafe'), ('run', 'strafe_run')):  # from one side to the other, from four points of the stride
+        for quarter in range(4):
+            states.append(_flip(f'torso_flip_{kind}_{quarter}', comp, quarter))
+    return states
+
+
+def _deaths():
+    """A death for each direction the shot came from, relative to the way the character faces: from the front, from the right (the clip's own side; the game
+    mirrors it for the left), from the back, and between them blends of the two clips either side."""
+    states = []
+    for angle_name, parts in (('front', [('death_front', 1.0)]), ('front_right', [('death_front', 1.0), ('death_right', 1.0)]), ('right', [('death_right', 1.0)]),
+            ('back_right', [('death_right', 1.0), ('death_back', 1.0)]), ('back', [('death_back', 1.0)])):
+        states.append(_death('death_%s' % angle_name, parts, ortho=4.8 if angle_name == 'back' else 3.8)) #the back death travels furthest
+    return states
+
+
+IDLE_SPINE =Vector((0.0, 0.0, 1.323))
 
 
 # ------------------------------------------------------------------ materials
@@ -282,6 +399,26 @@ def pose_arms(arm, targets, pole, hand_dir):
         aim_bone(arm, f'{side}Hand', f'{side}HandMiddle1', T + Vector(hand_dir(sgn)))
 
 
+def pose_legs(arm, targets, knee_dir):
+    """Two-bone solve per leg: the foot goes to targets[side] (world), the knee bends towards knee_dir, and the foot points the way the character faces (-y)."""
+    for side, T in targets.items():
+        S = wpos(arm, f'{side}UpLeg')
+        E0, F0 = wpos(arm, f'{side}Leg'), wpos(arm, f'{side}Foot')
+        L1, L2 = (E0 - S).length, (F0 - E0).length
+        T = Vector(T)
+        d = min(max((T - S).length, abs(L1 - L2) + 1e-3), (L1 + L2) * 0.999)
+        dr = (T - S).normalized()
+        T = S + dr * d
+        a = (L1 * L1 - L2 * L2 + d * d) / (2 * d)
+        h = math.sqrt(max(L1 * L1 - a * a, 0))
+        P = Vector(knee_dir)
+        pp = (P - dr * P.dot(dr)).normalized()
+        E = S + dr * a + pp * h
+        aim_bone(arm, f'{side}UpLeg', f'{side}Leg', E)
+        aim_bone(arm, f'{side}Leg', f'{side}Foot', T)
+        aim_bone(arm, f'{side}Foot', f'{side}ToeBase', T + Vector((0.0, -0.14, -0.03)))
+
+
 def fingers_to_fists(arm):
     for pb in arm.pose.bones:
         n = pb.name.replace('mixamorig:', '')
@@ -321,20 +458,42 @@ def match_rest(src, tgt):
     return ref
 
 
-def retarget(src, tgt, ref):
+_SIDE = Matrix(((-1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0))) #reflects across the character's centre line (the character faces along y)
+
+
+def _mirrored(name):
+    if 'Left' in name:
+        return name.replace('Left', 'Right')
+    if 'Right' in name:
+        return name.replace('Right', 'Left')
+    return name
+
+
+def _reflect(q):
+    """A world space rotation as it looks in a mirror held along the character's centre line."""
+    return (_SIDE @ q.to_matrix() @ _SIDE).to_quaternion()
+
+
+def retarget(src, tgt, ref, mirror=False):
+    """Poses tgt like src. mirror: as src's mirror image (its left side doing what its right side does, and the other way round)."""
     bpy.context.view_layer.update()
     Ms, Mt = src.matrix_world, tgt.matrix_world
     sh_rest = (Ms @ src.data.bones['mixamorig:Hips'].matrix_local).to_translation()
     sh_pose = (Ms @ src.pose.bones['mixamorig:Hips'].matrix).to_translation()
+    if mirror:
+        sh_pose = sh_rest + Vector((-(sh_pose.x - sh_rest.x), sh_pose.y - sh_rest.y, sh_pose.z - sh_rest.z))
     th_rest = (Mt @ tgt.data.bones['mixamorig:Hips'].matrix_local).to_translation()
     ratio = th_rest.z / sh_rest.z
     scl = Mt.to_scale()
     S = Matrix.Diagonal((scl.x, scl.y, scl.z, 1))
     pose = {}
     for b in tgt.data.bones:  # parents come before children
-        if b.name in src.pose.bones:
-            sb = src.data.bones[b.name]
-            delta = (Ms @ src.pose.bones[b.name].matrix).to_quaternion() @ (Ms @ sb.matrix_local).to_quaternion().inverted()
+        sname = _mirrored(b.name) if mirror else b.name
+        if sname in src.pose.bones:
+            sb = src.data.bones[sname]
+            delta = (Ms @ src.pose.bones[sname].matrix).to_quaternion() @ (Ms @ sb.matrix_local).to_quaternion().inverted()
+            if mirror:
+                delta = _reflect(delta)
         else:
             delta = None
         if b.parent is None:
@@ -372,13 +531,26 @@ def smooth(x):
     return x * x * (3 - 2 * x)
 
 
+def _toward(a, b, f):
+    """The rotation f of the way from a to b; past b (f above 1) it carries on the same way, so the swing grows."""
+    if f <= 1.0:
+        return a.slerp(b, f)
+    delta = a.inverted() @ b
+    axis, angle = delta.to_axis_angle()
+    return a @ Quaternion(axis, angle * f)
+
+
+STATES += _transitions()
+STATES += _gaits() + _deaths() #(after smooth, which the transition states use when they are rendered)
+
+
 # ------------------------------------------------------------------ build one role
 def build(role):
     cfg = dict(ROLES[role], _role=role)
     PROPS.clear()
     bpy.ops.wm.read_factory_settings(use_empty=True)
     # motion source: the Mixamo clips in Xbot.glb (its mannequin mesh is discarded)
-    bpy.ops.import_scene.gltf(filepath=os.path.join(HERE, 'Xbot.glb'))
+    bpy.ops.import_scene.gltf(filepath=os.path.join(ASSETS, 'Xbot.glb'))
     src = [o for o in bpy.data.objects if o.type == 'ARMATURE'][0]
     for o in list(bpy.data.objects):
         if o.type == 'MESH':
@@ -386,9 +558,17 @@ def build(role):
     src.hide_render = True
     # extra Mixamo clips (FBX, Without Skin, In Place) each bring their own armature; turn it to face the same way as the Xbot's
     clip_src = {}
-    for fname in sorted({s['clip'] for s in STATES if s.get('clip')}):
+    needed = set()
+    for s in STATES:
+        if ONLY and not any(s['name'] == o or (o.endswith('*') and s['name'].startswith(o[:-1])) for o in ONLY):
+            continue
+        if s.get('clip'):
+            needed.add(s['clip'])
+        if s.get('mix'):
+            needed.update(CLIPSPEC[c]['clip'] for c, _, _ in s['mix'](0, s['n']) if c != 'idle' and 'clip' in CLIPSPEC[c])
+    for fname in sorted(needed): #only the clips of the states being rendered
         before_clip = set(bpy.data.objects)
-        bpy.ops.import_scene.fbx(filepath=os.path.join(HERE, 'clips', fname))
+        bpy.ops.import_scene.fbx(filepath=os.path.join(ASSETS, 'clips', fname))
         carm = [o for o in bpy.data.objects if o not in before_clip and o.type == 'ARMATURE'][0]
         carm.hide_render = True
         carm.rotation_mode = 'XYZ'
@@ -400,7 +580,7 @@ def build(role):
         clip_src[fname] = [carm, carm.animation_data.action, None]
     # body: a human avatar with separate shirt / trousers / shoes meshes
     before = set(bpy.data.objects)
-    bpy.ops.import_scene.gltf(filepath=os.path.join(HERE, 'readyplayer.me.glb'))
+    bpy.ops.import_scene.gltf(filepath=os.path.join(ASSETS, 'readyplayer.me.glb'))
     new = [o for o in bpy.data.objects if o not in before]
     arm = [o for o in new if o.type == 'ARMATURE'][0]
     for o in new:
@@ -485,12 +665,14 @@ def build(role):
     if w in ('pistol', 'suppressed'):
         prim('cube', (hips.x - 0.2, hips.y - 0.01, hips.z + 0.04), (0.06, 0.14, 0.1), mat('holster', ACCENT['holster']), 'holster')
         prim('cube', (hips.x - 0.2, hips.y - 0.07, hips.z + 0.12), (0.035, 0.05, 0.05), gun, 'holster')
+        holster_gun = PROPS[n0 + 1][0] #(the nub of the gun showing in the holster: the draw state moves the hand to it)
         for o, _ in PROPS[n0:]:
             attach(arm, o, 'Hips')
     else:
         length = 0.75 if w == 'rifle' else 0.34
         lift = 0.16 if cfg['gear'] == 'gunner' else 0.08
         prim('cube', (spine.x, spine.y + 0.2, spine.z + lift), (0.055, length, 0.07), gun, 'holster', rot=(0, 0, math.radians(32)))
+        holster_gun = PROPS[n0][0]
         for o, _ in PROPS[n0:]:
             attach(arm, o, 'Spine2')
 
@@ -588,88 +770,172 @@ def build(role):
                 show = show and mode != 'aim'
             o.hide_render = not show
 
+    foot_rest = {}
+
+    def shuffle_pose(u, p):
+        """A sideways shuffle made on the legs with IK (no clip): the feet stay on their own side of the body and slide in turn, like a step and close. u: where in
+        the cycle (the left foot is highest at LIFT, like every other gait), p: dict(c=how far each foot is from the middle, a=how far it travels from there,
+        lift=how high it comes off the ground). The character moves to its right (-x), so a planted foot goes the other way (+x) relative to the hips."""
+        for pb in arm.pose.bones:
+            pb.rotation_quaternion = idle_rot[pb.name]
+            pb.location = idle_loc[pb.name]
+        bpy.context.view_layer.update()
+        if not foot_rest:
+            for side in ('Left', 'Right'):
+                foot_rest[side] = wpos(arm, f'{side}Foot').copy()
+        targets = {}
+        for side, centre, phase0 in (('Left', p['c'], (LIFT - 0.25) % 1.0), ('Right', -p['c'], (LIFT + 0.25) % 1.0)):
+            q = (u - phase0) % 1.0  # 0..0.5 the foot is in the air (highest in the middle), 0.5..1 planted
+            if q < 0.5:
+                t = smooth(q / 0.5)
+                dx = centre + p['a'] - 2 * p['a'] * t
+                dz = p['lift'] * math.sin(math.pi * q / 0.5)
+            else:
+                dx = centre - p['a'] + 2 * p['a'] * ((q - 0.5) / 0.5)
+                dz = 0.0
+            r = foot_rest[side]
+            targets[side] = Vector((dx, r.y, r.z + dz))
+        pose_legs(arm, targets, (0.0, -1.0, 0.1))
+        return ({pb.name: pb.rotation_quaternion.copy() for pb in arm.pose.bones}, {pb.name: pb.location.copy() for pb in arm.pose.bones})
+
+    def mix_pose(parts, layer):
+        """Poses the body as a blend of clips (parts: [(clip name or 'idle', where in its cycle, weight)]); returns the yaw to square the blend up."""
+        acc_rot = acc_loc = None
+        total = yaw = 0.0
+        for comp, u, weight in parts:
+            if weight <= 0.0:
+                continue
+            if comp == 'idle':
+                rot, loc, y = idle_rot, idle_loc, 0.0
+            elif 'shuffle' in CLIPSPEC[comp]:
+                rot, loc = shuffle_pose(u, CLIPSPEC[comp]['shuffle'])
+                y = 0.0
+            else:
+                spec = CLIPSPEC[comp]
+                carm, cact, crest = clip_src[spec['clip']]
+                a0, a1 = cact.frame_range
+                carm.animation_data.action = cact
+                mirrored = spec.get('mirror', False)
+                sample = min(max(u, 0.0), 1.0) if spec.get('once') else (u + spec['lift'] - LIFT) % 1.0 #a death plays once from its first frame to its last
+                sc.frame_set(int(round(a0 + (a1 - a0) * sample)))
+                retarget(carm, arm, crest, mirrored)
+                rot = {pb.name: pb.rotation_quaternion.copy() for pb in arm.pose.bones}
+                loc = {pb.name: pb.location.copy() for pb in arm.pose.bones}
+                if spec.get('damp'):  # below 1: part of the way from the idle pose; above 1: past the clip's own pose, away from the idle pose
+                    rot = {k: _toward(idle_rot[k], v, spec['damp']) for k, v in rot.items()}
+                    loc = {k: idle_loc[k] + (v - idle_loc[k]) * spec['damp'] for k, v in loc.items()}
+                y = spec['yaw_torso' if layer == 'torso' else 'yaw_legs'] * (-1.0 if mirrored else 1.0)
+            if acc_rot is None:
+                acc_rot, acc_loc, total, yaw = {k: v.copy() for k, v in rot.items()}, {k: v.copy() for k, v in loc.items()}, weight, y * weight
+            else:
+                t = weight / (total + weight)
+                acc_rot = {k: acc_rot[k].slerp(rot[k], t) for k in acc_rot}
+                acc_loc = {k: acc_loc[k].lerp(loc[k], t) for k in acc_loc}
+                total += weight
+                yaw += y * weight
+        for pb in arm.pose.bones:
+            pb.rotation_quaternion = acc_rot[pb.name]
+            pb.location = acc_loc[pb.name]
+        bpy.context.view_layer.update()
+        return yaw / total
+
     os.makedirs(os.path.join(OUT, role), exist_ok=True)
     meta = {}
     for st in STATES:
-        if ONLY and st['name'] not in ONLY:
+        if ONLY and not any(st['name'] == o or (o.endswith('*') and st['name'].startswith(o[:-1])) for o in ONLY):
             continue
         set_layer(st['layer'], st['mode'])
         clip = st.get('clip')
         sx, rx = (clip_src[clip][0], clip_src[clip][2]) if clip else (src, REF)
-        act = clip_src[clip][1] if clip else acts[st['action']]
-        r0, r1 = act.frame_range
+        act = clip_src[clip][1] if clip else (None if st.get('mix') else acts[st['action']])
+        r0, r1 = act.frame_range if act else (0, 0)
         n = st['n']
         full = st['layer'] == 'full'
         if full:
-            cam.ortho_scale = 2.9 if w == 'rifle' else 2.6
+            cam.ortho_scale = st.get('ortho', 2.9 if w == 'rifle' else 2.6)
         else:
             cam.ortho_scale = st.get('ortho', layered_scale)
         sc.render.resolution_x = sc.render.resolution_y = int(round(cam.ortho_scale * PPU))
-        if st['mode'] == 'fall':
-            co.location = (0, -0.8 * st['dir'], 6)
-        elif st['mode'] == 'downed':
-            co.location = (0, -0.85, 6)
-        else:
-            co.location = (0, -0.12, 6)
+        co.location = (0, -0.12, 6)
+        travel_base = None
         for i in range(n):
             arm.rotation_euler = (0, 0, 0)
             arm.location = (0, 0, 0)
-            sx.animation_data.action = act
-            sc.frame_set(int(round(r0 + (r1 - r0) * i / (n - 1 if clip and not st.get('loop') else n))))  # a clip that plays once ends on its last frame; a looping one stops a frame short of its start
-            retarget(sx, arm, rx)
-            if st.get('blend'):
-                b = st['blend']
-                for pb in arm.pose.bones:
-                    pb.rotation_quaternion = idle_rot[pb.name].slerp(pb.rotation_quaternion, b)
-                    pb.location = idle_loc[pb.name].lerp(pb.location, b)
+            if st.get('mix'):
+                yaw_deg = mix_pose(st['mix'](i, n), st['layer'])
+            else:
+                sx.animation_data.action = act
+                u = i / (n - 1 if clip and not st.get('loop') else n)  # a clip that plays once ends on its last frame; a looping one stops a frame short of its start
+                if st.get('phase'):  # start part way through a looping clip, to line its footfalls up with the other gait cycles
+                    u = (u + st['phase']) % 1.0
+                sc.frame_set(int(round(r0 + (r1 - r0) * u)))
+                retarget(sx, arm, rx)
+                if st.get('blend'):
+                    b = st['blend']
+                    for pb in arm.pose.bones:
+                        pb.rotation_quaternion = idle_rot[pb.name].slerp(pb.rotation_quaternion, b)
+                        pb.location = idle_loc[pb.name].lerp(pb.location, b)
+                yaw_deg = st.get('yaw_offset', 0)
             fingers_to_fists(arm)
             mode = st['mode']
-            if mode in ('downed', 'fall'):
-                p = 1.0 if mode == 'downed' else i / (n - 1)
-                dr = st.get('dir', 1)
-                if mode == 'fall':
-                    if p < 0.7:
-                        ang = 90 * (p / 0.7) ** 2
-                    else:
-                        ang = 90 - 7 * math.sin(math.pi * (p - 0.7) / 0.3)
-                else:
-                    ang = 90
-                arm.rotation_euler = (math.radians(ang) * dr, 0, 0)
+            if st.get('keep_travel'):
+                # the clip's own movement stays (a fall carries the body away from where the feet stood): only where the standing pose has its hips is taken
+                # as the pivot, once, from the first frame, and the same shift is applied to every frame
                 bpy.context.view_layer.update()
-                Ls, Rs = wpos(arm, 'LeftArm'), wpos(arm, 'RightArm')
-                fwd = Vector((0, -dr, 0))
-                if dr > 0:   # face down: one arm reaching past the head, one by the hip
-                    goal = {'Left': Ls + fwd * 0.42 + Vector((0.12, 0, 0)), 'Right': Rs - fwd * 0.3 + Vector((-0.18, 0, 0))}
-                    pole = lambda s: (s * 1.0, 0.0, 1.0)
-                else:        # face up: arms flung out
-                    goal = {'Left': Ls + Vector((0.42, 0, 0)) + fwd * 0.15, 'Right': Rs + Vector((-0.4, 0, 0)) - fwd * 0.1}
-                    pole = lambda s: (s * 0.3, 0.0, 1.0)
-                w8 = 1.0 if mode == 'downed' else smooth((p - 0.25) / 0.6)
-                if w8 > 0:
-                    for k in goal:
-                        goal[k] = wpos(arm, f'{k}Hand').lerp(Vector((goal[k].x, goal[k].y, 0.06)), w8)
-                    pose_arms(arm, goal, pole, lambda s: tuple(fwd * 0.1))
+                if travel_base is None:
+                    travel_base = (wpos(arm, 'Hips').x, wpos(arm, 'Hips').y)
+                arm.location.x -= travel_base[0]
+                arm.location.y -= travel_base[1]
+                bpy.context.view_layer.update()
             else:
                 recenter(arm)
-                if st.get('yaw_offset'):  # turn the whole body about the hips, so a clip that starts a few degrees off square starts square
-                    arm.rotation_euler = (0, 0, math.radians(st['yaw_offset']))
-                    bpy.context.view_layer.update()
+            if yaw_deg:  # turn the whole body about the hips, so a clip that starts a few degrees off square starts square
+                arm.rotation_euler = (0, 0, math.radians(yaw_deg))
+                bpy.context.view_layer.update()
+                if not st.get('keep_travel'):
                     recenter(arm)
-                dl =wpos(arm, 'Spine2') - spine_ref
-                if mode == 'aim':
-                    pose_arms(arm, {k: v + dl for k, v in aim_t.items()}, aim_pole, aim_dir)
-                    for o, loc in hand_items:
-                        o.location = loc + dl
-                elif mode == 'interact':
-                    t = 2 * math.pi * i / n
-                    tg = {'Left': Vector((0.1, -0.27 + 0.02 * math.sin(t), shz - 0.38 + 0.02 * math.cos(t))) + dl,
-                          'Right': Vector((-0.1, -0.27 - 0.02 * math.sin(t), shz - 0.38 - 0.02 * math.cos(t))) + dl}
-                    pose_arms(arm, tg, lambda s: (s * 1.0, 0.2, -0.8), lambda s: (0.0, -0.1, -0.03))
+            dl =wpos(arm, 'Spine2') - spine_ref
+            if mode == 'aim':
+                pose_arms(arm, {k: v + dl for k, v in aim_t.items()}, aim_pole, aim_dir)
+                for o, loc in hand_items:
+                    o.location = loc + dl
+            elif mode == 'draw':
+                # drawing the gun: the right hand goes to the holster and takes the gun (first 40%), brings it up to the aim while the left hand comes across to meet it
+                t = i / (n - 1.0)
+                p1 = smooth(t / 0.4)
+                p2 = smooth((t - 0.4) / 0.5)
+                pl = smooth((t - 0.3) / 0.6)
+                bpy.context.view_layer.update()
+                grip = holster_gun.matrix_world.translation.copy()
+                rest = {s: wpos(arm, f'{s}Hand').copy() for s in ('Left', 'Right')}
+                elbow_out = {}
+                for s in ('Left', 'Right'):
+                    sh, el, ha = wpos(arm, f'{s}Arm'), wpos(arm, f'{s}ForeArm'), wpos(arm, f'{s}Hand')
+                    mid = (sh + ha) / 2
+                    v = el - mid
+                    elbow_out[s] = (v - (ha - sh).normalized() * v.dot((ha - sh).normalized())).normalized() #which way the elbow points at rest
+                aim_r, aim_l = aim_t['Right'] + dl, aim_t['Left'] + dl
+                goals = {'Right': rest['Right'].lerp(grip, p1).lerp(aim_r, p2), 'Left': rest['Left'].lerp(aim_l, pl)}
+                blend = {'Right': max(p1 * 0.6, p2), 'Left': pl}
+                for s in ('Right', 'Left'):
+                    pole_now = elbow_out[s].lerp(Vector(aim_pole(1 if s == 'Left' else -1)).normalized(), blend[s])
+                    pose_arms(arm, {s: goals[s]}, lambda sg, P=pole_now: P, aim_dir)
+                for o, loc in hand_items: #the gun is in the holster until the hand lifts it out
+                    o.hide_render = not p2 > 0.0
+                    o.location = grip.lerp(loc + dl, p2)
+                holster_gun.hide_render = p2 > 0.0
+            elif mode == 'interact':
+                t = 2 * math.pi * i / n
+                tg = {'Left': Vector((0.1, -0.27 + 0.02 * math.sin(t), shz - 0.38 + 0.02 * math.cos(t))) + dl,
+                      'Right': Vector((-0.1, -0.27 - 0.02 * math.sin(t), shz - 0.38 - 0.02 * math.cos(t))) + dl}
+                pose_arms(arm, tg, lambda s: (s * 1.0, 0.2, -0.8), lambda s: (0.0, -0.1, -0.03))
             bpy.context.view_layer.update()
             if SHOULDERS:  # offsets from the sprite's pivot, in sprite pixels (x right, y down), for the left and right shoulder joints
                 k = sc.render.resolution_x / cam.ortho_scale
                 lsh_w, rsh_w = wpos(arm, 'LeftArm'), wpos(arm, 'RightArm')
                 SHOULDER_POS.setdefault(st['name'], []).append([round(-lsh_w.x * k, 1), round(lsh_w.y * k, 1), round(-rsh_w.x * k, 1), round(rsh_w.y * k, 1)])
+                hd_w = wpos(arm, 'Head')
+                HEAD_POS.setdefault(st['name'], []).append([round(-hd_w.x * k, 1), round(hd_w.y * k, 1)]) #(same convention: from the pivot, in sheet pixels, x right, y down)
                 continue
             sc.render.filepath = os.path.join(OUT, role, f"{st['name']}_{i:02d}.png")
             bpy.ops.render.render(write_still=True)
@@ -681,6 +947,7 @@ def build(role):
     import json
     if SHOULDERS:
         json.dump(SHOULDER_POS, open(os.path.join(OUT, role, 'shoulders.json'), 'w'))
+        json.dump(HEAD_POS, open(os.path.join(OUT, role, 'heads.json'), 'w'))
     else:
         json.dump(meta, open(os.path.join(OUT, role, 'sprites.json'), 'w'), indent=1)
 

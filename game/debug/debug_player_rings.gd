@@ -3,7 +3,7 @@ extends CanvasLayer
 
 ##Debug view: draws a ring in each player's role colour, and a green (defender) or red (attacker) ring around each player whose team this peer knows.
 ##Its own canvas layer that follows the camera (like the level's ProjectileLayer), so the level's darkness doesn't dim the rings.
-##Game creates it only while one of its ring debug settings is on.
+##Game creates it only while one of its ring debug settings is on. The 'rings' debug command hides and shows them.
 
 const ROLE_RADIUS : float = 20.0 #the body is 12 px, the role ring sits just outside it
 const TEAM_RADIUS : float = 26.0 #outside the role ring, so both show at once

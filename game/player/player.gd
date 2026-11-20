@@ -26,6 +26,11 @@ var lag_compensator : LagCompensator
 var projectile_manager : ProjectileManager
 var role : Role #public, the same on every peer. Null for a player spawned without one (the playground): the exported stats above are used
 var team : int = Team.UNKNOWN #secret: only set where this peer may know it. Never use it in simulated gameplay, see Team
+var hit_direction : Vector2 = Vector2.ZERO #the way the last shot that hit this player was travelling (synced with the health, so every peer plays the same flinch or death); zero if unknown
+var _shown_health : float = starting_health #the health the skin last reacted to: a drop below it is a hit
+@onready var _alive_layer : int = collision_layer #the body's collision while alive, which a dead player gives up
+@onready var _alive_mask : int = collision_mask
+var debug_killed : bool = false #killed by a debug command (set where the kill runs, the lobby): the match counts a player like this as still in play, so it does not end over a test
 var _teleport_to : Variant = null #a position the next tick moves the player to, see teleport()
 
 var player_name : String = "":
@@ -42,27 +47,91 @@ signal shot_fired #a gun fired: plays the skin's recoil and muzzle flash
 var health : float = starting_health:
 	set(v):
 		if v <= 0:
+			var already_dead : bool = health <= 0.0 #the health sync writes the same 0 every tick: dying has to happen once, not again each time
 			health = 0
-			die()
+			if not already_dead:
+				die()
 		else:
 			health = v
 		health_changed.emit(health)
 
 
 func _ready() -> void:
+	_derive_movement()
+	camera.enabled = input.is_multiplayer_authority()
+	if name_display != null:
+		name_display.visible = not input.is_multiplayer_authority() #the name is for the others: you do not see your own
+	died.connect(_on_died)
+	health_changed.connect(_on_health_changed)
+	shot_fired.connect(skin.play_shot)
+
+
+func _derive_movement() -> void:
 	if set_friction_from_slow_down_time:
 		friction = speed / slow_down_time
 	if set_acceleration_from_time:
 		acceleration = speed / acceleration_time
-	camera.enabled = input.is_multiplayer_authority()
-	died.connect(skin.die)
-	shot_fired.connect(skin.play_shot)
+
+
+##Gives the player another role after they have spawned (debug): the new stats and items, at full health. Run it on every peer, roles are public.
+func change_role(new_role : Role) -> void:
+	role = new_role
+	if new_role == null:
+		return
+	new_role.apply(self)
+	_derive_movement()
+	inventory.set_items(starting_items)
+
+##The skin falls according to where the killing shot came from, measured against the way the player faces (0 is from the front, positive from the right).
+func _on_died() -> void:
+	_set_collidable(false)
+	skin.die(_hit_angle())
+
+
+## A dead player is no obstacle: nothing collides with the body, and it collides with nothing, until it is back on its feet.
+func _set_collidable(collidable : bool) -> void:
+	collision_layer = _alive_layer if collidable else 0
+	collision_mask = _alive_mask if collidable else 0
+
+
+## Where the last shot came from, measured against the way the player faces: 0 is from the front, positive from the right, 180 from behind.
+func _hit_angle() -> float:
+	if hit_direction.is_zero_approx():
+		return 0.0
+	var facing : Vector2 = Vector2.from_angle(skin.torso.rotation - PI / 2.0) #the way the torso is turned: where the player aims
+	return rad_to_deg(facing.angle_to(-hit_direction))
+
+
+##Every health change, on every peer: a drop is a hit (a flinch and a puff of blood, the same everywhere as the direction is synced with the health).
+##Health coming back to a dead player stands them up again: the skin gets up from its fall and the player can act.
+func _on_health_changed(h : float) -> void:
+	if h < _shown_health and not hit_direction.is_zero_approx():
+		skin.hit(_hit_angle())
+	_shown_health = h
+	if h > 0.0:
+		debug_killed = false
+		if skin.dead:
+			skin.revive()
+			_set_collidable(true)
+			set_active(true)
+
+
+## Debug (run where the player's state lives, the lobby; the health sync tells everyone else): kills the player as if shot from source_angle_deg round them
+## (0 from the front, positive from the right), or brings a dead one back with full health.
+func debug_kill(source_angle_deg : float = 0.0) -> void:
+	debug_killed = true #so the match does not end over it (see Game._is_in_play)
+	var facing : Vector2 = (input.aim - global_position).normalized() if input.aim != Vector2.ZERO else Vector2.UP
+	take_damage(health, -facing.rotated(deg_to_rad(source_angle_deg))) #the shot travels towards the player, away from where it came from
+
+
+func debug_revive() -> void:
+	health = starting_health
 
 
 func _process(_delta : float) -> void:
 	#The body no longer turns to face the mouse: the skin turns its own legs (to the way it moves) and torso (to the aim). The gun stays out.
 	var aim_direction : Vector2 = (input.aim - global_position).normalized() if input.aim != Vector2.ZERO else Vector2.ZERO
-	skin.update_visual(velocity, aim_direction, is_aiming() and not is_barrel_blocked(aim_direction), is_running(), input.interacting)
+	skin.update_visual(velocity, aim_direction, is_aiming() and not is_barrel_blocked(aim_direction), is_running(), input.interacting, inventory.active_slot)
 	if flashlight.on != input.flashlight_on: #the flashlight is part of the synced input, so this shows every player's beam as they set it
 		flashlight.on = input.flashlight_on
 
@@ -120,7 +189,10 @@ func set_active(active : bool) -> void:
 	input.active = active
 
 
-func take_damage(dmg : float) -> void:
+##from_direction: the way the shot was travelling (zero when there is none). It decides which death the skin plays if this kills, so it is set before the health changes.
+func take_damage(dmg : float, from_direction : Vector2 = Vector2.ZERO) -> void:
+	if not from_direction.is_zero_approx():
+		hit_direction = from_direction.normalized()
 	health -= dmg
 
 

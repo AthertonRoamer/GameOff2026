@@ -1,146 +1,132 @@
-## Night Shift character visuals (Godot 4), from the sprite kit (https://claude.ai/artifact/3vjw1tkGREJeaXT8mbr5Mc).
-## This copy uses the smooth cel-shaded sheets in guard/ (the kit's cel/ folder): pixel_art is off. The sheets are drawn at 176 px per metre,
-## so the Skin node is scaled 0.25 to fit the world's 44 px per metre. Add other roles by copying their cel/ folder next to guard/.
-## Scene setup (player_skin.tscn): a Node2D with three AnimatedSprite2D children, in this order: Legs, Torso, Full (later children draw on top, so the\n## torso covers the hips), with the role's frames assigned. The Lamp, Flashlight and Muzzle are nodes under the Torso. Call update_visual() every frame.
 class_name NightShiftCharacter
 extends Node2D
 
-## The role's frames and data. Set in player_skin.tscn (the guard's). Leave sprite_frames empty to load the role named below from sprite_root instead.
+## What a player looks like, and how it moves: the director of the skin. Drawing is done by three AnimatedSprite2D children, in this order (later children draw on
+## top, so the torso covers the hips): Legs, Torso and, for a body on the floor, Full. The sheets are rendered in Blender (tools/rig), cut into `sprite_frames`
+## and described by `sprite_data` (sprites.json: per sheet its offset, scale and the shoulder positions); SkinFrames makes them. They are drawn at 176 px per
+## metre, so the Skin node is scaled 0.25 to fit the world's 44. Call update_visual() every frame.
+##
+## The skin is made of nodes: this script (walking, aiming, drawing the gun), SkinHitReaction (flinch and blood), SkinDeath (the fall) and, under the Torso,
+## the shoulder lamp with the flashlight, and the muzzle flash.
+##
+## The legs have three directions of walk and run, timed to the same stride, so one sheet hands over to the next at the same frame with no fade: forward
+## (legs_walk / legs_run), sideways (legs_side_walk / legs_side_run, a step to the right, mirrored for the left) and backwards (legs_back / legs_back_run). Which
+## one plays depends on the angle between the aim and the movement: within 45 degrees of the aim is forward, 45 to 135 sideways, past 135 backwards. Each sheet is
+## turned so its stride runs along the way the player really moves, so the feet never slide sideways across the floor, and the hips (which each sheet carries)
+## stay within 45 degrees of the torso. The upper body has the same set of sheets, and between idle and a gait, and between gaits, there are transitions
+## rendered in Blender (see _request).
+
 @export var sprite_frames : SpriteFrames
-@export_file("*.json") var sprite_data : String
-@export var role := "guard" #only used when sprite_frames is empty
-@export var sprite_root := "res://game/player/skin"
-## On for the pixel-art sheets: crisp nearest-neighbour pixels. Off for the smooth cel-shaded sheets.
-@export var pixel_art := false
+@export_file("*.json") var sprite_data : String ## the role's sprites.json
 
-@onready var legs: AnimatedSprite2D = $Legs
-@onready var torso: AnimatedSprite2D = $Torso
-@onready var full: AnimatedSprite2D = $Full
-
-## How far the torso kicks back when a shot is fired, in the sprite sheets' pixels (the node is scaled 0.25, so a quarter of this in the world).
-@export var recoil_px := 8.0
-@export var recoil_out_time := 0.05
-@export var recoil_back_time := 0.18
-
-## Drawing and holstering the gun: the sheets have no frames between the arms-down and arms-up poses, so the old pose fades out over the new one
-## while swelling slightly (draw) or shrinking slightly (holster).
-## The shoulder lamp follows the right shoulder through every animation: the sheets' sprites.json carry the shoulder positions per frame (measured from
-## the rig, see tools/rig), and the lamp sits this far out from the joint, on the shoulder's surface. In a mirrored torso (a left strafe) it uses the mirrored left shoulder.
-@export var draw_time := 0.16
-@export var lamp_outward_px := 11.0
-@export var lamp_forward_px := -4.0
-
-## Standing still, turning on the spot: the feet stay put until the upper body is this far round, then step to catch up at this speed.
-@export var turn_threshold_deg := 70.0
-@export var turn_clip_deg := 96.0 #how far the legs_turn sheet turns the body (measured from the Mixamo clip)
-@export var turn_clip_time := 1.0 #how long the legs_turn sheet takes at its natural pace (96 degrees in 1 s)
-## The turn clip plays at the pace the player is turning at (the torso's turn speed, smoothed), between these multiples of its natural pace:
-## a slow turn gives an unhurried step, a fast flick a quick one.
-## Moving sideways relative to the torso (within this cosine of straight sideways, 0.5 = 60 degrees either side of it) plays the strafe sheets
-## instead of the forward or backward walk and run.
-@export var strafe_cone := 0.5
-## Changing between movement animations (idle, walk, run, strafe) fades the old pose out over this long, so the change is not a pop.
+@export_group("Gaits")
+## Play the Blender-rendered transitions between gaits and for drawing the gun (off: a new gait starts at once).
+@export var blend_gaits := true
+## Changing between idle and a walk or run where there is no transition sheet fades the old pose out over this long, so the change is not a pop.
 @export var move_blend_time := 0.14
-@export var turn_clip_min_scale := 0.8
-@export var turn_clip_max_scale := 3.5
+## How quickly the legs swing round while the player changes direction inside one of the three directions (per second, exponential). Lower is slower and
+## heavier. Changing from one direction to the next turns the legs at once, because the stride stays along the movement.
+@export_range(2.0, 40.0) var leg_turn_rate := 6.0
+## How far past 45 or 135 degrees the aim and the movement have to go before the legs change direction (back inside by this much to change back), so a
+## heading right on the line does not flicker between two sheets.
+@export_range(0.0, 20.0) var direction_margin_deg := 8.0
 ## Playback speed of the idle cycle, which is the breathing (the sheets' idle is 8 frames at 8 fps, a bit quick for a breath).
 @export var idle_breath_speed := 0.5
 
-var meta: Dictionary = {}
+@export_group("Turning on the spot")
+## Still players do not spin their feet with the mouse: the feet stay put until the upper body is this far round, then step to catch up.
+@export var turn_threshold_deg := 70.0
+@export var turn_clip_deg := 96.0 ## how far the legs_turn sheet turns the body (measured from the Mixamo clip)
+@export var turn_clip_time := 1.0 ## how long the legs_turn sheet takes at its natural pace (96 degrees in 1 s)
+## The turn clip plays at the pace the player is turning at (the torso's turn speed, smoothed), between these multiples of its natural pace:
+## a slow turn gives an unhurried step, a fast flick a quick one.
+@export var turn_clip_min_scale := 0.8
+@export var turn_clip_max_scale := 3.5
+
+@export_group("Gun")
+## How far the torso kicks back when a shot is fired, in the sheets' pixels (the node is scaled 0.25, so a quarter of this in the world).
+@export var recoil_px := 8.0
+@export var recoil_out_time := 0.05
+@export var recoil_back_time := 0.18
+## Without a draw sheet the gun comes out (or goes away) by the old pose fading out over the new one while swelling slightly (draw) or shrinking (holster).
+@export var draw_time := 0.16
+## The shoulder lamp follows the right shoulder through every animation (the sheets' sprites.json carry the shoulder positions per frame, measured from the
+## rig) and sits this far out from the joint, on the shoulder's surface.
+@export var lamp_outward_px := 11.0
+@export var lamp_forward_px := -4.0
+
+@onready var legs : AnimatedSprite2D = $Legs
+@onready var torso : AnimatedSprite2D = $Torso
+@onready var full : AnimatedSprite2D = $Full ## the body on the floor (SkinDeath)
+@onready var _hit_reaction : SkinHitReaction = $HitReaction
+@onready var _death : SkinDeath = $Death
+
+const GAIT_CYCLES : Array[String] = ["legs_walk", "legs_run", "legs_side_walk", "legs_side_run", "legs_back", "legs_back_run", "torso_walk", "torso_run",
+	"torso_side_walk", "torso_side_run", "torso_back", "torso_back_run"] #12-frame stride cycles that hand over to each other at the same phase
+
+var meta : Dictionary = {} ## sprites.json
 var dead := false
-const GAIT_CYCLES : Array[String] = ["legs_walk", "legs_run", "legs_strafe_walk", "legs_strafe_run", "torso_walk", "torso_run", "torso_walk_aim",
-	"torso_strafe_walk", "torso_strafe_walk_aim", "torso_strafe_run"] #12-frame stride cycles that can hand over to each other at the same phase
+
 var _ready_done := false
+var _lamp : Node2D
+var _recoil_tween : Tween
+var _rest_scale : Dictionary = {} #each sprite's scale as the scene has it (a sheet's own "scale" is applied on top)
+var _torso_turn_speed := 0.0 #radians per second, smoothed
+# the legs
+var _direction := 0 #which way the legs step: 0 forward, 1 sideways, 2 backwards (see _direction_for)
+var _legs_mirrored := false #the sideways sheet is mirrored (moving to the left)
+var _legs_placed := false
 var _stepping := false #the turn clip is playing
 var _stepping_now := false
 var _step_t := 0.0 #0 to 1 through the clip
 var _step_from := 0.0
 var _step_dir := 1.0
-var _legs_placed := false
-var _torso_turn_speed := 0.0 #radians per second, smoothed
-var _recoil_tween: Tween
+# the gun
+var _visual_started := false
 var _was_aiming := false
-var _ghost: AnimatedSprite2D
-var _lamp: Node2D
-
-
-## The frames and data of a role (guard, medic...). The Skin scene has the guard's frames assigned in the editor (`sprite_frames`, a saved SpriteFrames
-## resource, so every animation can be previewed on the Legs, Torso and Full nodes) and the role's sprites.json as `sprite_data` (per-animation offsets
-## and the shoulder positions). Another role is one more pair of files made the same way: tools/rig renders the sheets and sprites.json, and
-## bake_frames() (run through game/player/skin/bake_skin_frames.gd) turns them into the SpriteFrames resource.
-## load_role() is the code path for a role that has no baked file yet, and what WarmUp calls at startup to have the sheets loaded before a game.
-static var _role_cache: Dictionary = {}
-
-
-## The role's sprites.json and its SpriteFrames, loaded once: the baked <role>_frames.tres when it exists, otherwise cut from the sheets in code.
-static func load_role(root: String, role_name: String) -> Dictionary:
-	var key := "%s/%s" % [root, role_name]
-	if not _role_cache.has(key):
-		var role_meta: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("%s/sprites.json" % key))
-		var baked := "%s/%s_frames.tres" % [key, role_name]
-		_role_cache[key] = {"meta": role_meta, "frames": load(baked) if ResourceLoader.exists(baked) else build_frames(key, role_meta)}
-	return _role_cache[key]
-
-
-## Cuts a role's sheets into a SpriteFrames, from its sprites.json: one animation per entry, with the fps and looping the file says.
-static func build_frames(folder: String, role_meta: Dictionary) -> SpriteFrames:
-	var frames := SpriteFrames.new()
-	frames.remove_animation("default")
-	for anim_name in role_meta.keys():
-		var m: Dictionary = role_meta[anim_name]
-		var tex: Texture2D = load("%s/%s" % [folder, m["file"]])
-		var size := int(m["frame_size"])
-		var cols := int(m["hframes"])
-		frames.add_animation(anim_name)
-		frames.set_animation_speed(anim_name, m["fps"])
-		frames.set_animation_loop(anim_name, m["loop"])
-		for i in int(m["frames"]):
-			var at := AtlasTexture.new()
-			at.atlas = tex
-			at.region = Rect2((i % cols) * size, (i / cols) * size, size, size)
-			frames.add_frame(anim_name, at)
-	return frames
-
-
-## Saves a role's SpriteFrames as <folder>/<role>_frames.tres, so it can be assigned in the editor.
-static func bake_frames(root: String, role_name: String) -> Error:
-	var folder := "%s/%s" % [root, role_name]
-	var role_meta: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("%s/sprites.json" % folder))
-	return ResourceSaver.save(build_frames(folder, role_meta), "%s/%s_frames.tres" % [folder, role_name])
+var _held_item := -1 #the inventory slot of the item in the hands (-1 when none is out), so picking another one is noticed
+var _draw_mode := "" #"draw", "holster" or "switch" while the torso plays the torso_draw sheet, see _begin_draw
+var _ghost : AnimatedSprite2D
+# transitions
+var _blending : Dictionary = {} #sprite -> the transition it is playing (what it is going to, and where that carries on from), see _request
 
 
 func _ready() -> void:
-	if sprite_frames != null and sprite_data != "":
-		meta = JSON.parse_string(FileAccess.get_file_as_string(sprite_data))
-		for s in [legs, torso, full]:
-			s.sprite_frames = sprite_frames
-	else: #no frames set in the editor: load the role named in `role`
-		var loaded := load_role(sprite_root, role)
-		meta = loaded["meta"]
-		for s in [legs, torso, full]:
-			s.sprite_frames = loaded["frames"]
+	meta = JSON.parse_string(FileAccess.get_file_as_string(sprite_data))
 	for s in [legs, torso, full]:
+		s.sprite_frames = sprite_frames
 		s.centered = true
-		if pixel_art:
-			s.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	full.visible = false
 	_lamp = torso.get_node_or_null("Lamp") as Node2D
 	_play(legs, "legs_idle")
 	_play(torso, "torso_idle")
 	_ready_done = true
 
+
 ## move_vel: current velocity. aim_dir: direction the player is aiming.
-## aiming: aim button held (gun out). running: sprint held (forces holster).
-func update_visual(move_vel: Vector2, aim_dir: Vector2, aiming: bool, running: bool, interacting := false) -> void:
+## aiming: the gun is out. running: sprint held (forces holster).
+func update_visual(move_vel: Vector2, aim_dir: Vector2, aiming: bool, running: bool, interacting := false, held_item := -1) -> void:
 	if dead:
 		return
 	var moving := move_vel.length() > 5.0
+	if not _visual_started: #the first call: the gun is simply out or away, it does not come out at the spawn
+		_visual_started = true
+		_was_aiming = aiming and not running
+		_held_item = held_item if _was_aiming else -1
+	var forced_away := running #running puts the gun away (and it comes out again when the run stops). The inventory has often put it away already, so aiming is false here
 	if running:
 		aiming = false  # running always holsters
 	var drew := aiming != _was_aiming #the draw transition has its own crossfade on the torso
 	if drew:
 		_was_aiming = aiming
-		_start_draw_transition(aiming)
+		if forced_away:
+			_cancel_draw() #a run puts the gun away with no animation: the run starts at once
+		elif interacting or not _begin_draw(aiming, false):
+			_cancel_draw()
+			_start_draw_transition(aiming) #no draw sheet: just a fade
+	elif aiming and held_item != _held_item and _held_item != -1 and held_item != -1:
+		_begin_draw(true, true) #another item picked up with the gun out: put the first away and draw the next
+	_held_item = held_item if aiming else -1
 
 	# sprites are drawn facing up, so add 90 degrees to a direction's angle
 	# the torso (and the flashlight on it) always follows the mouse, drawn gun or not; it only falls back to the movement when there is no aim
@@ -157,29 +143,32 @@ func update_visual(move_vel: Vector2, aim_dir: Vector2, aiming: bool, running: b
 		_torso_turn_speed = lerpf(_torso_turn_speed, instant, 1.0 - exp(-dt / tau))
 
 	var legs_anim := "legs_idle"
-	var strafing := false
 	var legs_flip := false
-	var side_amount := 0.0 #positive: moving to the character's right
 	if moving:
-		# which way the player moves relative to where the torso faces: forward and back follow the movement (back plays the walk in reverse),
-		# sideways is a strafe: the legs face the torso and the strafe sheet (a right strafe, mirrored for left) plays
+		# which way the player moves relative to where the torso aims decides the sheet; the sheet is then turned so that its stride runs along the movement
 		var facing := Vector2.from_angle(torso.rotation - PI / 2)
 		var heading := move_vel.normalized()
-		var forward_amount := heading.dot(facing)
-		side_amount = heading.dot(facing.rotated(PI / 2))
-		strafing = absf(forward_amount) < strafe_cone and meta.has("legs_strafe_walk")
+		var angle := rad_to_deg(facing.angle_to(heading)) #0 is straight ahead, positive to the right
+		var previous_direction := _direction
+		_direction = _direction_for(absf(angle), _direction)
 		var target_rotation : float
-		if strafing:
-			legs_anim = "legs_strafe_run" if running and meta.has("legs_strafe_run") else "legs_strafe_walk"
-			target_rotation = torso.rotation
-			legs_flip = side_amount < 0.0
-			legs.speed_scale = 1.0
+		match _direction:
+			0: #forward: the sheet faces up, so up is turned onto the movement
+				legs_anim = "legs_run" if running else "legs_walk"
+				target_rotation = heading.angle() + PI / 2
+			1: #sideways: the sheet steps to its right, mirrored for the left; that step is turned onto the movement
+				legs_anim = "legs_side_run" if running else "legs_side_walk"
+				legs_flip = angle < 0.0
+				target_rotation = heading.angle() + (PI if legs_flip else 0.0)
+			_: #backwards: the sheet steps down, so down is turned onto the movement
+				legs_anim = "legs_back_run" if running else "legs_back"
+				target_rotation = heading.angle() - PI / 2
+		legs.speed_scale = 1.0
+		if _direction != previous_direction or legs_flip != _legs_mirrored:
+			legs.rotation += angle_difference(legs.rotation, target_rotation) #a different sheet, the same stride along the movement: turn at once
 		else:
-			legs_anim = "legs_run" if running else "legs_walk"
-			var backwards := forward_amount < 0.0
-			target_rotation = (-move_vel if backwards else move_vel).angle() + PI / 2
-			legs.speed_scale = -1.0 if backwards else 1.0  # backpedal = walk cycle in reverse
-		legs.rotation += angle_difference(legs.rotation, target_rotation) * (1.0 - exp(-dt * 24.0)) #the legs swing round to a new heading rather than snapping
+			legs.rotation += angle_difference(legs.rotation, target_rotation) * (1.0 - exp(-dt * leg_turn_rate)) #a change of heading within a direction is eased
+		_legs_mirrored = legs_flip
 		_stepping = false
 		_stepping_now = false
 	else:
@@ -187,25 +176,194 @@ func update_visual(move_vel: Vector2, aim_dir: Vector2, aiming: bool, running: b
 		_stepping_now = _update_step_turn(get_process_delta_time())
 		legs.speed_scale = idle_breath_speed
 
-	# the upper body: a strafe has its own torso animations (the sheets are a right strafe; a left strafe is the mirror image, and the lamp and
-	# muzzle on the torso are separate nodes, so they stay where they are)
+	# the upper body moves like the legs do: its own sheets for walking forward, sideways (a step to the right, mirrored for the left) and backwards,
+	# holstered, at a run, or with the gun out (a run always holsters). The arms swing in step with the legs: same pace, same stride frame.
 	var torso_anim := "torso_idle"
-	var torso_strafe := strafing and meta.has("torso_strafe_walk")
+	var torso_flip := false
 	if interacting:
 		torso_anim = "torso_interact"
 	elif aiming:
-		torso_anim = ("torso_strafe_walk_aim" if torso_strafe and meta.has("torso_strafe_walk_aim") else "torso_walk_aim") if moving else "torso_idle_aim"
-		torso_strafe = torso_strafe and torso_anim == "torso_strafe_walk_aim"
+		torso_anim = "torso_idle_aim" #the gun stays up and steady whichever way the legs go: there is no walking-with-the-gun swing
 	elif moving:
-		if torso_strafe:
-			torso_anim = "torso_strafe_run" if running and meta.has("torso_strafe_run") else "torso_strafe_walk"
+		if _direction == 1:
+			torso_anim = "torso_side_run" if running else "torso_side_walk"
+			torso_flip = legs_flip
+		elif _direction == 2:
+			torso_anim = "torso_back_run" if running else "torso_back"
 		else:
 			torso_anim = "torso_run" if running else "torso_walk"
-	var torso_flip := torso_strafe and side_amount < 0.0
 	torso.speed_scale = idle_breath_speed if torso_anim in ["torso_idle", "torso_idle_aim"] else 1.0 # breathing is a slow idle cycle
 	if not _stepping_now: #mid-step the legs hold their own frozen pose
-		_play(legs, legs_anim, legs_flip, true)
-	_play(torso, torso_anim, torso_flip, not drew)
+		_request(legs, legs_anim, legs_flip, true)
+	if _draw_mode != "":
+		torso.speed_scale = 1.0 #the draw plays at its own pace, whatever the torso was doing
+		return
+	_request(torso, torso_anim, torso_flip, not drew)
+
+
+## The gun coming out of the holster (or going back in, played backwards), in the torso_draw sheet: the right hand takes the gun and the arms come up to the aim.
+## Picking another item with the gun out puts the gun away and takes it out again (switch). Returns false when the skin has no such sheet.
+func _begin_draw(drawing: bool, switching: bool) -> bool:
+	if not blend_gaits or not torso.visible or not meta.has("torso_draw") or not torso.sprite_frames.has_animation(&"torso_draw"):
+		return false
+	_abort_transitions()
+	var on_sheet := torso.animation == &"torso_draw" and _draw_mode != ""
+	if torso.animation_finished.is_connected(_on_draw_finished):
+		torso.animation_finished.disconnect(_on_draw_finished)
+	_draw_mode = "switch" if switching else ("draw" if drawing else "holster")
+	torso.flip_h = false
+	torso.offset = sheet_offset("torso_draw")
+	_apply_scale(torso, "torso_draw")
+	if drawing and not switching:
+		if on_sheet:
+			torso.play()
+		else:
+			torso.play(&"torso_draw")
+	elif on_sheet:
+		torso.play_backwards()
+	else:
+		torso.play_backwards(&"torso_draw")
+	torso.animation_finished.connect(_on_draw_finished, CONNECT_ONE_SHOT)
+	return true
+
+
+func _on_draw_finished() -> void:
+	if _draw_mode == "switch": #the old gun is away: the new one comes out
+		_draw_mode = "draw"
+		torso.play(&"torso_draw")
+		torso.animation_finished.connect(_on_draw_finished, CONNECT_ONE_SHOT)
+		return
+	if _draw_mode == "holster": #the gun is away and the arms hang: the idle, so a run or a walk can start from it with the transition from idle
+		_draw_mode = ""
+		torso.offset = sheet_offset("torso_idle")
+		_apply_scale(torso, "torso_idle")
+		torso.play(&"torso_idle")
+		return
+	_draw_mode = ""
+
+
+func _cancel_draw() -> void:
+	if torso.animation_finished.is_connected(_on_draw_finished):
+		torso.animation_finished.disconnect(_on_draw_finished)
+	_draw_mode = ""
+
+
+## Asks a sprite for an animation. Between two gaits (idle, walk, run, sideways, backwards, and a strafe to the other side) there is a transition rendered in
+## Blender (sheets <layer>_tr_<from>_<to>_<frame>, and torso_flip_ for a strafe that changes sides) where the sheets exist: it plays first, then the new gait carries
+## on from the frame after it. Anything else (the gun up, interacting, turning on the spot, two gaits without a sheet) starts at once, with a fade where it asked for one.
+func _request(s: AnimatedSprite2D, anim_name: String, flip := false, fade := false) -> void:
+	var full := anim_name
+	if _blending.has(s):
+		var t: Dictionary = _blending[s]
+		if t["anim"] == full and t["flip"] == flip:
+			s.speed_scale = 1.0 #the transition plays at its own pace, not at the idle breathing's
+			return
+		_cancel_transition(s) #something else was asked for part way through
+	if not _begin_transition(s, full, flip):
+		_play(s, anim_name, flip, fade)
+
+
+## The gait an animation is one of ("" for the others: aiming, interacting, turning, a transition itself).
+func _gait_of(anim_name: String) -> String:
+	var base := anim_name.trim_prefix("legs_").trim_prefix("torso_")
+	return base if base in ["idle", "walk", "run", "side_walk", "side_run", "back", "back_run"] else ""
+
+
+## Starts the transition from what the sprite shows to `full` drawn the way `flip` says, when there is one. Where in the stride it starts is the nearer of the
+## sheets' two (or four, for a strafe changing sides) starting frames. A mirrored sheet shows the other foot at any frame, which is the half cycle in the sums:
+## the upper body and legs of a sideways step to the left are the right step's sheets drawn flipped.
+func _begin_transition(s: AnimatedSprite2D, full: String, flip: bool) -> bool:
+	var from := _gait_of(String(s.animation))
+	var to := _gait_of(full)
+	if not blend_gaits or from == "" or to == "" or not s.is_playing() and from != "idle":
+		return false
+	var layer := "torso" if s == torso else "legs"
+	var count := s.sprite_frames.get_frame_count(s.animation)
+	var half := count / 2
+	var sheet := ""
+	var draw_flip := false
+	var resume := 0
+	if from == to:
+		if flip == s.flip_h or layer != "torso" or not to.begins_with("side_"):
+			return false
+		var quarter := count / 4
+		var q := roundi(float(s.frame) / quarter) % 4
+		sheet = "torso_flip_%s_%d" % ["run" if to == "side_run" else "walk", q]
+		draw_flip = s.flip_h
+		resume = (q * quarter + 1) % count
+	else:
+		var from_side := from.begins_with("side_")
+		var to_side := to.begins_with("side_")
+		if from_side and to_side and flip != s.flip_h:
+			return false #a change of side as well as of gait: no sheet for both
+		draw_flip = s.flip_h if from_side else (flip if to_side else false)
+		var f0 := 0
+		if from != "idle":
+			var phase := s.frame if (from_side or not draw_flip) else s.frame - half #(a flipped forward or backward sheet starts half a cycle on)
+			f0 = (roundi(float(posmod(phase, count)) / half) % 2) * half
+		sheet = "%s_tr_%s_%s_%d" % [layer, from, to, f0]
+	if not meta.has(sheet) or not s.sprite_frames.has_animation(sheet):
+		return false
+	var n: int = meta[sheet]["frames"]
+	if from != to:
+		resume = (int(sheet.get_slice("_", sheet.get_slice_count("_") - 1)) + n + 1 + (half if (not to.begins_with("side_") and draw_flip) else 0)) % count
+	_start_blend(s, sheet, draw_flip, full, flip, resume)
+	return true
+
+
+func _start_blend(s: AnimatedSprite2D, sheet: String, draw_flip: bool, full: String, flip: bool, resume: int) -> void:
+	_blending[s] = {"anim": full, "flip": flip, "resume": resume, "n": meta[sheet]["frames"]}
+	s.flip_h = draw_flip
+	s.offset = sheet_offset(sheet, draw_flip)
+	_apply_scale(s, sheet)
+	s.speed_scale = 1.0
+	s.play(sheet)
+	s.frame = 0
+	s.animation_finished.connect(_end_transition.bind(s), CONNECT_ONE_SHOT)
+
+
+func _end_transition(s: AnimatedSprite2D) -> void:
+	if not _blending.has(s):
+		return
+	var t: Dictionary = _blending[s]
+	_blending.erase(s)
+	s.flip_h = t["flip"]
+	s.offset = sheet_offset(t["anim"], t["flip"])
+	_apply_scale(s, t["anim"])
+	s.play(t["anim"])
+	if _gait_of(t["anim"]) != "idle":
+		s.frame = t["resume"]
+
+
+## Cut short (something else was asked for): the new gait is shown at the frame the transition had got to.
+func _cancel_transition(s: AnimatedSprite2D) -> void:
+	if not _blending.has(s):
+		return
+	if s.animation_finished.is_connected(_end_transition.bind(s)):
+		s.animation_finished.disconnect(_end_transition.bind(s))
+	var t: Dictionary = _blending[s]
+	var count := s.sprite_frames.get_frame_count(t["anim"])
+	var reached := posmod(int(t["resume"]) - (int(t["n"]) - s.frame), count)
+	_end_transition(s)
+	if _gait_of(t["anim"]) != "idle":
+		s.frame = reached
+
+
+func _abort_transitions() -> void:
+	for s: AnimatedSprite2D in _blending.keys():
+		if s.animation_finished.is_connected(_end_transition.bind(s)):
+			s.animation_finished.disconnect(_end_transition.bind(s))
+	_blending.clear()
+
+
+## Which way the legs step (0 forward, 1 sideways, 2 backwards) for an angle between the aim and the movement of 0 to 180 degrees. The lines are at 45
+## and 135 degrees; the current direction is kept until the angle is direction_margin_deg past a line.
+func _direction_for(angle_deg: float, current: int) -> int:
+	var low : float = [0.0, 45.0, 135.0][current] - direction_margin_deg #the current direction's range, a little wider than it is
+	var high : float = [45.0, 135.0, 180.0][current] + direction_margin_deg
+	if angle_deg >= low and angle_deg <= high:
+		return current
+	return 0 if angle_deg < 45.0 else (1 if angle_deg <= 135.0 else 2)
 
 
 ## Turning on the spot. Still players do not spin their feet with the mouse: the legs stay planted until the torso has twisted more than
@@ -242,7 +400,8 @@ func _update_step_turn(delta: float) -> bool:
 	_step_from = legs.rotation
 	legs.flip_h = _step_dir < 0.0 #the clip is a right turn, a left turn is its mirror image
 	legs.animation = "legs_turn"
-	legs.offset = _offset("legs_turn")
+	legs.offset = sheet_offset("legs_turn", legs.flip_h)
+	_apply_scale(legs, "legs_turn")
 	legs.stop()
 	legs.frame = 0
 	return true
@@ -304,7 +463,6 @@ func _start_draw_transition(drawing: bool) -> void:
 		tween.chain().tween_callback(ghost.queue_free)
 
 
-
 ## The shot animation, which the sheets do not have: the torso (and the flashlight on it) kicks back along the barrel and eases forward again,
 ## and the muzzle flash, if the skin has one under the torso, fires. Call it once per shot.
 func play_shot() -> void:
@@ -321,53 +479,81 @@ func play_shot() -> void:
 	if flash:
 		flash.flash()
 
+## A hit: a puff of blood and (unless the hit killed) a flinch away from the shot. source_angle_deg is where the shot came from, as in die(): 0 from the front,
+## positive from the right, 180 from behind.
+func hit(source_angle_deg := 0.0) -> void:
+	var away := Vector2.from_angle(torso.rotation - PI / 2.0 + deg_to_rad(source_angle_deg) + PI) #the way the shot was travelling, in the world
+	_hit_reaction.react(away, not dead)
 
-func go_down() -> void:
-	_show_full("downed")
+
+## The player dies: the body falls the way the killing shot pushes it and lies there (see SkinDeath). Dying twice keeps the first fall.
+func die(source_angle_deg := 0.0) -> void:
+	if dead:
+		return
+	_hit_reaction.cancel()
+	dead = true
+	_death.fall(source_angle_deg)
 
 
 func revive() -> void:
+	_hit_reaction.cancel()
 	dead = false
-	full.visible = false
-	legs.visible = true
-	torso.visible = true
+	_death.rise()
 
 
-## Dead players stay in the downed pose (add a death effect on top, e.g. fade or tint).
-func die() -> void:
-	_show_full("downed")
-	full.pause()
-	dead = true
+## Called as the skin goes down: whatever transition or draw the upper body was playing is dropped.
+func stop_upper_body_blends() -> void:
+	_abort_transitions()
+	_cancel_draw()
 
 
-func _show_full(anim_name: String) -> void:
-	full.rotation = torso.rotation
-	legs.visible = false
-	torso.visible = false
-	full.visible = true
-	full.play(anim_name)
-	full.offset = _offset(anim_name)
-
-
-## Starts an animation on a sprite. Changing from one animation to another (idle to walk, walk to run, run to strafe...) crossfades: a frozen copy
-## of the old pose fades out over move_blend_time, and a change between two gait cycles keeps the stride's phase instead of restarting it.
+## Starts an animation on a sprite. Changing from one animation to another (idle to walk, walk to run...) crossfades: a frozen copy of the old pose fades
+## out over move_blend_time. A change between two stride cycles (walk, run, sideways, backwards) keeps the stride's phase and does not fade: the sheets
+## already match.
 func _play(s: AnimatedSprite2D, anim_name: String, flip := false, fade := false) -> void:
 	if s.animation != anim_name or not s.is_playing():
 		var changing := s.animation != anim_name
+		var between_cycles := changing and GAIT_CYCLES.has(String(s.animation)) and GAIT_CYCLES.has(anim_name)
 		var phase := 0.0
-		if changing and GAIT_CYCLES.has(s.animation) and GAIT_CYCLES.has(anim_name):
-			phase = float(s.frame) / maxf(1.0, s.sprite_frames.get_frame_count(s.animation))
-		if changing and fade and move_blend_time > 0.0 and _ready_done:
+		if between_cycles:
+			var old_count := s.sprite_frames.get_frame_count(s.animation)
+			phase = float(posmod(s.frame - _mirror_shift(s.animation, s.flip_h, old_count), old_count)) / maxf(1.0, old_count)
+		if changing and fade and not between_cycles and move_blend_time > 0.0 and _ready_done:
 			_fade_copy(s, move_blend_time) #copies the old pose, flip included
 		s.flip_h = flip
-		s.offset = _offset(anim_name)
+		s.offset = sheet_offset(anim_name, flip)
+		_apply_scale(s, anim_name)
 		s.play(anim_name)
-		if phase > 0.0:
-			s.frame = clampi(int(phase * s.sprite_frames.get_frame_count(anim_name)), 0, s.sprite_frames.get_frame_count(anim_name) - 1)
+		var count := s.sprite_frames.get_frame_count(anim_name)
+		if phase > 0.0 or _mirror_shift(anim_name, flip, count) > 0:
+			s.frame = (clampi(int(phase * count), 0, count - 1) + _mirror_shift(anim_name, flip, count)) % count
 	else:
+		if flip != s.flip_h and _is_side_sheet(anim_name): #the same sideways sheet on the other side: a mirror lifts the other foot
+			s.frame = (s.frame + s.sprite_frames.get_frame_count(anim_name) / 2) % s.sprite_frames.get_frame_count(anim_name)
+		if flip != s.flip_h:
+			s.offset = sheet_offset(anim_name, flip)
 		s.flip_h = flip
 
+
+## How many frames a sideways sheet (legs or torso) is shifted by when it is mirrored: half the cycle, because a mirror image lifts the other foot (and
+## swings the other arm) at any moment, and the sheets are timed to lift the left foot at the same frame.
+func _mirror_shift(anim_name: StringName, mirrored: bool, frame_count: int) -> int:
+	return frame_count / 2 if mirrored and _is_side_sheet(anim_name) else 0
+
+
+func _is_side_sheet(anim_name: StringName) -> bool:
+	return String(anim_name).begins_with("legs_side_") or String(anim_name).begins_with("torso_side_")
+
+
+## A sheet may be drawn a little smaller than it was rendered ("scale" in sprites.json), on top of the sprite's own scale in the scene.
+func _apply_scale(s: AnimatedSprite2D, anim_name: String) -> void:
+	if not _rest_scale.has(s):
+		_rest_scale[s] = s.scale
+	s.scale = _rest_scale[s] * float(meta[anim_name].get("scale", 1.0))
+
+
 ## Shifts the sprite so the character's position (the hips) sits on the node origin.
-func _offset(anim_name: String) -> Vector2:
+## Flipped, the sprite is mirrored about its own centre, not about the node origin, so the offset's x is mirrored too: then the hips stay on the origin.
+func sheet_offset(anim_name: String, flipped := false) -> Vector2:
 	var o: Array = meta[anim_name]["godot_offset"]
-	return Vector2(o[0], o[1])
+	return Vector2(-o[0] if flipped else o[0], o[1])
