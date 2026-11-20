@@ -1,6 +1,9 @@
 class_name Player
 extends CharacterBody2D
 
+const BLEED_BELOW : float = 0.5 #a player with less than this share of their starting health is bleeding
+const DEAD_Z : int = -10 #z_index of a dead player: above the floor (FacilityMap.FLOOR_Z), below everything else
+
 @export var speed : float = 250.0
 @export var run_multiplier : float = 1.6 #top speed while shift is held and the player is moving
 @export var acceleration : float = 500.0
@@ -42,8 +45,9 @@ var player_name : String = "":
 signal health_changed(h : float)
 signal died
 signal shot_fired #a gun fired: plays the skin's recoil and muzzle flash
+signal damaged(direction : Vector2) #health went down from a shot going this way (on every peer: the health and the direction are synced together). BloodSplats listens
 
-@export var starting_health : float = 100.0
+@export var starting_health : float = 50.0
 var health : float = starting_health:
 	set(v):
 		if v <= 0:
@@ -58,6 +62,7 @@ var health : float = starting_health:
 
 func _ready() -> void:
 	_derive_movement()
+	_shown_health = health #(its initial value came before starting_health was set: the first hit was not noticed)
 	camera.enabled = input.is_multiplayer_authority()
 	if name_display != null:
 		name_display.visible = not input.is_multiplayer_authority() #the name is for the others: you do not see your own
@@ -85,6 +90,7 @@ func change_role(new_role : Role) -> void:
 ##The skin falls according to where the killing shot came from, measured against the way the player faces (0 is from the front, positive from the right).
 func _on_died() -> void:
 	_set_collidable(false)
+	z_index = DEAD_Z #a body on the floor is under everything that stands on it
 	skin.die(_hit_angle())
 
 
@@ -107,12 +113,14 @@ func _hit_angle() -> float:
 func _on_health_changed(h : float) -> void:
 	if h < _shown_health and not hit_direction.is_zero_approx():
 		skin.hit(_hit_angle())
+		damaged.emit(hit_direction)
 	_shown_health = h
 	if h > 0.0:
 		debug_killed = false
 		if skin.dead:
 			skin.revive()
 			_set_collidable(true)
+			z_index = 0
 			set_active(true)
 
 
@@ -199,6 +207,11 @@ func take_damage(dmg : float, from_direction : Vector2 = Vector2.ZERO) -> void:
 func die() -> void:
 	died.emit()
 	set_active(false)
+
+
+## Hurt badly enough to be losing blood: alive with less than half their starting health. The lobby drops a splat of blood for a bleeding player every few seconds.
+func is_bleeding() -> bool:
+	return health > 0.0 and health < starting_health * BLEED_BELOW
 
 
 func is_alive() -> bool:

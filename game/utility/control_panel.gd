@@ -2,57 +2,45 @@
 class_name ControlPanel
 extends StaticBody2D
 
-##A utility room's control console, seen from above: a wall-height console with a lit screen, drawn in the game's cel style (flat tones, hard edges,
-##ink outline). It is solid, glows a little in the dark, and is an interactable (see PlayerInteractor): in reach, E opens its `screen`.
+##A utility room's control console, seen from above: a long steel desk with three keyboards, button banks and two thin monitors along the back, a detailed picture
+##rendered like the walls (a height map from above, see EnvConsole and art/console.png). The panel lights glow over it, drawn here. It is solid, glows a little in the dark, and is an interactable (see PlayerInteractor): in reach, E
+##opens its `screen`. Only one player can be at a console at a time: UtilityConsoles lets the lobby decide who (see claim), and a console somebody is using
+##says so in its prompt and has its last light red.
 ##It is a scene (control_panel.tscn) with its collision shape and screen light as real nodes, so size, light and reach are edited in the editor, and
-##the drawing is a tool script, so the console shows there too. A console for a particular job is an inherited scene of it that sets `title`, `function`
-##and `screen_scene` (door_control_panel.tscn). UtilityConsoles places one in each utility room and gives it its screen on a canvas layer.
+##the drawing is a tool script, so the console shows there too. The picture has the cabinet and the dark glass; what happens on the glass (the floor plan,
+##the lights that pulse) is drawn over it here. A console for a particular job is an inherited scene of it that sets `title`, `function` and `screen_scene`
+##(door_control_panel.tscn). UtilityConsoles places one in each utility room and gives it its screen on a canvas layer.
 ##The console faces down the screen (the operator stands below it). Sizes are in world pixels, 44 per metre.
+
+const ART : Texture2D = preload("res://game/environment/art/console.png")
+const ART_SCALE : float = 44.0 / EnvConsole.PPM #the picture is drawn at 352 px per metre, the world is 44
 
 @export var title : String = "Console"
 @export var function : String = "" #the utility room function it works, like "doors" (what FacilityControl and the lobby check)
 @export var screen_scene : PackedScene #what using the console opens: a full-screen Control with open(player), close() and a `closed` signal
-@export var reach_m : float = 1.7 #how close the player has to be, from the middle of the console
+@export var reach_m : float = 1.2 #how close the player has to be, from the middle of the console
 
-@export_group("Look")
-@export var ink : Color = Color("#06080c") :
-	set(value):
-		ink = value
-		queue_redraw()
-@export var steel : Color = Color("#2a313d") :
-	set(value):
-		steel = value
-		queue_redraw()
-@export var steel_lit : Color = Color("#3a4352") :
-	set(value):
-		steel_lit = value
-		queue_redraw()
-@export var steel_shade : Color = Color("#1a1f27") :
-	set(value):
-		steel_shade = value
-		queue_redraw()
-@export var screen_dark : Color = Color("#0c0e12") :
-	set(value):
-		screen_dark = value
-		queue_redraw()
-@export var screen_line : Color = Color("#6fd3e8") :
+@export_group("Screen")
+@export var screen_line : Color = Palette.ITEM :
 	set(value):
 		screen_line = value
 		queue_redraw()
-@export var amber : Color = Color("#f2b544") :
+@export var amber : Color = Palette.BACKUP :
 	set(value):
 		amber = value
 		queue_redraw()
-@export var red : Color = Color("#e5484d") :
+@export var red : Color = Palette.ALARM :
 	set(value):
 		red = value
 		queue_redraw()
-@export var green : Color = Color("#4be38a") :
+@export var green : Color = Palette.OK :
 	set(value):
 		green = value
 		queue_redraw()
 
 var screen : Control #the opened screen's instance, set by whoever places the console (UtilityConsoles)
+var consoles : UtilityConsoles #the one that decides who is at the console, set by it
+var occupant : int = 0 #the peer at the console, 0 when nobody is. Kept up to date on every peer by UtilityConsoles
 
 var _time : float = 0.0
 
@@ -73,9 +61,6 @@ func _process(delta : float) -> void:
 	queue_redraw()
 
 
-func _set_look(_value = null) -> void:
-	queue_redraw()
-
 ##Close enough, and nothing solid (a wall or a closed door) in between: a console on the other side of a wall cannot be used.
 func is_in_reach(world_position : Vector2, slack : float = 1.0) -> bool:
 	if global_position.distance_to(world_position) > reach_m * 44.0 * slack:
@@ -86,58 +71,54 @@ func is_in_reach(world_position : Vector2, slack : float = 1.0) -> bool:
 	return get_world_2d().direct_space_state.intersect_ray(query).is_empty()
 
 
+##Is somebody else at the console (as this peer knows it)?
+func is_in_use_by_other() -> bool:
+	return occupant != 0 and occupant != multiplayer.get_unique_id()
+
+
 func get_prompt() -> String:
+	if is_in_use_by_other():
+		return "The %s panel is in use" % title.to_lower()
 	return "E   use the %s panel" % title.to_lower()
 
 
-##Opens the console's screen for this player and returns it, so the interactor holds the player here until it closes.
+##Opens the console's screen for this player and returns it, so the interactor holds the player here until it closes. The lobby is asked to give the player the
+##console; the screen opens at once, and closes again if the lobby says somebody was there first (refused).
 func interact(player : Player) -> Control:
-	if screen == null:
+	if screen == null or is_in_use_by_other():
 		return null
+	if consoles != null:
+		consoles.claim(self)
+		screen.closed.connect(consoles.release.bind(self), CONNECT_ONE_SHOT)
 	screen.open(player)
 	return screen
 
 
+##The lobby did not give the player the console: somebody else was at it first.
+func refused() -> void:
+	if screen != null and screen.visible:
+		screen.close()
+
+
 func _draw() -> void:
-	var body : Rect2 = Rect2(-31.0, -13.0, 62.0, 26.0)
-	var shape : PackedVector2Array = _rounded_rect(body, 5.0)
-	draw_colored_polygon(_rounded_rect(body.grow(1.5), 6.0), ink)
-	draw_colored_polygon(shape, steel)
-	_draw_band(shape, Rect2(-31.0, -13.0, 62.0, 4.0), steel_lit) #the top edge catches the light
-	_draw_band(shape, Rect2(-31.0, -13.0, 4.0, 26.0), steel_lit.darkened(0.25))
-	_draw_band(shape, Rect2(27.0, -13.0, 4.0, 26.0), steel_shade)
-	_draw_band(shape, Rect2(-31.0, 9.0, 62.0, 4.0), steel_shade)
-	#the sloped front: the screen, in a dark frame
-	var frame : Rect2 = Rect2(-23.0, -2.0, 46.0, 13.0)
-	draw_colored_polygon(_rounded_rect(frame.grow(1.2), 3.0), ink)
-	draw_colored_polygon(_rounded_rect(frame, 2.5), screen_dark)
-	var pulse : float = 1.0 if Engine.is_editor_hint() else 0.75 + 0.25 * sin(_time * 3.0)
-	var line : Color = Color(screen_line.r, screen_line.g, screen_line.b, 0.9)
-	#a tiny floor plan on the screen
-	draw_rect(Rect2(-19.0, 0.5, 14.0, 8.0), Color(line, 0.35), false, 1.0)
-	draw_rect(Rect2(-3.0, 0.5, 10.0, 8.0), Color(line, 0.35), false, 1.0)
-	draw_rect(Rect2(9.0, 0.5, 11.0, 8.0), Color(line, 0.35), false, 1.0)
-	draw_rect(Rect2(-6.0, 3.0, 3.0, 2.0), Color(green, pulse))
-	draw_rect(Rect2(7.5, 3.0, 3.0, 2.0), Color(red, pulse))
-	draw_rect(Rect2(20.0, 3.0, 2.0, 2.0), Color(amber, pulse))
-	#a row of buttons along the back
-	for i in 6:
-		var colour : Color = [green, amber, red][i % 3]
-		draw_rect(Rect2(-20.0 + i * 7.5, -9.0, 4.0, 3.0), ink)
-		draw_rect(Rect2(-19.5 + i * 7.5, -8.5, 3.0, 2.0), Color(colour, 0.9))
+	draw_texture_rect(ART, Rect2(-ART.get_size() * ART_SCALE / 2.0, ART.get_size() * ART_SCALE), false)
+	var metre : float = 44.0
+	var pulse : float = 1.0 if Engine.is_editor_hint() else 0.8 + 0.2 * sin(_time * 3.0)
+	for at : Vector2 in EnvConsole.LEDS: #the panel lights: dull red, with a little glow that breathes
+		_glow(at * metre, red, 0.55 * pulse, 2.6)
+	for i in EnvConsole.INDICATORS.size(): #the three on the back panel: red, red and a green that goes red while somebody is at the console
+		var colour : Color = red if i < 2 or occupant != 0 else green
+		var at : Vector2 = EnvConsole.INDICATORS[i] * metre
+		draw_rect(Rect2(at - Vector2(0.62, 0.52), Vector2(1.24, 1.04)), Color(colour, 0.9 * pulse))
+		_glow(at, colour, 0.5 * pulse, 2.4)
+	for face : Rect2 in EnvConsole.MONITOR_FACES: #a faint cool light along the monitors' glass
+		draw_rect(Rect2(face.position * metre, face.size * metre), Color(screen_line, 0.3 * pulse))
+		draw_rect(Rect2(face.position * metre + Vector2(0.0, 0.5), Vector2(face.size.x * metre, 1.6)), Color(screen_line, 0.07 * pulse))
 
 
-func _draw_band(outline : PackedVector2Array, band : Rect2, colour : Color) -> void:
-	var band_polygon : PackedVector2Array = PackedVector2Array([band.position, Vector2(band.end.x, band.position.y), band.end, Vector2(band.position.x, band.end.y)])
-	for piece : PackedVector2Array in Geometry2D.intersect_polygons(outline, band_polygon):
-		draw_colored_polygon(piece, colour)
-
-
-static func _rounded_rect(rect : Rect2, radius : float, steps : int = 5) -> PackedVector2Array:
-	var points : PackedVector2Array = PackedVector2Array()
-	var corners : Array[Vector2] = [Vector2(rect.end.x - radius, rect.position.y + radius), Vector2(rect.end.x - radius, rect.end.y - radius),
-		Vector2(rect.position.x + radius, rect.end.y - radius), Vector2(rect.position.x + radius, rect.position.y + radius)]
-	for i in 4:
-		for s in steps + 1:
-			points.append(corners[i] + Vector2.from_angle((i - 1) * PI / 2.0 + s * PI / 2.0 / steps) * radius)
-	return points
+## A soft glow: a few circles, fainter the wider they are.
+func _glow(at : Vector2, colour : Color, strength : float, radius : float) -> void:
+	for step in 3:
+		var k : float = 1.0 - step / 3.0
+		draw_circle(at, radius * k, Color(colour, strength * 0.18 * (1.0 - k + 0.4)))
+	draw_circle(at, radius * 0.22, Color(colour.lightened(0.25), strength))

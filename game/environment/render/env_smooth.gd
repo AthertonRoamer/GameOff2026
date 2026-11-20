@@ -22,6 +22,14 @@ const WALL_COLOR : Color = Color("#16203a") #dark navy
 const GATE_COLOR : Color = Color("#1d2a4d")
 const GATE_EXTERIOR_COLOR : Color = Color("#263766")
 const INK_COLOR : Color = Color("#07090c")
+const CONSOLE_COLOR : Color = Color("#2a313d") #the control console: steel in the walls' tone, a lighter bezel, near-black glass, the palette's signal colours
+const CONSOLE_BEZEL_COLOR : Color = Color("#3a4352")
+const CONSOLE_SCREEN_COLOR : Color = Color("#0c0e12")
+const CONSOLE_GREEN : Color = Color("#4be38a")
+const CONSOLE_AMBER : Color = Color("#f2b544")
+const CONSOLE_RED : Color = Color("#e5484d")
+const CONSOLE_HALF : Vector2 = Vector2(31.0, 13.0) / 44.0 #half the console's size in metres (62 x 26 world pixels)
+const CONSOLE_SIZE_PX : Vector2i = Vector2i(284, 140) #its picture: the console and 0.1 m all round
 
 const SHADOW_REACH : float = 0.3 #how far a wall's shadow reaches across the floor, metres
 const SHADOW_STRENGTH : float = 0.55
@@ -140,6 +148,53 @@ static func gate(state : String, exterior : bool, vertical : bool) -> Image:
 						color.b * (1.0 - lw) + light_color.b * lw, maxf(color.a, lw))
 			image.set_pixel(px, py, color)
 	return image
+
+
+##A control console seen from above, 1.41 m x 0.59 m (62 x 26 world pixels at the map's scale) with room round it for a soft shadow, picture 284 x 140. Its front
+##(where the operator stands) is the bottom of the picture. A steel cabinet with rounded edges, a row of coloured buttons along the back and, in a raised
+##bezel, a dark glass screen. The screen's contents are not in the picture: the game draws them over it, animated (see ControlPanel).
+static func console() -> Image:
+	var size : Vector2i = Vector2i(CONSOLE_SIZE_PX)
+	var image : Image = Image.create(size.x, size.y, false, Image.FORMAT_RGBA8)
+	var hx : float = CONSOLE_HALF.x
+	var hy : float = CONSOLE_HALF.y
+	#slabs: [u0, v0, u1, v1, y base, height, fillet, colour], drawn in this order
+	var slabs : Array = [
+		[-hx, -hy, hx, hy, 0.0, 0.5, 0.07, CONSOLE_COLOR],
+		[-0.545, -0.06, 0.545, 0.27, 0.5, 0.03, 0.025, CONSOLE_BEZEL_COLOR], #the bezel, a step above the top
+		[-0.52, -0.035, 0.52, 0.245, 0.5, 0.025, 0.012, CONSOLE_SCREEN_COLOR]] #the glass, sunk into it
+	for i in 6: #the buttons along the back, a step above the top
+		var u : float = (-20.0 + i * 7.5 + 2.0) / 44.0
+		slabs.append([u - 0.045, -0.265, u + 0.045, -0.19, 0.5, 0.04, 0.02, [CONSOLE_GREEN, CONSOLE_AMBER, CONSOLE_RED][i % 3]])
+	for py in size.y:
+		for px in size.x:
+			var p : Vector2 = Vector2((px + 0.5) / PPM - size.x / (2.0 * PPM), (py + 0.5) / PPM - size.y / (2.0 * PPM))
+			image.set_pixel(px, py, _slab_color(p, slabs, [-hx, -hy, hx, hy]))
+	return image
+
+
+##The colour of the picture at p (metres from its middle): the slabs painted in order over a soft shadow thrown towards the bottom right from the shadow
+##rectangle [u0, v0, u1, v1].
+static func _slab_color(p : Vector2, slabs : Array, shadow_rect : Array) -> Color:
+	var e : float = 0.5 / PPM
+	var ds : float = _rect_inside(p - Vector2(0.03, 0.04), shadow_rect[0], shadow_rect[1], shadow_rect[2], shadow_rect[3])
+	var color : Color = Color(0, 0, 0, 0.45 * smoothstep(-0.05, 0.03, ds))
+	for slab : Array in slabs:
+		var d : float = _rect_inside(p, slab[0], slab[1], slab[2], slab[3])
+		var ink : float = clampf((INK - d) * PPM + 0.5, 0.0, 1.0) if d > -INK else 0.0
+		var inside : float = clampf(d * PPM + 0.5, 0.0, 1.0)
+		if inside <= 0.0 and ink <= 0.0:
+			continue
+		var hx0 : float = _slab_height(_rect_inside(p - Vector2(e, 0), slab[0], slab[1], slab[2], slab[3]) - INK, slab)
+		var hx1 : float = _slab_height(_rect_inside(p + Vector2(e, 0), slab[0], slab[1], slab[2], slab[3]) - INK, slab)
+		var hz0 : float = _slab_height(_rect_inside(p - Vector2(0, e), slab[0], slab[1], slab[2], slab[3]) - INK, slab)
+		var hz1 : float = _slab_height(_rect_inside(p + Vector2(0, e), slab[0], slab[1], slab[2], slab[3]) - INK, slab)
+		var surface : Color = shade(slab[7], _normal(hx0, hx1, hz0, hz1, e))
+		var painted : Color = surface.lerp(INK_COLOR, clampf((INK - d) * PPM + 0.5, 0.0, 1.0))
+		var weight : float = maxf(inside, ink)
+		color = Color(color.r * (1.0 - weight) + painted.r * weight, color.g * (1.0 - weight) + painted.g * weight,
+			color.b * (1.0 - weight) + painted.b * weight, color.a * (1.0 - weight) + weight)
+	return color
 
 
 ##Smooth shading: a flat top (normal straight up) comes out as the base colour, a surface tilted towards the light goes towards the highlight tone,

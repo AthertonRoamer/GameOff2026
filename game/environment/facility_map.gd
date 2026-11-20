@@ -20,6 +20,7 @@ extends Node2D
 signal built
 
 const TILE : int = FacilityTileSet.TILE
+const FLOOR_Z : int = -20 #z_index of the floor and shadow layers; a dead body is at Player.DEAD_Z, above them and below everything else
 const EDITOR_REBUILD_DELAY : float = 0.15 #seconds a room or door has to sit still in the editor before the tiles are rebuilt
 
 @export var doors_start : FacilityDoor.State = FacilityDoor.State.CLOSED #the state every door has when the game starts, unless apply_doors_start is off
@@ -39,6 +40,7 @@ var _changed_for : float = 0.0
 var floors : TileMapLayer #made in _ready (see _make_layers), not part of the scene file
 var shadows : TileMapLayer
 var walls : TileMapLayer
+var wall_body : StaticBody2D #the walls' collision and occluders (the tiles only draw), see _build_wall_body
 @onready var rooms_node : Node2D = $Rooms
 @onready var doors_node : Node2D = $Doors
 @onready var vents_node : Node2D = $Vents
@@ -84,10 +86,21 @@ func _make_layers() -> void:
 		layer.name = layer_name
 		layer.tile_set = tile_set
 		layer.scale = Vector2.ONE * FacilityTileSet.ART_SCALE #the tiles are drawn at 4x resolution, like the character sprites
+		layer.z_index = FLOOR_Z if layer_name != "Walls" else 0 #the floor and its shadows are far below everything, so a body on the floor (Player.DEAD_Z) lies over them
 		add_child(layer)
 		move_child(layer, index)
 		index += 1
 		set(layer_name.to_lower(), layer)
+	var old_body : Node = get_node_or_null("WallBodies")
+	if old_body != null:
+		remove_child(old_body)
+		old_body.free()
+	wall_body = StaticBody2D.new() #the walls' collision and light occluders, see _build_wall_body
+	wall_body.name = "WallBodies"
+	wall_body.collision_layer = FacilityTileSet.WORLD_LAYER
+	wall_body.collision_mask = 0
+	add_child(wall_body)
+	move_child(wall_body, index)
 
 
 ##Reads the rooms and doors, fills in the floor, wall and shadow layers, and works out which rooms each door joins.
@@ -250,6 +263,68 @@ func _paint_floors() -> void:
 func _paint_walls() -> void:
 	for cell : Vector2i in wall_cells:
 		walls.set_cell(cell, FacilityTileSet.SOURCE_WALLS, FacilityTileSet.mask_to_atlas(FacilityTileSet.neighbour_mask(cell, wall_cells)))
+	_build_wall_body()
+
+
+## The walls' collision and light occluders: the wall cells joined into as few rectangles as possible, one shape and one occluder each. A tile per cell made about
+## 1500 shapes and occluders, and every flashlight and every moving player paid for each of them; the rectangles are the same walls with a twentieth of the work
+## (and no seams between cells for a player to catch on).
+func _build_wall_body() -> void:
+	for child : Node in wall_body.get_children():
+		wall_body.remove_child(child)
+		child.free()
+	for rect : Rect2i in wall_rects():
+		var world : Rect2 = Rect2(Vector2(rect.position * TILE), Vector2(rect.size * TILE))
+		var shape : CollisionShape2D = CollisionShape2D.new()
+		shape.shape = RectangleShape2D.new()
+		(shape.shape as RectangleShape2D).size = world.size
+		shape.position = world.get_center()
+		wall_body.add_child(shape)
+		var occluder : LightOccluder2D = LightOccluder2D.new()
+		occluder.occluder = OccluderPolygon2D.new()
+		occluder.occluder.polygon = PackedVector2Array([world.position, Vector2(world.end.x, world.position.y), world.end, Vector2(world.position.x, world.end.y)])
+		wall_body.add_child(occluder)
+
+
+## The wall cells as rectangles (in cells) that cover them exactly: each row's runs of walls, with a run joined to the one above it when they span the same columns.
+func wall_rects() -> Array[Rect2i]:
+	var rows : Dictionary = {} #y -> the x of every wall cell in that row
+	for cell : Vector2i in wall_cells:
+		if not rows.has(cell.y):
+			rows[cell.y] = []
+		rows[cell.y].append(cell.x)
+	var ys : Array = rows.keys()
+	ys.sort()
+	var rects : Array[Rect2i] = []
+	var above : Dictionary = {} #(first x, last x) of a run in the row above -> its rectangle's index
+	var last_y : int = 0
+	for y : int in ys:
+		if y != last_y + 1:
+			above = {}
+		last_y = y
+		var xs : Array = rows[y]
+		xs.sort()
+		var current : Dictionary = {}
+		var i : int = 0
+		while i < xs.size():
+			var first : int = xs[i]
+			var last : int = first
+			while i + 1 < xs.size() and xs[i + 1] == last + 1:
+				i += 1
+				last = xs[i]
+			i += 1
+			var span : Vector2i = Vector2i(first, last)
+			var index : int = above.get(span, -1)
+			if index >= 0:
+				var taller : Rect2i = rects[index]
+				taller.size.y += 1
+				rects[index] = taller
+			else:
+				rects.append(Rect2i(first, y, last - first + 1, 1))
+				index = rects.size() - 1
+			current[span] = index
+		above = current
+	return rects
 
 
 func _collect_vents() -> void:

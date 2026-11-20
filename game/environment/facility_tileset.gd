@@ -7,7 +7,8 @@ extends RefCounted
 ##  source 0, floors: one plain tile
 ##  source 1, walls:  16 x 16, tile index = bitmask of which neighbours are wall (see NEIGHBOURS)
 ##  source 2, shadows: 16 x 16, soft shadow for a floor cell, tile index = bitmask of which neighbours are wall
-##Walls carry a collision shape on physics layer 2 ("world") and a light occluder, so they block movement, bullets and light.
+##The tiles only draw. The walls' collision (physics layer 2, "world") and light occluders are made by the map from the wall cells joined into rectangles
+##(FacilityMap._build_wall_body).
 
 const TILE : int = 11 #world pixels per cell (0.25 m, also the thickness of a wall)
 const ART_TILE : int = 44 #pixels per cell in the images
@@ -44,13 +45,9 @@ static func bake() -> Error:
 static func build() -> TileSet:
 	var tile_set : TileSet = TileSet.new()
 	tile_set.tile_size = Vector2i(ART_TILE, ART_TILE)
-	tile_set.add_physics_layer()
-	tile_set.set_physics_layer_collision_layer(0, WORLD_LAYER)
-	tile_set.set_physics_layer_collision_mask(0, 0)
-	tile_set.add_occlusion_layer()
-	_add_source(tile_set, SOURCE_FLOORS, "floors.png", 1, 1, false)
-	_add_source(tile_set, SOURCE_WALLS, "walls.png", 16, 16, true)
-	_add_source(tile_set, SOURCE_SHADOWS, "shadows.png", 16, 16, false)
+	_add_source(tile_set, SOURCE_FLOORS, "floors.png", 1, 1)
+	_add_source(tile_set, SOURCE_WALLS, "walls.png", 16, 16)
+	_add_source(tile_set, SOURCE_SHADOWS, "shadows.png", 16, 16)
 	return tile_set
 
 
@@ -66,23 +63,11 @@ static func mask_to_atlas(mask : int) -> Vector2i:
 	return Vector2i(mask % 16, mask / 16)
 
 
-static func _add_source(tile_set : TileSet, id : int, file : String, columns : int, rows : int, solid : bool) -> void:
+static func _add_source(tile_set : TileSet, id : int, file : String, columns : int, rows : int) -> void:
 	var source : TileSetAtlasSource = TileSetAtlasSource.new()
 	source.texture = load(ART_DIR + file)
 	source.texture_region_size = Vector2i(ART_TILE, ART_TILE)
 	for y in rows:
 		for x in columns:
 			source.create_tile(Vector2i(x, y))
-	tile_set.add_source(source, id) #the source must belong to the tile set before its tile data can use the tile set's layers
-	if not solid:
-		return
-	var half : float = ART_TILE / 2.0
-	var square : PackedVector2Array = PackedVector2Array([Vector2(-half, -half), Vector2(half, -half), Vector2(half, half), Vector2(-half, half)])
-	for y in rows:
-		for x in columns:
-			var data : TileData = source.get_tile_data(Vector2i(x, y), 0)
-			data.add_collision_polygon(0)
-			data.set_collision_polygon_points(0, 0, square)
-			var occluder : OccluderPolygon2D = OccluderPolygon2D.new()
-			occluder.polygon = square
-			data.set_occluder(0, occluder)
+	tile_set.add_source(source, id)

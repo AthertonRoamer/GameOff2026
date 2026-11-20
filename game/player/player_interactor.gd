@@ -51,7 +51,8 @@ func use(interactable : Node) -> void:
 		return
 	screen = opened
 	player.set_active(false) #the player stands at the console while the screen is up
-	player.input.interacting = true
+	player.input.at_console = true
+	player.input.interacting = true #(at once; from now on gathered with the keys)
 	screen.closed.connect(_on_screen_closed, CONNECT_ONE_SHOT)
 
 
@@ -62,6 +63,7 @@ func close_screen() -> void:
 
 func _on_screen_closed() -> void:
 	screen = null
+	player.input.at_console = false
 	player.input.interacting = false
 	if player.is_alive():
 		player.set_active(true)

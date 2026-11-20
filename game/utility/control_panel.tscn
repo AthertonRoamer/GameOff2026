@@ -17,6 +17,7 @@ fill_from = Vector2(0.5, 0.5)
 fill_to = Vector2(1, 0.5)
 
 [node name="ControlPanel" type="StaticBody2D"]
+texture_filter = 4
 collision_mask = 0
 script = ExtResource("1_panel")
 
@@ -27,6 +28,5 @@ shape = SubResource("RectangleShape2D_body")
 position = Vector2(0, 20)
 color = Color(0.43529412, 0.827451, 0.9098039, 1)
 energy = 0.55
-shadow_enabled = true
 texture = SubResource("GradientTexture2D_glow")
 texture_scale = 1.78

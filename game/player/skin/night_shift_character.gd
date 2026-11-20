@@ -116,12 +116,14 @@ func update_visual(move_vel: Vector2, aim_dir: Vector2, aiming: bool, running: b
 	var forced_away := running #running puts the gun away (and it comes out again when the run stops). The inventory has often put it away already, so aiming is false here
 	if running:
 		aiming = false  # running always holsters
+	if interacting or String(torso.animation).contains("typing"):
+		aiming = false #at a console the gun is away, and stays away until the typing has blended out (then it is drawn again, if it was out)
 	var drew := aiming != _was_aiming #the draw transition has its own crossfade on the torso
 	if drew:
 		_was_aiming = aiming
 		if forced_away:
 			_cancel_draw() #a run puts the gun away with no animation: the run starts at once
-		elif interacting or not _begin_draw(aiming, false):
+		elif not _begin_draw(aiming, false):
 			_cancel_draw()
 			_start_draw_transition(aiming) #no draw sheet: just a fade
 	elif aiming and held_item != _held_item and _held_item != -1 and held_item != -1:
@@ -181,7 +183,7 @@ func update_visual(move_vel: Vector2, aim_dir: Vector2, aiming: bool, running: b
 	var torso_anim := "torso_idle"
 	var torso_flip := false
 	if interacting:
-		torso_anim = "torso_interact"
+		torso_anim = "torso_typing" #typing at the console
 	elif aiming:
 		torso_anim = "torso_idle_aim" #the gun stays up and steady whichever way the legs go: there is no walking-with-the-gun swing
 	elif moving:
@@ -266,7 +268,7 @@ func _request(s: AnimatedSprite2D, anim_name: String, flip := false, fade := fal
 ## The gait an animation is one of ("" for the others: aiming, interacting, turning, a transition itself).
 func _gait_of(anim_name: String) -> String:
 	var base := anim_name.trim_prefix("legs_").trim_prefix("torso_")
-	return base if base in ["idle", "walk", "run", "side_walk", "side_run", "back", "back_run"] else ""
+	return base if base in ["idle", "walk", "run", "side_walk", "side_run", "back", "back_run", "typing"] else ""
 
 
 ## Starts the transition from what the sprite shows to `full` drawn the way `flip` says, when there is one. Where in the stride it starts is the nearer of the
@@ -438,6 +440,11 @@ func _process(delta: float) -> void:
 	var shoulder := Vector2(-float(row[0]), float(row[1])) if torso.flip_h else Vector2(float(row[2]), float(row[3])) #[left x, left y, right x, right y]
 	var target := shoulder + Vector2(lamp_outward_px, lamp_forward_px)
 	_lamp.position = _lamp.position.lerp(target, 1.0 - exp(-delta * 30.0))
+
+
+## Where the middle of a fallen body lies, in the world (the skin's own position while it has not fallen).
+func body_position() -> Vector2:
+	return _death.landing_here() if dead else global_position
 
 
 ## Called the moment the gun is drawn or put away, before the torso switches to its new animation.

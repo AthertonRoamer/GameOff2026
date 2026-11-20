@@ -5,12 +5,17 @@
 [ext_resource type="Script" uid="uid://dxvlk0rkeiwfe" path="res://multiplayer_template/rollback/projectile_manager.gd" id="3_projectiles"]
 [ext_resource type="Script" path="res://game/level/facility_control.gd" id="4_control"]
 [ext_resource type="Script" path="res://game/utility/utility_consoles.gd" id="5_consoles"]
+[ext_resource type="Script" path="res://game/blood/blood_splats.gd" id="6_blood"]
 
 [node name="Level" type="Node2D"]
 script = ExtResource("1_level")
 
 [node name="FacilityMap" parent="." instance=ExtResource("2_map")]
 doors_start = 0
+
+[node name="BloodSplats" type="Node2D" parent="."]
+z_index = -15
+script = ExtResource("6_blood")
 
 [node name="Darkness" type="CanvasModulate" parent="."]
 color = Color(0.21988139, 0.23190084, 0.3095929, 1)

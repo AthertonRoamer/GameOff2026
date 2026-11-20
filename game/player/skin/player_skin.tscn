@@ -88,10 +88,8 @@ texture_scale = 3.78125
 enabled = false
 color = Color(1, 0.9529412, 0.76862746, 1)
 energy = 0.55
-shadow_enabled = true
-shadow_filter = 1
 texture = SubResource("GradientTexture2D_halo")
-texture_scale = 2.2
+texture_scale = 1.1
 
 [node name="Muzzle" type="Node2D" parent="Torso" unique_id=1800132964]
 material = SubResource("CanvasItemMaterial_additive")

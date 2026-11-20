@@ -453,14 +453,31 @@ func night_shift_client() -> void:
 	me.input.flashlight_on = false
 	await get_tree().create_timer(2.0).timeout
 	night_shift_report(game, changes)
+	await get_tree().create_timer(4.0).timeout #(the host reports first, still seeing the client at the console)
+	var commands : DebugCommands = game.get_node("DebugCommands")
+	commands.run("kill") #dying at the console: the screen closes, and coming back leaves no trace of it
+	await wait_until(func() -> bool: return not me.is_alive(), 8.0)
 	await get_tree().create_timer(2.0).timeout
+	log_line("NS_DEAD interacting=%s screen_open=%s occupant=%d" % [me.input.interacting, panel.screen.visible, panel.occupant])
+	commands.run("revive")
+	await wait_until(func() -> bool: return me.is_alive(), 8.0)
+	await get_tree().create_timer(2.5).timeout
+	log_line("NS_REVIVED interacting=%s active=%s torso=%s legs=%s screen_open=%s occupant=%d prompt=\"%s\"" % [me.input.interacting, me.input.active, me.skin.torso.animation, me.skin.legs.animation, panel.screen.visible, panel.occupant, game.player_hud.interact_prompt.text])
+	await get_tree().create_timer(1.0).timeout
 
 
 func night_shift_host() -> void:
 	var game : Game = Main.mode.get_game()
 	var changes : Dictionary = night_shift_watch_doors(game)
-	await get_tree().create_timer(12.0).timeout
+	var panel : ControlPanel = game.level.consoles.panel_for("doors")
+	var me : Player = game.spawner.local_player
+	await wait_until(func() -> bool: return panel.occupant != 0, 40.0) #the client takes the console, which the lobby tells every peer
+	await get_tree().create_timer(0.5).timeout
+	me.interactor.use(panel) #the client is at it: this player must be turned away
+	log_line("NS_BLOCKED occupant=%d own_id=%d opened=%s prompt=\"%s\"" % [panel.occupant, multiplayer.get_unique_id(), me.input.interacting, panel.get_prompt()])
+	await get_tree().create_timer(5.0).timeout
 	night_shift_report(game, changes)
+	await get_tree().create_timer(14.0).timeout #the client then dies at the console and comes back, see night_shift_client
 
 
 ##Soak: nothing scripted, the game just runs for soak_seconds. With soak_move this peer's player walks a square, a side a second, so its
@@ -470,6 +487,7 @@ func soak_run() -> void:
 	var started_msec : int = Time.get_ticks_msec()
 	var step : int = 0
 	Main.mode.get_game().game_clock.real_minutes = soak_seconds / 60.0 + 60.0 #the game must outlast the soak
+	bandwidth_reset()
 	while (Time.get_ticks_msec() - started_msec) / 1000.0 < soak_seconds:
 		if soak_move:
 			for action in actions:
@@ -479,6 +497,7 @@ func soak_run() -> void:
 		await get_tree().create_timer(1.0).timeout
 	for action in actions:
 		Input.action_release(action)
+	perf_line((Time.get_ticks_msec() - started_msec) / 1000.0) #what this peer sent and received over the soak
 	log_line("SOAK_DONE seconds=%.0f move=%s %s" % [soak_seconds, soak_move, describe_game()])
 
 

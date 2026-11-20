@@ -55,7 +55,6 @@ STATES = [
     dict(name='torso_idle', layer='torso', action='idle', n=8, mode='holster'),
     dict(name='torso_idle_aim', layer='torso', action='idle', n=8, mode='aim'),
     dict(name='torso_draw', layer='torso', action='idle', n=8, mode='draw'),
-    dict(name='torso_interact', layer='torso', action='idle', n=12, mode='interact'),
     # a turn on the spot, from a Mixamo clip (Right Turn.fbx, which is no longer in clips/): a right turn of about 96 degrees that starts and ends in the standing
     # stance, with the body's yaw baked into the frames. The game leaves the legs node alone while the sheet plays, turns it by 96 degrees at the end, and mirrors the
     # sheet for a left turn.
@@ -92,7 +91,17 @@ CLIPSPEC = {
     # a backwards run: there is no such clip, so it is the backwards walk with its swing pushed beyond the original (damp above 1 goes past the clip's own
     # pose, away from the idle pose): longer strides and bigger arms, played at the run's pace
     'back_run': dict(clip='Walking Backwards (1).fbx', lift=0.07, yaw_legs=3, yaw_torso=3, damp=1.6),
+    # typing at a console: a 16 second clip of a seated typist. upper: only the spine, head and arms are taken (the seated hips and legs would drag the standing body
+    # down), so the legs stay as they stand. window: the cycle is this stretch of the clip (start, length, as fractions of it), its last part fading into the stretch
+    # before the start (xfade, as a fraction of the cycle) so the loop joins up
+    'typing': dict(clip='Typing.fbx', lift=0.90, yaw_legs=0, yaw_torso=0, upper=True, window=(0.30, 0.09), xfade=0.35),
 }
+
+UPPER_BONES = ('Spine', 'Neck', 'Head', 'LeftShoulder', 'LeftArm', 'LeftForeArm', 'LeftHand', 'RightShoulder', 'RightArm', 'RightForeArm', 'RightHand')  # (by prefix: Spine1, the fingers)
+
+
+def _is_upper(bone):
+    return bone.replace('mixamorig:', '').startswith(UPPER_BONES)
 
 
 def _cycle(name, layer, mode, parts, **extra):
@@ -111,7 +120,7 @@ def _flip(name, comp, quarter, n=6):
     return dict(name=name, layer='torso', action='mix', n=n, mode='holster', loop=False, mix=sample)
 
 
-TRANSITION_GAITS = {'walk': 'walk', 'run': 'run', 'side_walk': 'strafe', 'side_run': 'strafe_run', 'back': 'back', 'back_run': 'back_run'}  # the game's gait -> the clip it is made from
+TRANSITION_GAITS = {'walk': 'walk', 'run': 'run', 'side_walk': 'strafe', 'side_run': 'strafe_run', 'back': 'back', 'back_run': 'back_run', 'typing': 'typing'}  # the game's gait -> the clip it is made from (typing is the upper body only: see _typing)
 TRANSITION_LEGS = {'side_walk': 'shuffle', 'side_run': 'shuffle_run'}  # the legs move sideways as a shuffle (shuffle_pose), not with the strafe clips
 # which gaits the game goes between directly (both ways): speed changes and direction changes
 TRANSITION_EDGES = [('walk', 'run'), ('side_walk', 'side_run'), ('back', 'back_run'), ('walk', 'side_walk'), ('run', 'side_run'), ('back', 'side_walk'),
@@ -138,6 +147,8 @@ def _transitions():
     states = []
     for layer in ('torso', 'legs'):
         for gait in TRANSITION_GAITS:
+            if gait == 'typing':
+                continue
             states.append(_transition(layer, 'idle', gait, 0))
             for f0 in (0, 6):
                 states.append(_transition(layer, gait, 'idle', f0))
@@ -540,8 +551,15 @@ def _toward(a, b, f):
     return a @ Quaternion(axis, angle * f)
 
 
+def _typing():
+    """Typing at a console (the upper body only: the legs keep their idle sheet): a loop, and the blends into it from idle and back out of it from two points of
+    the loop. Played while a player uses a control panel."""
+    return [_cycle('torso_typing', 'torso', 'holster', [('typing', 1.0)]), _transition('torso', 'idle', 'typing', 0), _transition('torso', 'typing', 'idle', 0),
+        _transition('torso', 'typing', 'idle', 6)]
+
+
 STATES += _transitions()
-STATES += _gaits() + _deaths() #(after smooth, which the transition states use when they are rendered)
+STATES += _gaits() + _deaths() + _typing() #(after smooth, which the transition states use when they are rendered)
 
 
 # ------------------------------------------------------------------ build one role
@@ -798,6 +816,21 @@ def build(role):
         pose_legs(arm, targets, (0.0, -1.0, 0.1))
         return ({pb.name: pb.rotation_quaternion.copy() for pb in arm.pose.bones}, {pb.name: pb.location.copy() for pb in arm.pose.bones})
 
+    def clip_pose(spec, sample, mirrored=False):
+        """The skeleton posed like a clip at `sample` (0 to 1 through it): (rotations, locations) by bone."""
+        carm, cact, crest = clip_src[spec['clip']]
+        a0, a1 = cact.frame_range
+        carm.animation_data.action = cact
+        sc.frame_set(int(round(a0 + (a1 - a0) * min(max(sample, 0.0), 1.0))))
+        retarget(carm, arm, crest, mirrored)
+        rot = {pb.name: pb.rotation_quaternion.copy() for pb in arm.pose.bones}
+        loc = {pb.name: pb.location.copy() for pb in arm.pose.bones}
+        if spec.get('upper'):  # the rest of the body stays as it stands
+            for k in rot:
+                if not _is_upper(k):
+                    rot[k], loc[k] = idle_rot[k].copy(), idle_loc[k].copy()
+        return rot, loc
+
     def mix_pose(parts, layer):
         """Poses the body as a blend of clips (parts: [(clip name or 'idle', where in its cycle, weight)]); returns the yaw to square the blend up."""
         acc_rot = acc_loc = None
@@ -812,15 +845,20 @@ def build(role):
                 y = 0.0
             else:
                 spec = CLIPSPEC[comp]
-                carm, cact, crest = clip_src[spec['clip']]
-                a0, a1 = cact.frame_range
-                carm.animation_data.action = cact
                 mirrored = spec.get('mirror', False)
-                sample = min(max(u, 0.0), 1.0) if spec.get('once') else (u + spec['lift'] - LIFT) % 1.0 #a death plays once from its first frame to its last
-                sc.frame_set(int(round(a0 + (a1 - a0) * sample)))
-                retarget(carm, arm, crest, mirrored)
-                rot = {pb.name: pb.rotation_quaternion.copy() for pb in arm.pose.bones}
-                loc = {pb.name: pb.location.copy() for pb in arm.pose.bones}
+                if spec.get('window'):  # a stretch of a long clip played as a loop: the end of the cycle fades into the stretch before its start, so it joins up
+                    start, span = spec['window']
+                    uu = u % 1.0
+                    fade = spec.get('xfade', 0.3)
+                    w = smooth((uu - (1.0 - fade)) / fade)
+                    rot, loc = clip_pose(spec, start + span * uu)
+                    if w > 0.0:
+                        rot2, loc2 = clip_pose(spec, start + span * (uu - 1.0))
+                        rot = {k: rot[k].slerp(rot2[k], w) for k in rot}
+                        loc = {k: loc[k].lerp(loc2[k], w) for k in loc}
+                else:
+                    sample = min(max(u, 0.0), 1.0) if spec.get('once') else (u + spec['lift'] - LIFT) % 1.0 #a death plays once from its first frame to its last
+                    rot, loc = clip_pose(spec, sample, mirrored)
                 if spec.get('damp'):  # below 1: part of the way from the idle pose; above 1: past the clip's own pose, away from the idle pose
                     rot = {k: _toward(idle_rot[k], v, spec['damp']) for k, v in rot.items()}
                     loc = {k: idle_loc[k] + (v - idle_loc[k]) * spec['damp'] for k, v in loc.items()}
@@ -924,11 +962,6 @@ def build(role):
                     o.hide_render = not p2 > 0.0
                     o.location = grip.lerp(loc + dl, p2)
                 holster_gun.hide_render = p2 > 0.0
-            elif mode == 'interact':
-                t = 2 * math.pi * i / n
-                tg = {'Left': Vector((0.1, -0.27 + 0.02 * math.sin(t), shz - 0.38 + 0.02 * math.cos(t))) + dl,
-                      'Right': Vector((-0.1, -0.27 - 0.02 * math.sin(t), shz - 0.38 - 0.02 * math.cos(t))) + dl}
-                pose_arms(arm, tg, lambda s: (s * 1.0, 0.2, -0.8), lambda s: (0.0, -0.1, -0.03))
             bpy.context.view_layer.update()
             if SHOULDERS:  # offsets from the sprite's pivot, in sprite pixels (x right, y down), for the left and right shoulder joints
                 k = sc.render.resolution_x / cam.ortho_scale

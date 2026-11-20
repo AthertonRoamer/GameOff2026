@@ -2,8 +2,8 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b3v0cim62ntie"
-path.bptc="res://.godot/imported/torso_interact.png-e093e002dc2e036a497b4bbbd83e0b0b.bptc.ctex"
+uid="uid://bdxporbksyey3"
+path.bptc="res://.godot/imported/torso_tr_typing_idle_0.png-89df9fbd02ee28d8ecb60737568169df.bptc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -11,8 +11,8 @@ metadata={
 
 [deps]
 
-source_file="res://game/player/skin/guard/torso_interact.png"
-dest_files=["res://.godot/imported/torso_interact.png-e093e002dc2e036a497b4bbbd83e0b0b.bptc.ctex"]
+source_file="res://game/player/skin/guard/torso_tr_typing_idle_0.png"
+dest_files=["res://.godot/imported/torso_tr_typing_idle_0.png-89df9fbd02ee28d8ecb60737568169df.bptc.ctex"]
 
 [params]
 
@@ -24,7 +24,7 @@ compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
-mipmaps/generate=true
+mipmaps/generate=false
 mipmaps/limit=-1
 roughness/mode=0
 roughness/src_normal=""

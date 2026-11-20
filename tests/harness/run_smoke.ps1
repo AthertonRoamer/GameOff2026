@@ -140,7 +140,7 @@ if ($KillKey) {
 		if ($back.Count -eq 0) { "KILLKEY: no report after the second K"; $ok = $false } else {
 			$g = $back[0].Groups
 			"KILLKEY: after the second K: back=$($g[1].Value) health=$($g[2].Value) legs visible=$($g[3].Value) active=$($g[4].Value)"
-			if ($g[1].Value -ne "True" -or $g[2].Value -ne "100" -or $g[3].Value -ne "True" -or $g[4].Value -ne "True") { "KILLKEY: the player did not come back"; $ok = $false }
+			if ($g[1].Value -ne "True" -or $g[2].Value -ne "50" -or $g[3].Value -ne "True" -or $g[4].Value -ne "True") { "KILLKEY: the player did not come back"; $ok = $false }
 		}
 		$second = (Select-String -Path $actorFile -Pattern "KILLKEY_ACTOR second_kill died=(\w+) fall=(\w+) mirrored=(\w+) frame=(\d+) match_ended=(\w+)").Matches
 		if ($second.Count -eq 0) { "KILLKEY: no report of the second kill"; $ok = $false } else {
@@ -150,7 +150,7 @@ if ($KillKey) {
 		}
 		$saw = @(Get-Content $watcherFile | Select-String "KILLKEY_WATCHER saw_health=(\d+) skin_dead=(\w+) fall=(\S+) mirrored=(\w+)" | ForEach-Object { "health $($_.Matches[0].Groups[1].Value) dead=$($_.Matches[0].Groups[2].Value)" + $(if ($_.Matches[0].Groups[3].Value -ne "-") { " fall=$($_.Matches[0].Groups[3].Value)" } else { "" }) })
 		"KILLKEY: the other peer saw the attacker's player: $($saw -join ' -> ')"
-		if (-not ($saw -contains "health 0 dead=True fall=death_front") -or -not ($saw -contains "health 0 dead=True fall=death_front_right") -or -not ($saw -contains "health 100 dead=False")) { "KILLKEY: the other peer did not see the death and the return"; $ok = $false }
+		if (-not ($saw -contains "health 0 dead=True fall=death_front") -or -not ($saw -contains "health 0 dead=True fall=death_front_right") -or -not ($saw -contains "health 50 dead=False")) { "KILLKEY: the other peer did not see the death and the return"; $ok = $false }
 		$fin = (Select-String -Path $watcherFile -Pattern "KILLKEY_WATCHER final match_ended=(\w+) end_screen=(\w+)").Matches
 		if ($fin.Count -gt 0) {
 			"KILLKEY: the other peer: match ended=$($fin[0].Groups[1].Value) end screen=$($fin[0].Groups[2].Value)"
@@ -167,13 +167,19 @@ if ($NightShift) {
 		"NIGHT SHIFT: $(Split-Path $file -Leaf): doors $($m[0].Groups[1].Value) changes $($m[0].Groups[2].Value)"
 		"NIGHT SHIFT:   players $($m[0].Groups[3].Value)"
 	}
+	$blocked = (Select-String -Path $hostOut -Pattern 'NS_BLOCKED occupant=(\d+) own_id=(\d+) opened=(\w+) prompt="(.*)"').Matches
+	if ($blocked.Count -eq 0) { "NIGHT SHIFT: the host never tried the console the client was at"; $ok = $false }
+	else {
+		"NIGHT SHIFT: the host tried the console the client was at: opened=$($blocked[0].Groups[3].Value), it says '$($blocked[0].Groups[4].Value)'"
+		if ($blocked[0].Groups[3].Value -match "(?i)true" -or $blocked[0].Groups[1].Value -eq $blocked[0].Groups[2].Value -or $blocked[0].Groups[4].Value -notmatch "in use") { "NIGHT SHIFT: a second player must not be able to use a console somebody is at"; $ok = $false }
+	}
 	if ($reports.Count -eq 2) {
 		$expected = "COOC" + ("O" * 20)
 		foreach ($r in $reports) { if ($r[0] -ne $expected) { "NIGHT SHIFT: doors should be $expected (door 1, asked for from the spawn, must stay open)"; $ok = $false } }
 		if ($reports[0][1] -ne $reports[1][1]) { "NIGHT SHIFT: the doors changed on different ticks"; $ok = $false } else { "NIGHT SHIFT: doors changed on the same tick everywhere" }
 		$clientId = ((Select-String -Path $clientOuts[0] -Pattern "DEMO_POS|GAME_STARTED me=(\d+)").Matches | Select-Object -First 1).Groups[1].Value
 		foreach ($r in $reports) {
-			if ($r[2] -notmatch "${clientId}:flash=false,interacting=true,torso=torso_interact") { "NIGHT SHIFT: the client's player should show flashlight off and the interact animation (id $clientId)"; $ok = $false }
+			if ($r[2] -notmatch "${clientId}:flash=false,interacting=true,torso=torso_typing") { "NIGHT SHIFT: the client's player should show flashlight off and the interact animation (id $clientId)"; $ok = $false }
 		}
 	}
 }

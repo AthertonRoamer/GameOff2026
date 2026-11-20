@@ -15,6 +15,7 @@ const CONSOLE_REACH_SLACK : float = 1.5 #the lobby's view of a player can be a f
 @onready var projectiles : ProjectileManager = $ProjectileLayer/ProjectileManager
 @onready var control : FacilityControl = $FacilityControl
 @onready var consoles : UtilityConsoles = $UtilityConsoles
+@onready var blood : BloodSplats = $BloodSplats #the blood on the floor (above the floor, below the bodies)
 
 ##(peer_id : int) -> Player, or null. Set by the scene that spawns the players.
 var player_lookup : Callable = Callable()
@@ -26,6 +27,7 @@ var actors : Node2D:
 func _ready() -> void:
 	#the map builds itself in its own _ready, before this one
 	consoles.build()
+	consoles.player_of = func(peer_id : int) -> Player: return player_lookup.call(peer_id) if player_lookup.is_valid() else null
 	control.can_operate = _can_operate
 
 
@@ -37,5 +39,5 @@ func _can_operate(peer_id : int, function : String) -> bool:
 	if not player_lookup.is_valid():
 		return true
 	var player : Player = player_lookup.call(peer_id)
-	return player != null and player.is_alive() and consoles.is_at_console(function, player.global_position, CONSOLE_REACH_SLACK)
+	return player != null and player.is_alive() and consoles.is_at_console(function, player.global_position, CONSOLE_REACH_SLACK) and consoles.is_occupant(peer_id, function)
 

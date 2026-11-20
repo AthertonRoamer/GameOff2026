@@ -12,7 +12,7 @@ enum Kind { GUARD, INTRUDER }
 @export var color : Color = Color.WHITE #identifies the role (debug role rings for now)
 @export var speed : float = 200.0
 @export var run_multiplier : float = 1.6
-@export var starting_health : float = 100.0
+@export var starting_health : float = 50.0
 @export var starting_items : Array[Item] = []
 
 

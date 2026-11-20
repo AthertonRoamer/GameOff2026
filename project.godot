@@ -127,6 +127,7 @@ player_flashlight={
 
 time/tickrate=60
 time/sync_to_physics=false
+rollback/history_limit=128
 
 [physics]
 

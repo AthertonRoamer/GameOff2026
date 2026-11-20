@@ -260,7 +260,10 @@ func _on_player_spawned(player : Node, member : LobbyMember, index : int) -> voi
 		player_hud.bind_player(player)
 		if player.team == Team.ATTACKERS:
 			player_hud.show_target(target_chooser.target)
+	level.blood.players = func() -> Array: return spawner.players.values()
+	player.died.connect(level.blood.on_player_died.bind(player), CONNECT_DEFERRED) #the puddle under the body, on every peer (after the skin has laid the body)
 	if spawner.lobby.is_master:
+		player.damaged.connect(level.blood.on_player_damaged.bind(player)) #a splash where a bullet came through, decided by the lobby
 		player.died.connect(match_director.check_elimination)
 	if debug_respawn_dead_players:
 		player.died.connect(_on_player_died.bind(player))
@@ -317,6 +320,8 @@ func _on_network_unloader_cease_rpcs_request_received() -> void:
 	set_players_active(false)
 	level.projectiles.quiesce()
 	level.control.quiesce()
+	level.consoles.quiesce()
+	level.blood.quiesce()
 	pickups.quiesce()
 	spawner.quiesce()
 	($NetworkUnloader as NetworkUnloader).register_as_ceased()

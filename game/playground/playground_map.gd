@@ -46,6 +46,9 @@ func _ready() -> void:
 	PixelArt.enabled = String(_args.get("pixel", "off")) == "on"
 	player.camera.zoom = Vector2.ONE * float(_args.get("zoom", camera_zoom))
 	player.shot_fired.connect(func() -> void: _shots += 1)
+	level.blood.players = func() -> Array: return [player]
+	player.damaged.connect(level.blood.on_player_damaged.bind(player))
+	player.died.connect(level.blood.on_player_died.bind(player), CONNECT_DEFERRED)
 	if _args.has("shot"):
 		_run_check()
 

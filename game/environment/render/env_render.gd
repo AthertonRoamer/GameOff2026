@@ -38,6 +38,8 @@ func _run() -> void:
 		for mask in 256:
 			atlas.blit_rect(EnvSmooth.floor_shadow(mask), Rect2i(0, 0, cell, cell), Vector2i((mask % 16) * cell, (mask / 16) * cell))
 		_save(atlas, "shadows.png")
+	if _wanted("console"):
+		_save(EnvConsole.render(), "console.png")
 	if _wanted("doors"):
 		for exterior in [false, true]:
 			for state in ["closed", "locked", "open"]:
