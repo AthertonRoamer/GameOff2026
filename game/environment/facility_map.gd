@@ -20,6 +20,7 @@ extends Node2D
 signal built
 
 const TILE : int = FacilityTileSet.TILE
+const WALL_Z : int = 1 #z_index of the walls and gates: over the players, whose bodies can reach into the wall beside them
 const FLOOR_Z : int = -20 #z_index of the floor and shadow layers; a dead body is at Player.DEAD_Z, above them and below everything else
 const EDITOR_REBUILD_DELAY : float = 0.15 #seconds a room or door has to sit still in the editor before the tiles are rebuilt
 
@@ -50,6 +51,7 @@ var wall_body : StaticBody2D #the walls' collision and occluders (the tiles only
 
 func _ready() -> void:
 	_make_layers()
+	doors_node.z_index = WALL_Z
 	set_process(Engine.is_editor_hint()) #only the editor watches the rooms and doors for changes
 	if not Engine.is_editor_hint():
 		RenderingServer.set_default_clear_color(void_color) #the engine's default grey would show wherever there is no tile
@@ -86,7 +88,7 @@ func _make_layers() -> void:
 		layer.name = layer_name
 		layer.tile_set = tile_set
 		layer.scale = Vector2.ONE * FacilityTileSet.ART_SCALE #the tiles are drawn at 4x resolution, like the character sprites
-		layer.z_index = FLOOR_Z if layer_name != "Walls" else 0 #the floor and its shadows are far below everything, so a body on the floor (Player.DEAD_Z) lies over them
+		layer.z_index = FLOOR_Z if layer_name != "Walls" else WALL_Z #the floor and its shadows are far below everything, so a body on the floor (Player.DEAD_Z) lies over them
 		add_child(layer)
 		move_child(layer, index)
 		index += 1

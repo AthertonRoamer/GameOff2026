@@ -1,8 +1,8 @@
-[gd_resource type="TileSet" format=3]
+[gd_resource type="TileSet" format=3 uid="uid://db8iot8ba0cxm"]
 
-[ext_resource type="Texture2D" path="res://game/environment/art/floors.png" id="1_5cxs3"]
-[ext_resource type="Texture2D" path="res://game/environment/art/walls.png" id="2_u3vgy"]
-[ext_resource type="Texture2D" path="res://game/environment/art/shadows.png" id="3_kkjtp"]
+[ext_resource type="Texture2D" uid="uid://c8ybrncsjglod" path="res://game/environment/art/floors.png" id="1_5cxs3"]
+[ext_resource type="Texture2D" uid="uid://bf2cb5q0e1qb3" path="res://game/environment/art/walls.png" id="2_u3vgy"]
+[ext_resource type="Texture2D" uid="uid://dbqyiyust84sj" path="res://game/environment/art/shadows.png" id="3_kkjtp"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_3e11d"]
 texture = ExtResource("1_5cxs3")

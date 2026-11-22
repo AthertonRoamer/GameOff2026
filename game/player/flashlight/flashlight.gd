@@ -27,16 +27,24 @@ static var _cone_texture : Texture2D
 @onready var cone : PointLight2D = $Cone
 @onready var halo : PointLight2D = $Halo
 
-
 func _ready() -> void:
+	set_on(on)
+
+
+var painted : bool = false ## another player's flashlight: PlayerSight draws its beam and glow itself (in the local player's view only), so these lights stay off
+
+
+## Hands this flashlight to PlayerSight (see `painted`).
+func paint_instead() -> void:
+	painted = true
 	set_on(on)
 
 
 func set_on(value : bool) -> void:
 	on = value
 	if is_node_ready():
-		cone.enabled = value
-		halo.enabled = value
+		cone.enabled = value and not painted
+		halo.enabled = value and not painted
 
 
 func toggle() -> void:

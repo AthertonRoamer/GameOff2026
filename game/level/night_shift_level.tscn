@@ -6,6 +6,7 @@
 [ext_resource type="Script" path="res://game/level/facility_control.gd" id="4_control"]
 [ext_resource type="Script" path="res://game/utility/utility_consoles.gd" id="5_consoles"]
 [ext_resource type="Script" path="res://game/blood/blood_splats.gd" id="6_blood"]
+[ext_resource type="Script" path="res://game/hitscan/hitscan_manager.gd" id="7_hitscan"]
 
 [node name="Level" type="Node2D"]
 script = ExtResource("1_level")
@@ -18,7 +19,7 @@ z_index = -15
 script = ExtResource("6_blood")
 
 [node name="Darkness" type="CanvasModulate" parent="."]
-color = Color(0.21988139, 0.23190084, 0.3095929, 1)
+color = Color(0.176, 0.186, 0.248, 1)
 
 [node name="ProjectileLayer" type="CanvasLayer" parent="."]
 follow_viewport_enabled = true
@@ -26,6 +27,9 @@ follow_viewport_enabled = true
 [node name="ProjectileManager" type="Node2D" parent="ProjectileLayer"]
 script = ExtResource("3_projectiles")
 world_collision_mask = 10
+
+[node name="HitscanManager" type="Node2D" parent="ProjectileLayer"]
+script = ExtResource("7_hitscan")
 
 [node name="FacilityControl" type="Node" parent="." node_paths=PackedStringArray("facility")]
 script = ExtResource("4_control")

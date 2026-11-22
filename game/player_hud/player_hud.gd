@@ -37,6 +37,13 @@ func _ready() -> void:
 		_slot_icons.append(panel.get_node("Icon"))
 
 
+## A hit marker over the mouse whenever one of this player's instant shots hits (the lobby says so).
+func bind_hitscan(hitscan : HitscanManager) -> void:
+	var marker : HitMarker = HitMarker.new()
+	add_child(marker)
+	hitscan.hit_confirmed.connect(func(_damage : float) -> void: marker.flash())
+
+
 func bind_player(player : Player) -> void:
 	health_bar.max_value = player.starting_health
 	_show_health(player.health)

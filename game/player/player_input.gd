@@ -13,6 +13,7 @@ const FLASHLIGHT : int = 1 << 3 #a state, not a press: the flashlight action fli
 const INTERACTING : int = 1 << 4 #at a console with its screen up (set by PlayerInteractor, not gathered)
 const SLOT_SHIFT : int = 5 #3 bits: the slot chosen this tick plus one (so 0 is none)
 const DELTA_SHIFT : int = 8 #2 bits: the wheel's turn this tick plus one (so 1 is none)
+const LAG_SHIFT : int = 10 #6 bits: how many ticks behind the lobby this player sees the others (0 to 63), for lag compensated shots
 
 var movement : Vector2 = Vector2.ZERO
 var aim : Vector2 = Vector2.ZERO
@@ -44,6 +45,11 @@ var slot_delta : int: #the wheel: -1, 0 or 1
 	set(value): buttons = (buttons & ~(3 << DELTA_SHIFT)) | ((value + 1) << DELTA_SHIFT)
 
 
+var view_lag : int: #ticks this player sees the others behind the lobby: half the round trip, plus the display offset
+	get: return (buttons >> LAG_SHIFT) & 63
+	set(value): buttons = (buttons & ~(63 << LAG_SHIFT)) | (clampi(value, 0, 63) << LAG_SHIFT)
+
+
 func _gather() -> void:
 	movement = Input.get_vector("player_left", "player_right", "player_up", "player_down") if active else Vector2.ZERO
 	aim = (get_parent() as Node2D).get_global_mouse_position() if active else aim
@@ -53,6 +59,7 @@ func _gather() -> void:
 	slot_select = _gather_slot_select() if active else -1
 	slot_delta = _gather_slot_delta() if active else 0
 	interacting = at_console
+	view_lag = ceili(NetworkTime.remote_rtt * 0.5 * NetworkTime.tickrate) + NetworkRollback.display_offset
 	if active and Input.is_action_just_pressed("player_flashlight"):
 		flashlight_on = not flashlight_on
 

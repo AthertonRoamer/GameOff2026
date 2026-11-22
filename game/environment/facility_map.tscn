@@ -244,7 +244,7 @@ layout_mode = 3
 anchors_preset = 0
 offset_left = 1287.0
 offset_top = 121.0
-offset_right = 1859.0
+offset_right = 1617.0
 offset_bottom = 286.0
 mouse_filter = 2
 script = ExtResource("rect_script")
@@ -409,6 +409,7 @@ mouse_filter = 2
 script = ExtResource("rect_script")
 
 [node name="Doors" type="Node2D" parent="." unique_id=1364101371]
+z_index = 1
 
 [node name="Door_ring_archive" parent="Doors" unique_id=868430038 instance=ExtResource("4_yd85k")]
 position = Vector2(484, 401.5)

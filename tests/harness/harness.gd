@@ -440,6 +440,19 @@ func night_shift_client() -> void:
 	var changes : Dictionary = night_shift_watch_doors(game)
 	var me : Player = game.spawner.local_player
 	var panel : ControlPanel = game.level.consoles.panel_for("doors")
+	for slot in 4: #the roles carry different guns: pick the first instant one (the pistol)
+		var item : Item = me.inventory.slots[slot]
+		if item is Gun and (item as Gun).hitscan:
+			Input.action_press("inventory_slot_%d" % (slot + 1))
+			await get_tree().create_timer(0.3).timeout
+			Input.action_release("inventory_slot_%d" % (slot + 1))
+			break
+	await get_tree().create_timer(0.6).timeout #(the gun comes out)
+	Input.action_press("player_use_active_item") #the pistol, held for 3 s: every shot must be seen by every peer (the host counts them too)
+	await get_tree().create_timer(3.0).timeout
+	Input.action_release("player_use_active_item")
+	await get_tree().create_timer(1.0).timeout #(a shot just before the release is still on its way to the others)
+	log_line("NS_SHOTS seen=%d (slots %s, active %d, drawn %s, input active %s, aim %s, role %s)" % [game.level.hitscan.shots_seen, me.inventory.slots.map(func(i) -> String: return i.item_name if i != null else "-"), me.inventory.active_slot, me.inventory.drawn, me.input.active, me.input.aim, me.role.role_name if me.role else "none"])
 	game.level.control.request_door(game.level.facility.doors[1], FacilityDoor.State.CLOSED) #from the spawn, far from the console: the lobby must refuse
 	log_line("NS_ASKED_FROM_SPAWN distance=%.0f" % me.global_position.distance_to(panel.global_position))
 	if not await wait_until(func(): return panel.is_in_reach(me.global_position), 15.0):
@@ -474,6 +487,7 @@ func night_shift_host() -> void:
 	await wait_until(func() -> bool: return panel.occupant != 0, 40.0) #the client takes the console, which the lobby tells every peer
 	await get_tree().create_timer(0.5).timeout
 	me.interactor.use(panel) #the client is at it: this player must be turned away
+	log_line("NS_SHOTS seen=%d" % game.level.hitscan.shots_seen)
 	log_line("NS_BLOCKED occupant=%d own_id=%d opened=%s prompt=\"%s\"" % [panel.occupant, multiplayer.get_unique_id(), me.input.interacting, panel.get_prompt()])
 	await get_tree().create_timer(5.0).timeout
 	night_shift_report(game, changes)

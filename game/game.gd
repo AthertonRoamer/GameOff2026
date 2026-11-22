@@ -62,6 +62,18 @@ func _ready() -> void:
 	level.projectiles.projectile_hit.connect(_on_projectile_hit)
 	player_setup.lag_compensator = lag_compensator
 	player_setup.projectile_manager = level.projectiles
+	player_setup.hitscan_manager = level.hitscan
+	level.hitscan.lag_compensator = lag_compensator
+	level.hitscan.can_hit = func(target : Node) -> bool: return target.is_alive()
+	level.hitscan.targets = func() -> Array: return spawner.players.values()
+	level.hitscan.player_of = func(peer_id : int) -> Player: return spawner.players.get(peer_id)
+	level.hitscan.sight = $PlayerSight.visibility #shots and bullets are only seen as well as the local player can see where they are
+	level.projectiles.sight = $PlayerSight.visibility
+	$PlayerSight.ambient = level.darkness.color
+	$PlayerSight.players = func() -> Array: return spawner.players.values()
+	$PlayerSight.local_player = func() -> Player: return spawner.local_player
+	level.hitscan.shot_hit.connect(_on_projectile_hit) #(the same hit as a bullet makes: damage and the way it was going)
+	player_hud.bind_hitscan(level.hitscan)
 	player_setup.spawn_point = level.spawn_position()
 	player_hud.bind_clock(game_clock)
 	_configure_role_assigner()
@@ -322,6 +334,7 @@ func _on_network_unloader_cease_rpcs_request_received() -> void:
 	level.control.quiesce()
 	level.consoles.quiesce()
 	level.blood.quiesce()
+	level.hitscan.quiesce()
 	pickups.quiesce()
 	spawner.quiesce()
 	($NetworkUnloader as NetworkUnloader).register_as_ceased()

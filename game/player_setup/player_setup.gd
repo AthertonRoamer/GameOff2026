@@ -10,6 +10,7 @@ extends Node
 @export var hit_radius : float = 16.0 #a little more than the 12 px body circle
 @export var lag_compensator : LagCompensator
 @export var projectile_manager : ProjectileManager
+@export var hitscan_manager : HitscanManager
 
 
 ##Runs before the player enters the tree, so the role's stats are in place for the player's own _ready.
@@ -18,6 +19,7 @@ func setup_player(player : Node, member : LobbyMember, index : int, member_count
 	player.player_name = member.name
 	player.lag_compensator = lag_compensator
 	player.projectile_manager = projectile_manager
+	player.hitscan_manager = hitscan_manager
 	player.role = role
 	player.team = team
 	if role != null:

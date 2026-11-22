@@ -32,6 +32,7 @@
 [ext_resource type="Script" path="res://game/pickups/target_artifact_chooser.gd" id="30_chooser"]
 [ext_resource type="Script" path="res://game/debug/debug_commands.gd" id="31_commands"]
 [ext_resource type="PackedScene" path="res://game/debug/debug_console.tscn" id="32_console"]
+[ext_resource type="Script" path="res://game/player/player_sight.gd" id="33_sight"]
 
 [node name="Game" type="Node2D" unique_id=2090356720]
 script = ExtResource("1_game")
@@ -44,6 +45,9 @@ debug_show_team_rings = true
 script = ExtResource("10_debug")
 
 [node name="Level" parent="." unique_id=787857879 instance=ExtResource("8_level")]
+
+[node name="PlayerSight" type="Node2D" parent="."]
+script = ExtResource("33_sight")
 
 [node name="Spawner" type="Node" parent="." unique_id=335399860]
 script = ExtResource("2_spawner")

@@ -32,8 +32,10 @@ func _ready() -> void:
 		push_warning("PlaygroundMap: NetworkTime did not start, the player will not move")
 	player = PLAYER_SCENE.instantiate()
 	player.player_name = "Guard"
+	player.hitscan_manager = level.hitscan
 	player.projectile_manager = level.projectiles #the gun spawns its bullets here; walls and closed doors stop them
 	hud.bind_player(player)
+	hud.bind_hitscan(level.hitscan)
 	level.actors.add_child(player)
 	player.input.flashlight_on = String(_args.get("flash", "on")) != "off"
 	level.player_lookup = func(_peer_id : int) -> Player: return player

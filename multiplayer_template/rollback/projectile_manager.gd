@@ -41,6 +41,9 @@ func _exit_tree() -> void:
 
 
 ##Stops sending projectile messages. Call it when the game starts to end, before the node is freed (see RollbackPlayerSpawner.quiesce).
+var sight : Callable = Callable() ## (point) -> float: how well the local player sees a point, 0 to 1 (see PlayerSight.visibility). Unset: bullets are seen everywhere
+
+
 func quiesce() -> void:
 	_active = false
 	_projectiles.clear()
@@ -80,7 +83,12 @@ func _draw() -> void:
 	var now : float = NetworkTime.tick + NetworkTime.tick_factor
 	for projectile in _projectiles:
 		if now >= projectile["fire_tick"]:
-			_draw_bullet(position_at(projectile, now), projectile["direction"], projectile["color"])
+			var head : Vector2 = position_at(projectile, now)
+			var seen : float = sight.call(head) if sight.is_valid() else 1.0 #only drawn as well as the local player could see where it is
+			if seen <= 0.02:
+				continue
+			var tint : Color = projectile["color"]
+			_draw_bullet(head, projectile["direction"], Color(tint, tint.a * seen))
 
 
 ##A small glowing bullet: a soft halo, a tapered streak that fades out behind it, a bright slug and a white-hot tip. All drawn, no texture.
@@ -89,12 +97,12 @@ func _draw_bullet(head : Vector2, direction : Vector2, base : Color) -> void:
 	var tail : Vector2 = head - direction * tracer_length
 	var streak_width : float = radius * 0.8
 	draw_polygon(PackedVector2Array([tail, head + side * streak_width, head - side * streak_width]),
-		PackedColorArray([Color(base.r, base.g, base.b, 0.0), Color(base.r, base.g, base.b, 0.6), Color(base.r, base.g, base.b, 0.6)]))
+		PackedColorArray([Color(base.r, base.g, base.b, 0.0), Color(base.r, base.g, base.b, 0.6 * base.a), Color(base.r, base.g, base.b, 0.6 * base.a)]))
 	var halo : float = radius * 3.2 #a smooth radial glow, not stacked circles, so it has no visible rings
-	draw_texture_rect(_get_halo_texture(), Rect2(head - Vector2(halo, halo), Vector2(halo, halo) * 2.0), false, Color(base.r, base.g, base.b, 0.55))
-	draw_line(head - direction * radius * 2.4, head, base.lightened(0.4), radius * 1.2, true)
-	draw_circle(head, radius * 0.7, base.lightened(0.75))
-	draw_circle(head + direction * radius * 0.2, radius * 0.4, Color.WHITE)
+	draw_texture_rect(_get_halo_texture(), Rect2(head - Vector2(halo, halo), Vector2(halo, halo) * 2.0), false, Color(base.r, base.g, base.b, 0.55 * base.a))
+	draw_line(head - direction * radius * 2.4, head, Color(base.lightened(0.4), base.a), radius * 1.2, true)
+	draw_circle(head, radius * 0.7, Color(base.lightened(0.75), base.a))
+	draw_circle(head + direction * radius * 0.2, radius * 0.4, Color(1, 1, 1, base.a))
 
 func _on_tick(_delta : float, tick : int) -> void:
 	if not _active:

@@ -422,6 +422,7 @@ func _fade_copy(sprite: AnimatedSprite2D, time: float) -> void:
 	copy.rotation = sprite.rotation
 	copy.flip_h = sprite.flip_h
 	copy.texture_filter = sprite.texture_filter
+	copy.self_modulate = sprite.self_modulate
 	add_child(copy)
 	move_child(copy, sprite.get_index() + 1)
 	var tween := create_tween()
@@ -440,6 +441,25 @@ func _process(delta: float) -> void:
 	var shoulder := Vector2(-float(row[0]), float(row[1])) if torso.flip_h else Vector2(float(row[2]), float(row[3])) #[left x, left y, right x, right y]
 	var target := shoulder + Vector2(lamp_outward_px, lamp_forward_px)
 	_lamp.position = _lamp.position.lerp(target, 1.0 - exp(-delta * 30.0))
+
+
+## Shows or hides the muzzle flash (its star and its burst of light), for a shooter the local player has no line of sight to.
+func set_muzzle_seen(seen : bool) -> void:
+	var muzzle : Node2D = torso.get_node_or_null("Muzzle") as Node2D
+	if muzzle != null:
+		muzzle.visible = seen
+
+
+## How much of the body is drawn, 0 to 1, and how much the light on it brightens it (`light`: what to multiply its colours by, white for none). Only the sprites change
+## (their own self_modulate): the lights under the torso (the flashlight, the muzzle flash) keep shining, so a player you cannot see still shows where their light falls.
+func set_body_alpha(alpha : float, light : Color = Color.WHITE) -> void:
+	for sprite : CanvasItem in [legs, torso, full]:
+		sprite.self_modulate = Color(light.r, light.g, light.b, alpha)
+	var shadow : CanvasItem = get_node_or_null("Shadow")
+	if shadow != null:
+		shadow.self_modulate.a = alpha
+	if is_instance_valid(_ghost):
+		_ghost.self_modulate = Color(light.r, light.g, light.b, alpha)
 
 
 ## Where the middle of a fallen body lies, in the world (the skin's own position while it has not fallen).
@@ -461,6 +481,7 @@ func _start_draw_transition(drawing: bool) -> void:
 		ghost.rotation = torso.rotation
 		ghost.flip_h = torso.flip_h
 		ghost.texture_filter = torso.texture_filter
+		ghost.self_modulate = torso.self_modulate
 		add_child(ghost)
 		move_child(ghost, torso.get_index() + 1)
 		_ghost = ghost

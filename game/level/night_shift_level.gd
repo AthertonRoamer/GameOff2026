@@ -13,6 +13,7 @@ const CONSOLE_REACH_SLACK : float = 1.5 #the lobby's view of a player can be a f
 @onready var facility : FacilityMap = $FacilityMap
 @onready var darkness : CanvasModulate = $Darkness
 @onready var projectiles : ProjectileManager = $ProjectileLayer/ProjectileManager
+@onready var hitscan : HitscanManager = $ProjectileLayer/HitscanManager #instant shots (above the darkness, like the bullets)
 @onready var control : FacilityControl = $FacilityControl
 @onready var consoles : UtilityConsoles = $UtilityConsoles
 @onready var blood : BloodSplats = $BloodSplats #the blood on the floor (above the floor, below the bodies)

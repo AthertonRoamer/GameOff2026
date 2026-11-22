@@ -84,7 +84,7 @@ func _add(kind : int, at : Vector2, direction : Vector2, seed : int) -> BloodSpl
 	splat.global_position = at
 	splat.start(kind, direction, seed)
 	_splats.append(splat)
-	_splats.assign(_splats.filter(func(s : BloodSplat) -> bool: return is_instance_valid(s)))
+	_splats.assign(_splats.filter(func(s) -> bool: return is_instance_valid(s))) #(untyped: a splat that faded away is a freed object, which a typed argument refuses)
 	while _splats.size() > max_splats:
 		_splats.pop_front().queue_free()
 	return splat

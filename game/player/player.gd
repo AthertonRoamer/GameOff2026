@@ -27,6 +27,7 @@ const DEAD_Z : int = -10 #z_index of a dead player: above the floor (FacilityMap
 
 var lag_compensator : LagCompensator
 var projectile_manager : ProjectileManager
+var hitscan_manager : HitscanManager
 var role : Role #public, the same on every peer. Null for a player spawned without one (the playground): the exported stats above are used
 var team : int = Team.UNKNOWN #secret: only set where this peer may know it. Never use it in simulated gameplay, see Team
 var hit_direction : Vector2 = Vector2.ZERO #the way the last shot that hit this player was travelling (synced with the health, so every peer plays the same flinch or death); zero if unknown
@@ -138,7 +139,7 @@ func debug_revive() -> void:
 
 func _process(_delta : float) -> void:
 	#The body no longer turns to face the mouse: the skin turns its own legs (to the way it moves) and torso (to the aim). The gun stays out.
-	var aim_direction : Vector2 = (input.aim - global_position).normalized() if input.aim != Vector2.ZERO else Vector2.ZERO
+	var aim_direction : Vector2 = (input.aim - global_position).normalized() if input.aim != Vector2.ZERO and not input.interacting else Vector2.ZERO #(at a console the player does not turn: the skin keeps its facing)
 	skin.update_visual(velocity, aim_direction, is_aiming() and not is_barrel_blocked(aim_direction), is_running(), input.interacting, inventory.active_slot)
 	if flashlight.on != input.flashlight_on: #the flashlight is part of the synced input, so this shows every player's beam as they set it
 		flashlight.on = input.flashlight_on
@@ -212,6 +213,23 @@ func die() -> void:
 ## Hurt badly enough to be losing blood: alive with less than half their starting health. The lobby drops a splat of blood for a bleeding player every few seconds.
 func is_bleeding() -> bool:
 	return health > 0.0 and health < starting_health * BLEED_BELOW
+
+
+## For every player but the local one (see PlayerSight): their flashlight beam and glow are drawn by PlayerSight, inside the local player's view only, not lit by the scene.
+func paint_flashlight_in_view() -> void:
+	flashlight.paint_instead()
+
+
+## Whether the local player sees this player's muzzle flash (see PlayerSight).
+func set_muzzle_seen(seen : bool) -> void:
+	skin.set_muzzle_seen(seen)
+
+
+## How much of this player the local player sees, 0 to 1 (see PlayerSight): the body and the name. Their lights are not hidden.
+func set_body_seen(alpha : float, light : Color = Color.WHITE) -> void:
+	skin.set_body_alpha(alpha, light)
+	if name_display != null:
+		name_display.modulate.a = alpha
 
 
 func is_alive() -> bool:

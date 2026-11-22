@@ -167,6 +167,13 @@ if ($NightShift) {
 		"NIGHT SHIFT: $(Split-Path $file -Leaf): doors $($m[0].Groups[1].Value) changes $($m[0].Groups[2].Value)"
 		"NIGHT SHIFT:   players $($m[0].Groups[3].Value)"
 	}
+	$shotsHost = (Select-String -Path $hostOut -Pattern "NS_SHOTS seen=(\d+)").Matches
+	$shotsClient = (Select-String -Path $clientOuts[0] -Pattern "NS_SHOTS seen=(\d+)").Matches
+	if ($shotsHost.Count -eq 0 -or $shotsClient.Count -eq 0) { "NIGHT SHIFT: no shot counts reported"; $ok = $false }
+	else {
+		"NIGHT SHIFT: the client fired $($shotsClient[0].Groups[1].Value) shots, the host saw $($shotsHost[0].Groups[1].Value)"
+		if ([int]$shotsClient[0].Groups[1].Value -lt 3 -or $shotsHost[0].Groups[1].Value -ne $shotsClient[0].Groups[1].Value) { "NIGHT SHIFT: every shot must be seen by every peer"; $ok = $false }
+	}
 	$blocked = (Select-String -Path $hostOut -Pattern 'NS_BLOCKED occupant=(\d+) own_id=(\d+) opened=(\w+) prompt="(.*)"').Matches
 	if ($blocked.Count -eq 0) { "NIGHT SHIFT: the host never tried the console the client was at"; $ok = $false }
 	else {
