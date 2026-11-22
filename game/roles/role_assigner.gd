@@ -70,6 +70,18 @@ func teams_visible_to(member_id : int, assignment : Dictionary) -> Dictionary:
 	return visible
 
 
+##Whether `viewer` is shown where `other` chose to start (SpawnSelectPhase). Guards see guards: roles are public, so a defender sees a secretly
+##attacking guard's pick like any guard's, and that guard sees theirs. Attackers also see the attackers whose team they know (teams_visible_to), so
+##the intruder and the attacking guard see each other when intruders_know_attackers is on. Nobody else's pick is shown.
+func sees_spawn_of(viewer_id : int, other_id : int, assignment : Dictionary) -> bool:
+	if viewer_id == other_id:
+		return true
+	if not _is_intruder(assignment, viewer_id) and not _is_intruder(assignment, other_id):
+		return true #two guards
+	var teams : Dictionary = assignment["teams"]
+	return teams.get(viewer_id) == Team.ATTACKERS and teams.get(other_id) == Team.ATTACKERS and teams_visible_to(viewer_id, assignment).has(other_id)
+
+
 func _is_intruder(assignment : Dictionary, member_id : int) -> bool:
 	var role : Role = role_at(assignment["roles"].get(member_id, -1))
 	return role != null and role.is_intruder()

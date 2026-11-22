@@ -1,0 +1,85 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://game/phases/role_reveal/role_reveal_phase.gd" id="1_reveal"]
+
+[node name="RoleRevealPhase" type="Node"]
+script = ExtResource("1_reveal")
+duration_seconds = 15.0
+
+[node name="Screen" type="CanvasLayer" parent="."]
+layer = 10
+visible = false
+
+[node name="Backdrop" type="ColorRect" parent="Screen"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.02745098, 0.03529412, 0.047058824, 1)
+
+[node name="Center" type="CenterContainer" parent="Screen"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Box" type="VBoxContainer" parent="Screen/Center"]
+custom_minimum_size = Vector2(560, 0)
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 14
+
+[node name="Heading" type="Label" parent="Screen/Center/Box"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6627451, 0.6431373, 0.58431375, 1)
+theme_override_font_sizes/font_size = 18
+text = "YOUR ROLE"
+horizontal_alignment = 1
+
+[node name="Portrait" type="TextureRect" parent="Screen/Center/Box"]
+visible = false
+custom_minimum_size = Vector2(0, 220)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="RoleName" type="Label" parent="Screen/Center/Box"]
+layout_mode = 2
+theme_override_colors/font_outline_color = Color(0.023529412, 0.03137255, 0.047058824, 1)
+theme_override_constants/outline_size = 10
+theme_override_font_sizes/font_size = 64
+text = "ROLE"
+horizontal_alignment = 1
+
+[node name="Description" type="Label" parent="Screen/Center/Box"]
+visible = false
+custom_minimum_size = Vector2(560, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="Team" type="Label" parent="Screen/Center/Box"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+text = "You are a guard."
+horizontal_alignment = 1
+
+[node name="Objective" type="Label" parent="Screen/Center/Box"]
+custom_minimum_size = Vector2(560, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Stop the intruders until the shift ends."
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="Countdown" type="Label" parent="Screen/Center/Box"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6627451, 0.6431373, 0.58431375, 1)
+theme_override_font_sizes/font_size = 16
+text = "Starting in 15"
+horizontal_alignment = 1
