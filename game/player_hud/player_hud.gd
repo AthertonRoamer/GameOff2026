@@ -10,6 +10,7 @@ extends CanvasLayer
 @onready var inventory_full_label : Label = $InventoryFullLabel #while an item in reach can't be taken for lack of room
 @onready var target_label : Label = $TargetLabel #attackers only: which artifact they are after
 @onready var clock_label : Label = $ClockLabel #hidden until bind_clock(): the playground has no clock
+@onready var score_label : Label = $ScoreLabel #hidden until bind_deathmatch()
 
 var _slot_panels : Array[PanelContainer] = []
 var _slot_icons : Array[TextureRect] = []
@@ -58,6 +59,17 @@ func bind_player(player : Player) -> void:
 func _show_health(health : float) -> void:
 	health_bar.value = health
 	_fill_style.bg_color = Palette.ALARM if health < health_bar.max_value * 0.3 else Palette.BACKUP
+
+
+## A deathmatch has a countdown in the clock's place, and the kills under it.
+func bind_deathmatch(mode : DeathmatchMode) -> void:
+	var local_id : int = multiplayer.get_unique_id()
+	clock_label.text = DeathmatchMode.format_time(mode.duration_seconds)
+	clock_label.visible = true
+	score_label.text = mode.scoreboard_text(local_id)
+	score_label.visible = true
+	mode.time_changed.connect(func(left : float) -> void: clock_label.text = DeathmatchMode.format_time(left))
+	mode.scores_changed.connect(func() -> void: score_label.text = mode.scoreboard_text(local_id))
 
 
 func bind_clock(clock : GameClock) -> void:

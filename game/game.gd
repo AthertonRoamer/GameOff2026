@@ -49,6 +49,7 @@ signal play_started #every peer: the phases are over and the players can move (t
 var started : bool = false #play has begun: the phases are over. (The test harness waits for this)
 
 var settings : MatchSettings = MatchSettings.new() #what the host chose for this match: the map, debug, the mode (see MatchSetupPanel)
+var deathmatch : DeathmatchMode #only in a deathmatch: the kills, the five minutes, the result
 var role_assigner : RoleAssigner = RoleAssigner.new()
 var assignment : Dictionary = {} #lobby: every member's role and team. The win check will use it
 var _roles : Dictionary = {} #member id -> role index, every member
@@ -116,8 +117,10 @@ func _ready() -> void:
 	level.blood.splat_made.connect(func(kind : int, at : Vector2) -> void: level.sound.play(level.sound.blood_drip if kind == BloodSplat.Kind.BLEED else level.sound.blood_splat, at))
 	level.hitscan.wall_hit.connect(func(at : Vector2) -> void: level.sound.play(level.sound.bullet_wall, at))
 	player_setup.spawn_point = level.spawn_position()
-	if not settings.is_deathmatch():
-		player_hud.bind_clock(game_clock) #(a deathmatch has no clock)
+	if settings.is_deathmatch():
+		_setup_deathmatch()
+	else:
+		player_hud.bind_clock(game_clock) #(a deathmatch counts down its own five minutes instead)
 	player_hud.visible = false #shown when play begins, after the phases
 	phases.game = self
 	phases.finished.connect(_begin_play)
@@ -156,8 +159,9 @@ func _begin_play(tick : int) -> void:
 	set_players_active(true)
 	player_hud.visible = true
 	if settings.is_deathmatch():
+		deathmatch.begin(tick, spawner.lobby != null and spawner.lobby.is_master) #(no shift clock, no teams, no artifacts: kills and the five minutes)
 		play_started.emit()
-		return #no clock, no teams and no win: players just fight and come back
+		return
 	game_clock.start(tick)
 	if spawner.lobby != null and spawner.lobby.is_master:
 		match_director.begin(assignment["teams"], _build_roster(), _is_in_play)
@@ -375,12 +379,17 @@ func _on_shot_fired(player : Player, is_local : bool) -> void:
 		level.sound.play(gun.shot_sound, player.global_position, is_local)
 
 
+const DEATHMATCH_RESPAWN_SECONDS : float = 4.0 #how long a fallen body lies there (its fall plays and it rests) before the player comes back elsewhere
+
+
 func _on_player_died(player : Node) -> void:
-	player.visible = false
+	var in_deathmatch : bool = settings.is_deathmatch()
+	if not in_deathmatch:
+		player.visible = false #(the debug respawn hides them at once; in a deathmatch the body stays and the fall is seen)
 	if player.is_multiplayer_authority(): #only the authority decides when health comes back; HealthSynchronizer broadcasts it
-		await get_tree().create_timer(3.0).timeout
-		if is_instance_valid(player):
-			if settings.is_deathmatch():
+		await get_tree().create_timer(DEATHMATCH_RESPAWN_SECONDS if in_deathmatch else 3.0).timeout
+		if is_instance_valid(player) and not (in_deathmatch and deathmatch.is_over): #(nobody comes back once the deathmatch is over)
+			if in_deathmatch:
 				_respawn_at.rpc(int(String(player.name)), _respawn_point()) #a deathmatch brings them back somewhere else
 			player.health = player.starting_health
 
@@ -405,6 +414,7 @@ func _respawn_point() -> Vector2:
 func _respawn_at(member_id : int, point : Vector2) -> void:
 	var player : Player = spawner.players.get(member_id)
 	if is_instance_valid(player):
+		player.visible = player.is_alive() #the body is gone from where it lay (it shows again as the player comes back, see _on_player_health_changed; if that has already come, they are simply shown)
 		player.teleport(point)
 
 
@@ -414,7 +424,10 @@ func _on_player_health_changed(h : float, player : Node) -> void:
 
 
 func _on_projectile_hit(projectile : Dictionary, target : Node) -> void:
+	var was_alive : bool = target is Player and target.is_alive()
 	target.take_damage(projectile["damage"], projectile["direction"]) #the direction decides how a player killed by it falls
+	if deathmatch != null and was_alive and not target.is_alive():
+		deathmatch.record_kill(int(projectile.get("owner_id", -1)), int(String(target.name))) #(the lobby counts it: only it hears of hits)
 
 
 ##Lobby only. Who played what, for the end screen. Built when the match starts so players who leave part way through are still listed.
@@ -430,6 +443,45 @@ func _build_roster() -> Array:
 func _is_in_play(member_id : int) -> bool:
 	var player : Variant = spawner.players.get(member_id)
 	return is_instance_valid(player) and (debug_respawn_dead_players or player.is_alive() or player.debug_killed) #(a player killed with the debug K key still counts)
+
+
+## Deathmatch only. The node that counts kills and time, and what every peer does with its result.
+func _setup_deathmatch() -> void:
+	deathmatch = DeathmatchMode.new()
+	deathmatch.name = "DeathmatchMode" #(the same on every peer: its messages find each other by this name)
+	deathmatch.name_of = func(id : int) -> String: return _member_name(id)
+	deathmatch.member_ids = func() -> Array: return spawner.lobby.members.map(func(m : LobbyMember) -> int: return m.id) if spawner.lobby != null else []
+	add_child(deathmatch)
+	deathmatch.finished.connect(_on_deathmatch_finished)
+	deathmatch.return_to_lobby.connect(_on_match_director_return_to_lobby)
+	player_hud.bind_deathmatch(deathmatch)
+
+
+func _member_name(id : int) -> String:
+	if spawner.lobby != null:
+		for member : LobbyMember in spawner.lobby.members:
+			if member.id == id:
+				return member.name
+	return str(id)
+
+
+func _on_deathmatch_finished(table : Array) -> void:
+	game_clock.stop()
+	if is_instance_valid(spawner.local_player):
+		spawner.local_player.interactor.close_screen()
+	set_players_active(false)
+	player_hud.visible = false
+	var local_id : int = multiplayer.get_unique_id()
+	var best : int = table[0]["kills"] if not table.is_empty() else 0
+	var winners : Array = table.filter(func(entry : Dictionary) -> bool: return entry["kills"] == best and best > 0)
+	var won : bool = winners.any(func(entry : Dictionary) -> bool: return entry["id"] == local_id)
+	var title : String = "Victory" if won else "Defeat"
+	var reason : String = "Nobody scored." if winners.is_empty() else ("%s wins with %d kills." % [winners[0]["name"], best] if winners.size() == 1 else "%s tie with %d kills." % [", ".join(winners.map(func(entry : Dictionary) -> String: return entry["name"])), best])
+	var lines : Array = []
+	for i in table.size():
+		var entry : Dictionary = table[i]
+		lines.append({"text": "%d. %s  -  %d kills" % [i + 1, entry["name"], entry["kills"]], "color": Palette.BACKUP if winners.any(func(w : Dictionary) -> bool: return w["id"] == entry["id"]) else Palette.PANEL_LINE})
+	end_screen.show_custom(title, EndScreen.WIN_COLOR if won else EndScreen.LOSE_COLOR, reason, lines, deathmatch.results_seconds)
 
 
 func _on_match_ended(reason : int, roster : Array) -> void:

@@ -40,6 +40,26 @@ func show_result(reason : int, roster : Array, local_id : int, seconds : float) 
 	set_process(true)
 
 
+## A result that is not about teams (the deathmatch): a title, a line under it and a list, each line {text, color}.
+func show_custom(title : String, title_color : Color, reason : String, lines : Array, seconds : float) -> void:
+	title_label.text = title
+	title_label.add_theme_color_override("font_color", title_color)
+	reason_label.text = reason
+	for entry : Dictionary in lines:
+		var line : Label = Label.new()
+		line.text = entry["text"]
+		line.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		line.add_theme_color_override("font_color", entry["color"])
+		line.add_theme_color_override("font_outline_color", Palette.VOID)
+		line.add_theme_constant_override("outline_size", 6)
+		line.add_theme_font_size_override("font_size", 18)
+		roster_box.add_child(line)
+	_seconds_left = seconds
+	_show_countdown()
+	visible = true
+	set_process(true)
+
+
 func _process(delta : float) -> void:
 	_seconds_left = maxf(_seconds_left - delta, 0.0)
 	_show_countdown()
