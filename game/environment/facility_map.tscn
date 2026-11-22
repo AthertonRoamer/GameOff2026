@@ -5,6 +5,8 @@
 [ext_resource type="PackedScene" path="res://game/environment/facility_door.tscn" id="4_yd85k"]
 [ext_resource type="PackedScene" path="res://game/utility/door_control_panel.tscn" id="6_ieksj"]
 [ext_resource type="Script" uid="uid://b7r08rbd5msb8" path="res://game/pickups/artifact_location.gd" id="7_artifact_location"]
+[ext_resource type="Script" uid="uid://bj3o6xoh76qn0" path="res://game/environment/guard_spawn.gd" id="9_guard_spawn"]
+[ext_resource type="Script" uid="uid://ck27vjswqmbtn" path="res://game/environment/intruder_spawn.gd" id="10_intruder_spawn"]
 [ext_resource type="Script" uid="uid://cwn71j7krn0x6" path="res://game/environment/facility_room_rect.gd" id="rect_script"]
 
 [node name="FacilityMap" type="Node2D" unique_id=577932594]
@@ -408,6 +410,70 @@ offset_bottom = 660.0
 mouse_filter = 2
 script = ExtResource("rect_script")
 
+[node name="exit_north" type="Node2D" parent="Rooms" unique_id=420536426]
+script = ExtResource("3_j40us")
+display_name = "Exit"
+kind = 6
+
+[node name="Rect1" type="Control" parent="Rooms/exit_north" unique_id=618149271]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 737.0
+offset_top = -121.0
+offset_right = 1012.0
+offset_bottom = -22.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="exit_south" type="Node2D" parent="Rooms" unique_id=935812866]
+script = ExtResource("3_j40us")
+display_name = "Exit"
+kind = 6
+
+[node name="Rect1" type="Control" parent="Rooms/exit_south" unique_id=1058860819]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 737.0
+offset_top = 1243.0
+offset_right = 1012.0
+offset_bottom = 1342.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="exit_west" type="Node2D" parent="Rooms" unique_id=1645979153]
+script = ExtResource("3_j40us")
+display_name = "Exit"
+kind = 6
+
+[node name="Rect1" type="Control" parent="Rooms/exit_west" unique_id=1041225978]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = -154.0
+offset_top = 517.0
+offset_right = -66.0
+offset_bottom = 660.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="exit_east" type="Node2D" parent="Rooms" unique_id=1561808616]
+script = ExtResource("3_j40us")
+display_name = "Exit"
+kind = 6
+
+[node name="Rect1" type="Control" parent="Rooms/exit_east" unique_id=1684657795]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1815.0
+offset_top = 517.0
+offset_right = 1925.0
+offset_bottom = 660.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
 [node name="Doors" type="Node2D" parent="." unique_id=1364101371]
 z_index = 1
 
@@ -487,13 +553,27 @@ horizontal = false
 position = Vector2(1721.5, 594)
 horizontal = false
 
+[node name="Door_pad_north_exit_north" parent="Doors" unique_id=585635267 instance=ExtResource("4_yd85k")]
+position = Vector2(880, -16.5)
+
+[node name="Door_pad_south_exit_south" parent="Doors" unique_id=2092993051 instance=ExtResource("4_yd85k")]
+position = Vector2(880, 1237.5)
+
+[node name="Door_pad_west_exit_west" parent="Doors" unique_id=312165905 instance=ExtResource("4_yd85k")]
+position = Vector2(-60.5, 594)
+horizontal = false
+
+[node name="Door_pad_east_exit_east" parent="Doors" unique_id=310680390 instance=ExtResource("4_yd85k")]
+position = Vector2(1809.5, 594)
+horizontal = false
+
 [node name="Vents" type="Node2D" parent="." unique_id=1423495800]
 
 [node name="Vent1" type="Marker2D" parent="Vents" unique_id=123131024]
 position = Vector2(352, 440)
 
 [node name="Vent2" type="Marker2D" parent="Vents" unique_id=353071235]
-position = Vector2(682, 440)
+position = Vector2(737, 506)
 
 [node name="Vent3" type="Marker2D" parent="Vents" unique_id=422834643]
 position = Vector2(968, 440)
@@ -541,6 +621,40 @@ script = ExtResource("7_artifact_location")
 [node name="RecordsArtifact" type="Marker2D" parent="ArtifactLocations" unique_id=1904601438]
 position = Vector2(1424, 1050)
 script = ExtResource("7_artifact_location")
+
+[node name="Spawns" type="Node2D" parent="." unique_id=964347742]
+
+[node name="GuardSpawnRing" type="Marker2D" parent="Spawns" unique_id=1859603441]
+position = Vector2(849, 458)
+script = ExtResource("9_guard_spawn")
+
+[node name="GuardSpawnBreakRoom" type="Marker2D" parent="Spawns" unique_id=1381550134]
+position = Vector2(258, 170)
+script = ExtResource("9_guard_spawn")
+
+[node name="GuardSpawnLockerRoom" type="Marker2D" parent="Spawns" unique_id=1264614557]
+position = Vector2(1452, 203)
+script = ExtResource("9_guard_spawn")
+
+[node name="GuardSpawnOffice" type="Marker2D" parent="Spawns" unique_id=149807184]
+position = Vector2(324, 1050)
+script = ExtResource("9_guard_spawn")
+
+[node name="IntruderSpawnNorth" type="Marker2D" parent="Spawns" unique_id=161384317]
+position = Vector2(874, 27)
+script = ExtResource("10_intruder_spawn")
+
+[node name="IntruderSpawnSouth" type="Marker2D" parent="Spawns" unique_id=1517545528]
+position = Vector2(874, 1204)
+script = ExtResource("10_intruder_spawn")
+
+[node name="IntruderSpawnWest" type="Marker2D" parent="Spawns" unique_id=911689786]
+position = Vector2(-16, 588)
+script = ExtResource("10_intruder_spawn")
+
+[node name="IntruderSpawnEast" type="Marker2D" parent="Spawns" unique_id=1212601899]
+position = Vector2(1765, 588)
+script = ExtResource("10_intruder_spawn")
 
 [node name="Props" type="Node2D" parent="." unique_id=818355929]
 y_sort_enabled = true

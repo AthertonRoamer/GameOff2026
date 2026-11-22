@@ -12,6 +12,7 @@ signal return_to_lobby #lobby only: the results have been up for results_seconds
 enum Reason { TIME_UP, ATTACKERS_ELIMINATED, ARTIFACT_STOLEN }
 
 @export var results_seconds : float = 10.0 #how long the end screen stays up before everyone goes back to the lobby
+@export var attacking_guards_win_by_escaping : bool = true #a secretly attacking guard who carries the target artifact into an exit zone wins too. Off: only intruders do
 
 var is_decided : bool = false
 
@@ -36,6 +37,11 @@ static func describe(reason : int) -> String:
 static func are_all_attackers_out(teams : Dictionary, is_in_play : Callable) -> bool:
 	var attackers : Array = teams.keys().filter(func(id : int) -> bool: return teams[id] == Team.ATTACKERS)
 	return not attackers.is_empty() and not attackers.any(is_in_play)
+
+
+##Whether a player on this team wins by carrying the target artifact out (see ArtifactEscape). Intruders always do.
+func can_win_by_escaping(team : int, is_intruder : bool) -> bool:
+	return team == Team.ATTACKERS and (is_intruder or attacking_guards_win_by_escaping)
 
 
 ##Lobby only, when the match starts. Nothing can end the match before this.

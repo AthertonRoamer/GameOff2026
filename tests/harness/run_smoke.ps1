@@ -5,6 +5,7 @@ param(
 	[switch]$Rollback, #use RollbackGameManager and the probe game, and check every peer starts on the scheduled tick
 	[switch]$Demo, #run the rollback demo: the first client shoots and moves, then every peer's view of every player must agree
 	[switch]$NightShift, #the real game (game/game.tscn): the client works the door console from the lobby-checked spot; every peer must agree on doors (and the tick they changed on), flashlight and interact
+	[switch]$Phases, #with the real game: run the phases before play (the role reveal). Without it every peer skips them (Game.debug_skip_phases), so play begins on the start tick
 	[switch]$KillKey, #the real game: the client taps the debug kill key (K) twice; the client and the host must both see the player die (and the fall play) and then come back
 	[switch]$Hold, #the client and then the host hold each weapon for 3 s; prints every shot event each saw (diagnostic, no pass/fail on cadence)
 	[switch]$Combat, #the first client kills the host's player with projectiles; every peer must see it die and respawn at the same place
@@ -37,6 +38,7 @@ if ($Moving) { $common += "--moving" }
 if ($Combat) { $common += "--combat" }
 if ($Hold) { $common += "--hold" }
 if ($NightShift) { $common += "--night-shift" }
+if ($Phases) { $common += "--phases" }
 if ($KillKey) { $common += @("--night-shift", "--killkey") }
 if ($Leave) { $common += "--leave" }
 if ($Kill) { $common += "--kill" }
@@ -181,8 +183,9 @@ if ($NightShift) {
 		if ($blocked[0].Groups[3].Value -match "(?i)true" -or $blocked[0].Groups[1].Value -eq $blocked[0].Groups[2].Value -or $blocked[0].Groups[4].Value -notmatch "in use") { "NIGHT SHIFT: a second player must not be able to use a console somebody is at"; $ok = $false }
 	}
 	if ($reports.Count -eq 2) {
-		$expected = "COOC" + ("O" * 20)
-		foreach ($r in $reports) { if ($r[0] -ne $expected) { "NIGHT SHIFT: doors should be $expected (door 1, asked for from the spawn, must stay open)"; $ok = $false } }
+		foreach ($r in $reports) {
+			$expected = "COOC" + ("O" * [Math]::Max(0, $r[0].Length - 4)) #doors 0 and 3 closed by the test, every other door open, however many the map has
+			if ($r[0].Length -lt 4 -or $r[0] -ne $expected) { "NIGHT SHIFT: doors should be $expected (door 1, asked for from the spawn, must stay open)"; $ok = $false } }
 		if ($reports[0][1] -ne $reports[1][1]) { "NIGHT SHIFT: the doors changed on different ticks"; $ok = $false } else { "NIGHT SHIFT: doors changed on the same tick everywhere" }
 		$clientId = ((Select-String -Path $clientOuts[0] -Pattern "DEMO_POS|GAME_STARTED me=(\d+)").Matches | Select-Object -First 1).Groups[1].Value
 		foreach ($r in $reports) {

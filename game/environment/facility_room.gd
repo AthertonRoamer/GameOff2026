@@ -8,13 +8,14 @@ extends Node2D
 ##To add a room: add a FacilityRoom under Rooms, add a FacilityRoomRect under it, drag it to size, set `kind` (and `function` if it has a console).
 ##The map reads the rooms and the doors and builds the floor, the walls (every empty cell touching a floor cell, so rooms need a one cell gap
 ##between them), the soft shadows and the minimap from them, so resizing a room never touches any art.
+##A room of kind Exit is an exit zone, not a room: see is_exit().
 
-enum Kind { CORRIDOR, UTILITY, ITEM, OFFICE, EXTERIOR_ROOM, OUTDOOR }
+enum Kind { CORRIDOR, UTILITY, ITEM, OFFICE, EXTERIOR_ROOM, OUTDOOR, EXIT }
 enum Function { NONE, CAMERAS, DOORS, LIGHTS, GENERATOR, TURRETS, POWER }
 
-const KIND_NAMES : Array[String] = ["corridor", "utility", "item", "office", "exterior_room", "outdoor"]
+const KIND_NAMES : Array[String] = ["corridor", "utility", "item", "office", "exterior_room", "outdoor", "exit"]
 const FUNCTION_NAMES : Array[String] = ["", "cameras", "doors", "lights", "generator", "turrets", "power"]
-const KIND_COLOURS : Array[Color] = [Color("#8aa0b8"), Color("#6fd3e8"), Color("#c9a0ff"), Color("#9ad1a0"), Color("#f2b544"), Color("#7a7f88")]
+const KIND_COLOURS : Array[Color] = [Color("#8aa0b8"), Color("#6fd3e8"), Color("#c9a0ff"), Color("#9ad1a0"), Color("#f2b544"), Color("#7a7f88"), Color("#4ade80")]
 const TILE : int = FacilityTileSet.TILE
 
 @export var display_name : String = "" : set = _set_display_name
@@ -22,6 +23,7 @@ const TILE : int = FacilityTileSet.TILE
 @export var function : Function = Function.NONE #what the room's console does, if it has one
 
 var clash_with : String = "" #set by the map while two rooms share floor, so the editor can say so
+var spawn_kinds : Array = [] #SpawnRoomMarker.Kind of every spawn marker standing in this room, set by the map in the editor (shown as badges)
 
 
 func _ready() -> void:
@@ -30,6 +32,13 @@ func _ready() -> void:
 
 func room_id() -> String:
 	return String(name)
+
+
+##An exit zone is an area, not a room: the map paints no floor or wall on it. It goes outside a room's wall, with the same one cell gap as between
+##two rooms, and a door in that wall leads into it. It is ringed by invisible walls (collision only), so players can step into it but not wander
+##off into the void. An attacker who stands in one carrying the target artifact wins the match, see ArtifactEscape.
+func is_exit() -> bool:
+	return kind == Kind.EXIT
 
 
 func kind_name() -> String:
@@ -73,11 +82,19 @@ func set_clash(other : String) -> void:
 		_redraw_rects()
 
 
+func set_spawn_kinds(kinds : Array) -> void:
+	if kinds != spawn_kinds:
+		spawn_kinds = kinds.duplicate()
+		_redraw_rects()
+
+
 func _get_configuration_warnings() -> PackedStringArray:
 	var warnings : PackedStringArray = []
 	if rects().is_empty():
 		warnings.append("This room has no floor. Add a FacilityRoomRect child and drag it to size.")
-	if clash_with != "":
+	if clash_with != "" and is_exit():
+		warnings.append("This exit is in or against %s. Leave a one cell wall between them and put a door in it." % clash_with)
+	elif clash_with != "":
 		warnings.append("This room overlaps %s. Rooms need a one cell gap between them." % clash_with)
 	return warnings
 

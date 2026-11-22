@@ -68,6 +68,34 @@ if (-not $p.WaitForExit(90000)) { Stop-Process -Id $p.Id -Force }
 $unit = (Select-String -Path "$env:TEMP\pickuptest.out" -Pattern "RESULT: PASS" -Quiet)
 $results["pickups unit test"] = $unit
 "{0,-62} {1}" -f "pickups unit test", $(if ($unit) { "PASS" } else { "FAIL" })
+# the attackers' win: the target artifact carried into an exit zone
+$p = Start-Process $Godot -ArgumentList "--headless", "--path", "`"$project`"", "res://tests/unit/test_artifact_escape.tscn" -NoNewWindow -PassThru `
+	-RedirectStandardOutput "$env:TEMP\escapetest.out" -RedirectStandardError "$env:TEMP\escapetest.err"
+if (-not $p.WaitForExit(90000)) { Stop-Process -Id $p.Id -Force }
+$unit = (Select-String -Path "$env:TEMP\escapetest.out" -Pattern "RESULT: PASS" -Quiet)
+$results["artifact escape unit test"] = $unit
+"{0,-62} {1}" -f "artifact escape unit test", $(if ($unit) { "PASS" } else { "FAIL" })
+# the phases before play (role reveal), and play waiting for them
+$p = Start-Process $Godot -ArgumentList "--headless", "--path", "`"$project`"", "res://tests/unit/test_match_phases.tscn" -NoNewWindow -PassThru `
+	-RedirectStandardOutput "$env:TEMP\phasestest.out" -RedirectStandardError "$env:TEMP\phasestest.err"
+if (-not $p.WaitForExit(90000)) { Stop-Process -Id $p.Id -Force }
+$unit = (Select-String -Path "$env:TEMP\phasestest.out" -Pattern "RESULT: PASS" -Quiet)
+$results["match phases unit test"] = $unit
+"{0,-62} {1}" -f "match phases unit test", $(if ($unit) { "PASS" } else { "FAIL" })
+# the reusable map view (scroll, zoom, layers) and the door console screen built on it
+$p = Start-Process $Godot -ArgumentList "--headless", "--path", "`"$project`"", "res://tests/unit/test_map_view.tscn" -NoNewWindow -PassThru `
+	-RedirectStandardOutput "$env:TEMP\mapviewtest.out" -RedirectStandardError "$env:TEMP\mapviewtest.err"
+if (-not $p.WaitForExit(90000)) { Stop-Process -Id $p.Id -Force }
+$unit = (Select-String -Path "$env:TEMP\mapviewtest.out" -Pattern "RESULT: PASS" -Quiet)
+$results["map view unit test"] = $unit
+"{0,-62} {1}" -f "map view unit test", $(if ($unit) { "PASS" } else { "FAIL" })
+# choosing where to start: spawn rooms, who sees whose pick, the spawn phase placing players
+$p = Start-Process $Godot -ArgumentList "--headless", "--path", "`"$project`"", "res://tests/unit/test_spawn_select.tscn" -NoNewWindow -PassThru `
+	-RedirectStandardOutput "$env:TEMP\spawntest.out" -RedirectStandardError "$env:TEMP\spawntest.err"
+if (-not $p.WaitForExit(90000)) { Stop-Process -Id $p.Id -Force }
+$unit = (Select-String -Path "$env:TEMP\spawntest.out" -Pattern "RESULT: PASS" -Quiet)
+$results["spawn selection unit test"] = $unit
+"{0,-62} {1}" -f "spawn selection unit test", $(if ($unit) { "PASS" } else { "FAIL" })
 
 Add-SmokeResult "original demo (host, lobby, join, game, end)" (& $smoke -Godot $Godot)
 Add-SmokeResult "all peers start on the same tick (2 players)" (& $smoke -Godot $Godot -Rollback)

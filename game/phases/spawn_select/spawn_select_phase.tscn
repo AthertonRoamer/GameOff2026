@@ -1,0 +1,87 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://game/phases/spawn_select/spawn_select_phase.gd" id="1_phase"]
+[ext_resource type="Script" path="res://game/ui/map_view/facility_map_view.gd" id="2_view"]
+[ext_resource type="Script" path="res://game/ui/map_view/layers/rooms_layer.gd" id="3_rooms"]
+[ext_resource type="Script" path="res://game/ui/map_view/layers/doors_layer.gd" id="4_doors"]
+[ext_resource type="Script" path="res://game/ui/map_view/layers/exits_layer.gd" id="5_exits"]
+[ext_resource type="Script" path="res://game/ui/map_view/layers/spawn_layer.gd" id="6_spawns"]
+
+[node name="SpawnSelectPhase" type="Node"]
+script = ExtResource("1_phase")
+duration_seconds = 30.0
+
+[node name="Screen" type="CanvasLayer" parent="."]
+layer = 10
+visible = false
+
+[node name="Backdrop" type="ColorRect" parent="Screen"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.02745098, 0.03529412, 0.047058824, 1)
+
+[node name="Margin" type="MarginContainer" parent="Screen"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 40
+theme_override_constants/margin_top = 28
+theme_override_constants/margin_right = 40
+theme_override_constants/margin_bottom = 24
+
+[node name="Box" type="VBoxContainer" parent="Screen/Margin"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 10
+
+[node name="Title" type="Label" parent="Screen/Margin/Box"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "CHOOSE WHERE TO START"
+horizontal_alignment = 1
+
+[node name="Status" type="Label" parent="Screen/Margin/Box"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Click a room to start there."
+horizontal_alignment = 1
+
+[node name="Map" type="Control" parent="Screen/Margin/Box"]
+layout_mode = 2
+size_flags_vertical = 3
+script = ExtResource("2_view")
+
+[node name="Rooms" type="Node2D" parent="Screen/Margin/Box/Map"]
+script = ExtResource("3_rooms")
+
+[node name="Doors" type="Node2D" parent="Screen/Margin/Box/Map"]
+script = ExtResource("4_doors")
+interactive = false
+
+[node name="Exits" type="Node2D" parent="Screen/Margin/Box/Map"]
+script = ExtResource("5_exits")
+
+[node name="Spawns" type="Node2D" parent="Screen/Margin/Box/Map"]
+script = ExtResource("6_spawns")
+
+[node name="Legend" type="Label" parent="Screen/Margin/Box"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6627451, 0.6431373, 0.58431375, 1)
+theme_override_font_sizes/font_size = 14
+text = "Your spawn rooms are outlined."
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="Countdown" type="Label" parent="Screen/Margin/Box"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6627451, 0.6431373, 0.58431375, 1)
+theme_override_font_sizes/font_size = 16
+text = "Starting in 30"
+horizontal_alignment = 1

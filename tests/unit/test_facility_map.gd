@@ -53,6 +53,69 @@ func _ready() -> void:
 	check(map.walls.get_used_cells().size() == map.wall_cells.size(), "the wall layer is painted from the walls")
 	check(map.actors != null and map.props_node != null, "the map has an Actors and a Props node")
 
+	#exit zones: outside the walls with no tiles of their own, a door into each, invisible walls round them
+	check(map.exits.size() > 0, "the map has exit zones (%d)" % map.exits.size())
+	await get_tree().physics_frame
+	var space : PhysicsDirectSpaceState2D = map.get_world_2d().direct_space_state
+	var door_cells : Dictionary = {}
+	for door : FacilityDoor in map.doors:
+		var cells : Rect2i = door.cell_rect(map)
+		for y in range(cells.position.y, cells.end.y):
+			for x in range(cells.position.x, cells.end.x):
+				door_cells[Vector2i(x, y)] = true
+	for id : String in map.exits:
+		check(not map.rooms.has(id), "exit %s is not counted as a room" % id)
+		var only_through_doors : bool = true
+		var enclosed : bool = true
+		for cell : Vector2i in map.exit_cells:
+			if map.exit_cells[cell] != id:
+				continue
+			if map.floor_cells.has(cell) or map.wall_cells.has(cell):
+				only_through_doors = false
+			for offset in FacilityTileSet.NEIGHBOURS:
+				var next : Vector2i = cell + offset
+				if map.floor_cells.has(next) and not door_cells.has(next):
+					only_through_doors = false
+				if not (map.floor_cells.has(next) or map.exit_cells.has(next) or map.wall_cells.has(next) or map.barrier_cells.has(next)):
+					enclosed = false
+		check(only_through_doors, "exit %s is behind a whole wall, touching floor only at a door" % id)
+		check(enclosed, "exit %s is closed in by walls, doors or invisible walls" % id)
+		var into : Array = map.doors.filter(func(door : FacilityDoor) -> bool: return door.room_a == id or door.room_b == id)
+		check(into.size() > 0, "a door leads into exit %s" % id)
+		for door : FacilityDoor in into:
+			var other : String = door.room_b if door.room_a == id else door.room_a
+			check(map.rooms.has(other) and door.exterior, "door %s joins exit %s to a room (%s) and is an exterior door" % [door.name, id, other])
+			check(map.rooms.has(map.floor_cells.get(door.cell_rect(map).position, "")), "the floor under door %s belongs to the room, not the exit" % door.name)
+		var rect : Rect2i = map.exits[id][0]
+		var centre : Vector2 = Vector2(rect.position * FacilityTileSet.TILE) + Vector2(rect.size * FacilityTileSet.TILE) / 2.0
+		check(map.is_in_exit(centre) and map.exit_at(centre) == id, "the middle of exit %s is in it" % id)
+	check(not map.is_in_exit(map.room_center_px("ring")), "the middle of the ring is not an exit")
+	#spawn rooms: each GuardSpawn / IntruderSpawn marker makes the room it stands on a spawn room of its kind
+	var markers : Array[SpawnRoomMarker] = map.spawn_markers()
+	check(markers.size() > 0, "the map has spawn markers (%d)" % markers.size())
+	for marker : SpawnRoomMarker in markers:
+		var room : String = map.room_at(map.to_local(marker.global_position))
+		check(room != "" and map.exit_at(marker.position) == "", "spawn marker %s stands on a room's floor (%s)" % [marker.name, room])
+		check(map.spawn_rooms(marker.kind).has(room), "and %s is a spawn room for %ss" % [room, SpawnRoomMarker.name_of(marker.kind)])
+	for spawn_kind in [SpawnRoomMarker.Kind.GUARD, SpawnRoomMarker.Kind.INTRUDER]:
+		check(not map.spawn_rooms(spawn_kind).is_empty(), "there is at least one spawn room for %ss" % SpawnRoomMarker.name_of(spawn_kind))
+		check(not map.spawn_rooms(spawn_kind).any(func(r : String) -> bool: return map.exits.has(r)), "no exit is a spawn room for %ss" % SpawnRoomMarker.name_of(spawn_kind))
+
+	check(map.barrier_cells.size() > 0, "the exits have invisible walls (%d cells)" % map.barrier_cells.size())
+	var barriers_ok : bool = true
+	for cell : Vector2i in map.barrier_cells:
+		if map.floor_cells.has(cell) or map.wall_cells.has(cell) or map.exit_cells.has(cell) or map.walls.get_cell_source_id(cell) != -1:
+			barriers_ok = false
+	check(barriers_ok, "invisible walls are never floor, wall or exit, and draw no tile")
+	var solid : bool = true
+	for cell : Vector2i in map.barrier_cells:
+		var query : PhysicsPointQueryParameters2D = PhysicsPointQueryParameters2D.new()
+		query.position = map.to_global(map.cell_to_world(cell))
+		query.collision_mask = FacilityTileSet.WORLD_LAYER
+		if space.intersect_point(query).is_empty():
+			solid = false
+	check(solid, "every invisible wall cell blocks players")
+
 	var panels : int = 0
 	for node : Node in map.props_node.get_children():
 		if node is ControlPanel:

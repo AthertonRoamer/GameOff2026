@@ -20,6 +20,7 @@ var use_killkey : bool = false #the real game: the client taps the debug kill ke
 var use_hold : bool = false #the client, then the host, hold fire for 3 s each and report every shot event they saw
 var use_night_shift : bool = false #the real game (game/game.tscn): the client works the door console; every peer reports doors, flashlight, interact
 var no_lagcomp : bool = false #the lobby does not rewind targets, for comparison
+var use_phases : bool = false #--phases: the real game runs its phases (role reveal...) before play. Otherwise every process skips them
 var join_port : int = LOBBY_PORT #the client can join through a latency proxy by using another port
 var players_expected : int = 2 #host waits for this many members before beginning
 var client_name : String = "ClientPlayer"
@@ -41,6 +42,7 @@ func _ready() -> void:
 	use_noray = args.has("--noray")
 	use_moving = args.has("--moving")
 	no_lagcomp = args.has("--no-lagcomp")
+	use_phases = args.has("--phases") or OS.get_cmdline_args().has("--harness-phases")
 	use_combat = args.has("--combat")
 	use_killkey = args.has("--killkey")
 	use_hold = args.has("--hold")
@@ -97,6 +99,11 @@ func apply_rollback_overrides(main : Node) -> void:
 	if use_night_shift:
 		main.configuration.game_manager_scene = load("res://multiplayer_template/rollback/rollback_game_manager.tscn")
 		main.configuration.game_scene = load("res://game/game.tscn")
+		if not use_phases: #play begins on the start tick, so the scripted checks don't wait out the role reveal. Every process does this, the lobby
+			#too: a peer that skipped them while the others didn't would turn its players on early
+			get_tree().node_added.connect(func(node : Node) -> void:
+				if node is Game:
+					(node as Game).debug_skip_phases = true)
 	elif use_demo:
 		main.configuration = load("res://multiplayer_template/demo_games/demo_rollback_game/rollback_demo_configuration.tres")
 		main.configuration.rollback_diagnostics = false #keep the overlay out of the way of the automated run
@@ -352,6 +359,8 @@ func run_host() -> void:
 			lobby_args.append("--harness-demo")
 		if use_night_shift:
 			lobby_args.append("--harness-night-shift")
+		if use_phases:
+			lobby_args.append("--harness-phases")
 		if use_moving:
 			lobby_args.append("--harness-moving")
 		if no_lagcomp:
@@ -609,6 +618,9 @@ func run_host_scenario() -> void:
 		await get_tree().create_timer(7.0).timeout
 		log_line("DEMO_POS " + describe_game())
 		perf_line(7.0)
+		#an observer also reports 7 s after it saw the game start, which can be a little after the host did: ending the game now would tear
+		#its game down first ("DEMO_POS no game"), so give the other peers time to report. Everyone stands still by now
+		await get_tree().create_timer(2.0).timeout
 	else: #nothing to do, but let the other peers report before the game is torn down
 		await get_tree().create_timer(2.0).timeout
 
