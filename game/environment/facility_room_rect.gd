@@ -52,8 +52,21 @@ func _draw() -> void:
 	var colour : Color = room.kind_colour() if room != null else Color.WHITE
 	draw_rect(Rect2(Vector2.ZERO, size), Color(colour, 0.2))
 	draw_rect(Rect2(Vector2.ZERO, size), Color(colour, 0.9), false, 2.0)
+	var spawn_kinds : Array = room.spawn_kinds if room != null else []
+	for i in spawn_kinds.size(): #a spawn room: a dashed frame inside the outline per kind, in the spawn marker's colour
+		_draw_dashed_frame(Rect2(Vector2.ONE * (5.0 + 4.0 * i), size - Vector2.ONE * (10.0 + 8.0 * i)), SpawnRoomMarker.colour_of(spawn_kinds[i]))
 	if room != null and get_index() == 0: #the room's name goes in its first rectangle
 		var label : String = room.display_name if room.display_name != "" else String(room.name)
 		draw_string(ThemeDB.fallback_font, Vector2(8.0, 22.0), label, HORIZONTAL_ALIGNMENT_LEFT, size.x - 16.0, 18, Color(colour, 1.0))
+		var y : float = 44.0
+		for spawn_kind : int in spawn_kinds: #"GUARD SPAWN", "INTRUDER SPAWN"
+			draw_string(ThemeDB.fallback_font, Vector2(8.0, y), "%s SPAWN" % SpawnRoomMarker.name_of(spawn_kind).to_upper(), HORIZONTAL_ALIGNMENT_LEFT, size.x - 16.0, 14, SpawnRoomMarker.colour_of(spawn_kind))
+			y += 18.0
 		if room.clash_with != "":
-			draw_string(ThemeDB.fallback_font, Vector2(8.0, 44.0), "overlaps " + room.clash_with, HORIZONTAL_ALIGNMENT_LEFT, size.x - 16.0, 14, Color("#e5484d"))
+			draw_string(ThemeDB.fallback_font, Vector2(8.0, y), "overlaps " + room.clash_with, HORIZONTAL_ALIGNMENT_LEFT, size.x - 16.0, 14, Color("#e5484d"))
+
+
+func _draw_dashed_frame(rect : Rect2, colour : Color) -> void:
+	var corners : Array[Vector2] = [rect.position, Vector2(rect.end.x, rect.position.y), rect.end, Vector2(rect.position.x, rect.end.y)]
+	for i in 4:
+		draw_dashed_line(corners[i], corners[(i + 1) % 4], colour, 2.0, 8.0)

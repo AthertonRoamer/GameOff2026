@@ -5,5 +5,5 @@ extends Resource
 ##game/match_setup/maps/ and add that resource to MatchSettings.MAPS.
 
 @export var display_name : String = ""
-@export var scene : PackedScene ## the facility: a FacilityMap scene
+@export_file("*.tscn") var scene_path : String = "" ## the facility: a FacilityMap scene. A path, not the scene itself: only the map a match uses is loaded, when it begins
 @export var spawn_room : String = "" ## the id of the room the players start in (the middle of it)

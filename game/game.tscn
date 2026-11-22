@@ -33,6 +33,11 @@
 [ext_resource type="Script" uid="uid://dwt6snx6886fv" path="res://game/debug/debug_commands.gd" id="31_commands"]
 [ext_resource type="PackedScene" path="res://game/debug/debug_console.tscn" id="32_console"]
 [ext_resource type="Script" uid="uid://dysciooj4lq1b" path="res://game/player/player_sight.gd" id="33_sight"]
+[ext_resource type="Script" path="res://game/match_director/artifact_escape.gd" id="34_escape"]
+[ext_resource type="Script" path="res://game/phases/match_phases.gd" id="35_phases"]
+[ext_resource type="PackedScene" path="res://game/phases/role_reveal/role_reveal_phase.tscn" id="36_reveal"]
+[ext_resource type="Script" path="res://game/match_director/designated_exit_chooser.gd" id="37_exit_chooser"]
+[ext_resource type="PackedScene" path="res://game/phases/spawn_select/spawn_select_phase.tscn" id="38_spawn_select"]
 
 [node name="Game" type="Node2D" unique_id=2090356720]
 script = ExtResource("1_game")
@@ -46,7 +51,7 @@ script = ExtResource("10_debug")
 
 [node name="Level" parent="." unique_id=787857879 instance=ExtResource("8_level")]
 
-[node name="PlayerSight" type="Node2D" parent="." unique_id=1033005263]
+[node name="PlayerSight" type="Node2D" parent="." unique_id=1766860348]
 script = ExtResource("33_sight")
 
 [node name="Spawner" type="Node" parent="." unique_id=335399860]
@@ -68,18 +73,64 @@ script = ExtResource("17_clock")
 [node name="MatchDirector" type="Node" parent="." unique_id=621785788]
 script = ExtResource("18_director")
 
-[node name="PickupControl" type="Node" parent="." unique_id=793834316]
+[node name="PickupControl" type="Node" parent="." unique_id=911595859]
 script = ExtResource("20_pickups")
 pickup_scene = ExtResource("21_pickup")
 
-[node name="ArtifactPlacer" type="Node" parent="." unique_id=645576219 node_paths=PackedStringArray("pickups")]
+[node name="ArtifactPlacer" type="Node" parent="." unique_id=975387195 node_paths=PackedStringArray("pickups")]
 script = ExtResource("22_placer")
 artifacts = Array[ExtResource("23_artifact")]([ExtResource("24_idol"), ExtResource("25_scarab"), ExtResource("26_orb"), ExtResource("27_mask"), ExtResource("28_chalice"), ExtResource("29_dagger")])
 pickups = NodePath("../PickupControl")
 
-[node name="TargetArtifactChooser" type="Node" parent="." unique_id=1589188216 node_paths=PackedStringArray("placer")]
+[node name="TargetArtifactChooser" type="Node" parent="." unique_id=1600048755 node_paths=PackedStringArray("placer")]
 script = ExtResource("30_chooser")
 placer = NodePath("../ArtifactPlacer")
+
+[node name="DesignatedExitChooser" type="Node" parent="."]
+script = ExtResource("37_exit_chooser")
+
+[node name="ArtifactEscape" type="Node" parent="." node_paths=PackedStringArray("target_chooser", "match_director", "exit_chooser")]
+script = ExtResource("34_escape")
+target_chooser = NodePath("../TargetArtifactChooser")
+match_director = NodePath("../MatchDirector")
+exit_chooser = NodePath("../DesignatedExitChooser")
+
+[node name="MatchPhases" type="Node" parent="."]
+script = ExtResource("35_phases")
+
+[node name="Cover" type="CanvasLayer" parent="MatchPhases"]
+layer = 9
+visible = false
+
+[node name="Backdrop" type="ColorRect" parent="MatchPhases/Cover"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.02745098, 0.03529412, 0.047058824, 1)
+
+[node name="Waiting" type="Label" parent="MatchPhases/Cover"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -12.0
+offset_right = 200.0
+offset_bottom = 12.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.6627451, 0.6431373, 0.58431375, 1)
+theme_override_font_sizes/font_size = 18
+text = "Waiting for the other players..."
+horizontal_alignment = 1
+
+[node name="RoleReveal" parent="MatchPhases" instance=ExtResource("36_reveal")]
+
+[node name="SpawnSelect" parent="MatchPhases" instance=ExtResource("38_spawn_select")]
 
 [node name="EndScreen" parent="." unique_id=1748445485 instance=ExtResource("19_end")]
 
@@ -87,10 +138,10 @@ placer = NodePath("../ArtifactPlacer")
 
 [node name="PlayerHud" parent="." unique_id=793943031 instance=ExtResource("9_hud")]
 
-[node name="DebugCommands" type="Node" parent="." unique_id=546399529]
+[node name="DebugCommands" type="Node" parent="." unique_id=1986469095]
 script = ExtResource("31_commands")
 
-[node name="DebugConsole" parent="." unique_id=1377564932 instance=ExtResource("32_console")]
+[node name="DebugConsole" parent="." unique_id=1687354838 instance=ExtResource("32_console")]
 
 [connection signal="cease_rpcs_request_received" from="NetworkUnloader" to="." method="_on_network_unloader_cease_rpcs_request_received"]
 [connection signal="finished" from="GameClock" to="MatchDirector" method="on_time_up"]

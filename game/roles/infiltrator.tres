@@ -1,5 +1,6 @@
 [gd_resource type="Resource" script_class="Role" format=3 uid="uid://dquliqopf7cqu"]
 
+[ext_resource type="Texture2D" uid="uid://ckxs3fsktcc1o" path="res://icon.svg" id="1_1pxb4"]
 [ext_resource type="Script" uid="uid://v21eutcpbg5f" path="res://game/roles/role.gd" id="1_role"]
 [ext_resource type="Script" uid="uid://bko7sp24yavq3" path="res://game/items/item.gd" id="2_item"]
 [ext_resource type="Resource" path="res://game/items/guns/pistol.tres" id="3_pistol"]
@@ -12,4 +13,6 @@ kind = 1
 color = Color(1, 0, 0, 1)
 skin = "intruder"
 legs_tint = Color(0.6, 0.5, 0.4, 1)
+portrait = ExtResource("1_1pxb4")
+description = "Test infiltrator description"
 starting_items = Array[ExtResource("2_item")]([ExtResource("3_pistol"), ExtResource("4_rifle")])

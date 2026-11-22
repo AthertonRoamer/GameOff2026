@@ -9,7 +9,10 @@ extends Node2D
 ##  Vents   Marker2D nodes: the top left corner of a 2 x 2 cell (0.5 m) grille
 ##  Props   anything that stands on the floor and matters to the game (control panels, things that block): always there, y-sorted
 ##  Decor   (optional) furniture and clutter that is only looked at: sprites and lights, no collision. Streamed: only what is near the view is in the tree
+##  Spawns  GuardSpawn / IntruderSpawn markers: each makes the room it stands on a spawn room of its kind (see SpawnRoomMarker, spawn_rooms)
 ##  Actors  where players and other moving things are added, y-sorted
+##  A room of kind Exit is an exit zone: an area outside the walls with no floor or wall tiles of its own, reached through a door like a room and
+##          ringed by invisible walls (see FacilityRoom.is_exit, exits, barrier_cells, is_in_exit)
 ##  Floors, Walls, Shadows   tile layers the map makes and fills in itself from the rooms and doors, in the editor as well as in the game: every cell of
 ##          a room is floor, every empty cell touching a floor cell is wall (so rooms need a one cell gap), and the floor beside a wall gets a soft
 ##          shadow. They are not part of the scene file, so resizing a room never touches the art. The Rebuild button below redoes them by hand.
@@ -42,9 +45,12 @@ const EDITOR_REBUILD_DELAY : float = 0.15 #seconds a room or door has to sit sti
 @export_range(0, 192, 1, "suffix:cells") var decor_margin_cells : int = 64 ## Decor within this far of the view is in the tree
 @export_range(0, 48, 1, "suffix:cells") var editor_margin_cells : int = 8 ## the same margin, in the editor (it follows the 2D view)
 
-var rooms : Dictionary = {} #room id -> {name, kind, function, rects: Array[Rect2i], exterior: bool}
+var rooms : Dictionary = {} #room id -> {name, kind, function, rects: Array[Rect2i], exterior: bool, spawns: {SpawnRoomMarker.Kind: world point}}
 var floor_rects : Array[Rect2i] = [] #every piece of floor, in cells: the rooms' rectangles, then the door cells
 var wall_cells : Dictionary = {} #Vector2i -> true: every empty cell touching a floor cell
+var exits : Dictionary = {} #exit id -> Array[Rect2i]: the rooms of kind Exit, which are zones rather than rooms (no floor, no walls), see FacilityRoom.is_exit. Not in `rooms`
+var exit_cells : Dictionary = {} #Vector2i -> exit id
+var barrier_cells : Dictionary = {} #Vector2i -> true: the invisible walls round the exit zones (collision, no tile), see _compute_walls
 var doors : Array[FacilityDoor] = []
 var vents : Array[Vector2i] = []
 
@@ -136,6 +142,7 @@ func build() -> void:
 	clear_tiles()
 	_build_wall_body()
 	_collect_vents()
+	_collect_spawns()
 	_signature = _layout_signature()
 	built.emit()
 
@@ -182,6 +189,15 @@ func floor_cell_count() -> int:
 	return seen.size()
 
 
+##Id of the exit zone a world position is in, or "".
+func exit_at(world : Vector2) -> String:
+	return exit_cells.get(world_to_cell(world), "")
+
+
+func is_in_exit(world : Vector2) -> bool:
+	return exit_cells.has(world_to_cell(world))
+
+
 ##Bounding rectangles of a room in world pixels (a room can have several, like the corridor ring).
 func room_rects_px(room_id : String) -> Array[Rect2]:
 	var result : Array[Rect2] = []
@@ -214,6 +230,20 @@ func random_floor_point() -> Vector2:
 			var inner : Rect2i = rect.grow(-1) if rect.size.x > 2 and rect.size.y > 2 else rect #(a cell in from the walls)
 			return cell_to_world(inner.position + Vector2i(randi() % inner.size.x, randi() % inner.size.y))
 	return Vector2.ZERO
+
+
+##The rooms players of this kind may start in (SpawnRoomMarker.Kind), in scene order (the same on every peer).
+func spawn_rooms(spawn_kind : int) -> Array[String]:
+	var result : Array[String] = []
+	for id : String in rooms:
+		if rooms[id]["spawns"].has(spawn_kind):
+			result.append(id)
+	return result
+
+
+##Where players of this kind who start in this room appear: its marker's position.
+func spawn_point(room_id : String, spawn_kind : int) -> Vector2:
+	return rooms[room_id]["spawns"].get(spawn_kind, room_center_px(room_id))
 
 
 func rooms_of_kind(kind : String) -> Array[String]:
@@ -345,16 +375,29 @@ func _collect_rooms() -> void:
 	rooms.clear()
 	floor_rects.clear()
 	_floor_ids.clear()
+	exits.clear()
+	exit_cells.clear()
 	for room : FacilityRoom in _room_nodes():
 		var rects : Array[Rect2i] = room.cell_rects(self)
+		if room.is_exit(): #a zone, not floor: no tiles of its own. It sits outside a room's wall, joined to the room by a door
+			exits[room.room_id()] = rects
+			for rect : Rect2i in rects:
+				for y in range(rect.position.y, rect.end.y):
+					for x in range(rect.position.x, rect.end.x):
+						exit_cells[Vector2i(x, y)] = room.room_id()
+			continue
 		for rect : Rect2i in rects:
 			floor_rects.append(rect)
 			_floor_ids.append(room.room_id())
 		var label : String = room.display_name if room.display_name != "" else room.room_id().capitalize()
-		rooms[room.room_id()] = {"name": label, "kind": room.kind_name(), "function": room.function_name(), "rects": rects, "exterior": false}
+		rooms[room.room_id()] = {"name": label, "kind": room.kind_name(), "function": room.function_name(), "rects": rects, "exterior": false, "spawns": {}}
 	_index_floor()
 	if Engine.is_editor_hint(): #the editor says so on a room that overlaps another
 		var clashes : Dictionary = {} #room id -> another room whose floor it shares
+		for cell : Vector2i in exit_cells: #an exit needs the same one cell wall between it and a room as two rooms do, or it would cut a gap in the wall
+			for offset in [Vector2i.ZERO] + FacilityTileSet.NEIGHBOURS:
+				if is_floor(cell + offset):
+					clashes[exit_cells[cell]] = room_of_cell(cell + offset)
 		for i in floor_rects.size():
 			for chunk : Vector2i in _chunks_of(floor_rects[i]):
 				for j : int in _floor_index[chunk]:
@@ -381,22 +424,22 @@ func _collect_doors() -> void:
 		else:
 			first = Vector2i(cells.position.x - 1, cells.position.y + 1)
 			second = Vector2i(cells.end.x, cells.position.y + 1)
-		door.room_a = room_of_cell(first) #(the rooms' own cells: no door cell has been added yet)
-		door.room_b = room_of_cell(second)
+		door.room_a = room_of_cell(first) if is_floor(first) else exit_cells.get(first, "") #(the rooms' own cells: no door cell has been added yet) a side can be an exit zone: the door out of the facility
+		door.room_b = room_of_cell(second) if is_floor(second) else exit_cells.get(second, "")
 		if Engine.is_editor_hint(): #the editor says so on a door that is not between two different rooms
 			door.set_problem("" if door.room_a != "" and door.room_b != "" and door.room_a != door.room_b else "This door is not in the wall between two different rooms. Drag it onto the one cell gap between them.")
 		door.door_index = index
 		var outside : bool = false
 		for side : String in [door.room_a, door.room_b]:
-			if side != "" and rooms[side]["kind"] == "outdoor":
+			if exits.has(side) or (rooms.has(side) and rooms[side]["kind"] == "outdoor"):
 				outside = true
 		door.exterior = outside
 		if outside: #the room on the building side counts as an exterior room
 			for side : String in [door.room_a, door.room_b]:
-				if side != "" and rooms[side]["kind"] != "outdoor":
+				if rooms.has(side) and rooms[side]["kind"] != "outdoor":
 					rooms[side]["exterior"] = true
 		door_floor.append(cells)
-		door_floor_rooms.append(door.room_a if door.room_a != "" else door.room_b)
+		door_floor_rooms.append(door.room_a if rooms.has(door.room_a) else door.room_b) #the floor under the door belongs to a room, never to an exit
 		doors.append(door)
 		index += 1
 	floor_rects.append_array(door_floor)
@@ -421,9 +464,11 @@ func _chunks_of(rect : Rect2i) -> Array[Vector2i]:
 	return result
 
 
-##Every empty cell touching a floor cell is a wall: the ring round each piece of floor, without the cells that are floor of another.
+##Every empty cell touching a floor cell is a wall: the ring round each piece of floor, without the cells that are floor of another and without an exit zone's own cells (so the doorway out
+##to an exit stays clear). Every empty cell touching an exit is a barrier: an invisible wall, so a player who goes through the door into the exit stops at its edge instead of walking off into the void.
 func _compute_walls() -> void:
 	wall_cells.clear()
+	barrier_cells.clear()
 	_wall_chunks.clear()
 	for rect : Rect2i in floor_rects:
 		var ring : Rect2i = rect.grow(1)
@@ -433,10 +478,15 @@ func _compute_walls() -> void:
 		for y in range(rect.position.y, rect.end.y):
 			_add_wall(Vector2i(ring.position.x, y))
 			_add_wall(Vector2i(ring.end.x - 1, y))
+	for cell : Vector2i in exit_cells:
+		for offset in FacilityTileSet.NEIGHBOURS:
+			var next : Vector2i = cell + offset
+			if not is_floor(next) and not exit_cells.has(next) and not wall_cells.has(next):
+				barrier_cells[next] = true
 
 
 func _add_wall(cell : Vector2i) -> void:
-	if wall_cells.has(cell) or is_floor(cell):
+	if wall_cells.has(cell) or is_floor(cell) or exit_cells.has(cell):
 		return
 	wall_cells[cell] = true
 	var chunk : Vector2i = chunk_of_cell(cell)
@@ -463,12 +513,23 @@ func _build_wall_body() -> void:
 		occluder.occluder = OccluderPolygon2D.new()
 		occluder.occluder.polygon = PackedVector2Array([world.position, Vector2(world.end.x, world.position.y), world.end, Vector2(world.position.x, world.end.y)])
 		wall_body.add_child(occluder)
+	for rect : Rect2i in cells_to_rects(barrier_cells): #the invisible walls round the exit zones: collision only, no tile and no occluder
+		var world : Rect2 = Rect2(Vector2(rect.position * TILE), Vector2(rect.size * TILE))
+		var shape : CollisionShape2D = CollisionShape2D.new()
+		shape.shape = RectangleShape2D.new()
+		(shape.shape as RectangleShape2D).size = world.size
+		shape.position = world.get_center()
+		wall_body.add_child(shape)
 
 
-## The wall cells as rectangles (in cells) that cover them exactly: each row's runs of walls, with a run joined to the one above it when they span the same columns.
 func wall_rects() -> Array[Rect2i]:
-	var rows : Dictionary = {} #y -> the x of every wall cell in that row
-	for cell : Vector2i in wall_cells:
+	return cells_to_rects(wall_cells)
+
+
+## Cells as rectangles (in cells) that cover them exactly: each row's runs of cells, with a run joined to the one above it when they span the same columns.
+func cells_to_rects(cells : Dictionary) -> Array[Rect2i]:
+	var rows : Dictionary = {} #y -> the x of every cell in that row
+	for cell : Vector2i in cells:
 		if not rows.has(cell.y):
 			rows[cell.y] = []
 		rows[cell.y].append(cell.x)
@@ -506,6 +567,40 @@ func wall_rects() -> Array[Rect2i]:
 	return rects
 
 
+##Every SpawnRoomMarker in the map (wherever it is in the tree: only its position counts) makes the room under it a spawn room of its kind.
+func _collect_spawns() -> void:
+	var kinds_of : Dictionary = {} #room id -> the spawn kinds it has, for the editor's badges
+	for marker : SpawnRoomMarker in spawn_markers():
+		var at : Vector2 = to_local(marker.global_position)
+		var room : String = room_at(at)
+		marker.room_id = room
+		var problem : String = ""
+		if exit_at(at) != "":
+			problem = "This spawn marker is on an exit zone. Drag it onto a room."
+		elif room == "":
+			problem = "This spawn marker is not on any room's floor. Drag it onto a room."
+		elif not rooms[room]["spawns"].has(marker.kind):
+			rooms[room]["spawns"][marker.kind] = at
+			if not kinds_of.has(room):
+				kinds_of[room] = []
+			kinds_of[room].append(marker.kind)
+		if Engine.is_editor_hint():
+			marker.set_problem(problem)
+		if problem != "":
+			marker.room_id = ""
+	if Engine.is_editor_hint():
+		for node : FacilityRoom in _room_nodes():
+			node.set_spawn_kinds(kinds_of.get(node.room_id(), []))
+
+
+func spawn_markers() -> Array[SpawnRoomMarker]:
+	var result : Array[SpawnRoomMarker] = []
+	for node : Node in find_children("*", "Marker2D", true, false):
+		if node is SpawnRoomMarker:
+			result.append(node)
+	return result
+
+
 func _collect_vents() -> void:
 	#only the positions: there is no vent art in the smooth look
 	vents.clear()
@@ -535,4 +630,6 @@ func _layout_signature() -> int:
 		parts.append("%s %s %s" % [door.name, door.position, door.horizontal])
 	for child : Node in vents_node.get_children():
 		parts.append("%s" % (child as Node2D).position)
+	for marker : SpawnRoomMarker in spawn_markers():
+		parts.append("%s %d %s" % [marker.name, marker.kind, marker.global_position])
 	return "|".join(parts).hash()

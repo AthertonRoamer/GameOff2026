@@ -9,7 +9,9 @@ enum Kind { GUARD, INTRUDER }
 
 @export var role_name : String = ""
 @export var kind : Kind = Kind.GUARD #public: everyone can see whether a player is a guard or an intruder
-@export var color : Color = Color.WHITE #identifies the role (debug role rings for now)
+@export var color : Color = Color.WHITE #identifies the role (debug role rings, the role reveal)
+@export var portrait : Texture2D #shown when the role is revealed at the start of a match. None: the reveal shows no picture
+@export_multiline var description : String = "" #what the role does, shown under its name when it is revealed
 @export var speed : float = 200.0
 @export var run_multiplier : float = 1.6
 @export var starting_health : float = 50.0

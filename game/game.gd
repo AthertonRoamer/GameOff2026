@@ -12,9 +12,10 @@ extends Node2D
 ##The game reports itself loaded only once it has spawned them
 ##(is_setup_complete, waited for by RollbackGameManager), so every peer has its players before the shared start tick.
 
-const DEBUG_SETTINGS : Array[StringName] = [&"debug_respawn_dead_players", &"debug_show_role_rings", &"debug_show_team_rings"] #turned off by DebugRemover
+const DEBUG_SETTINGS : Array[StringName] = [&"debug_respawn_dead_players", &"debug_show_role_rings", &"debug_show_team_rings", &"debug_skip_phases"] #turned off by DebugRemover
 
 signal setup_complete #the players have been spawned with their roles and teams
+signal play_started #every peer: the phases are over and the players can move (the shift clock starts now)
 
 @export_group("Roles and teams")
 @export var guard_roles : Array[Role] = [] #every guard gets a different one while they last
@@ -28,6 +29,7 @@ signal setup_complete #the players have been spawned with their roles and teams
 @export var debug_respawn_dead_players : bool = false #hides dead players and revives them (full health) after 3 seconds
 @export var debug_show_role_rings : bool = false #a ring in each player's role colour
 @export var debug_show_team_rings : bool = false #green rings around defenders, red around attackers. Every peer is told every team for this
+@export var debug_skip_phases : bool = false #play begins on the start tick, without the phases (role reveal...) before it
 
 @onready var level : NightShiftLevel = $Level
 @onready var spawner : RollbackPlayerSpawner = $Spawner
@@ -40,6 +42,11 @@ signal setup_complete #the players have been spawned with their roles and teams
 @onready var pickups : PickupControl = $PickupControl
 @onready var artifact_placer : ArtifactPlacer = $ArtifactPlacer
 @onready var target_chooser : TargetArtifactChooser = $TargetArtifactChooser
+@onready var exit_chooser : DesignatedExitChooser = $DesignatedExitChooser
+@onready var artifact_escape : ArtifactEscape = $ArtifactEscape
+@onready var phases : MatchPhases = $MatchPhases
+
+var started : bool = false #play has begun: the phases are over. (The test harness waits for this)
 
 var settings : MatchSettings = MatchSettings.new() #what the host chose for this match: the map, debug, the mode (see MatchSetupPanel)
 var role_assigner : RoleAssigner = RoleAssigner.new()
@@ -48,6 +55,7 @@ var _roles : Dictionary = {} #member id -> role index, every member
 var _known_teams : Dictionary = {} #member id -> Team, only the teams this peer may know
 var _artifact_picks : PackedInt32Array = PackedInt32Array() #lobby: which artifact goes on each location, see ArtifactPlacer
 var _target_artifact : int = -1 #lobby: the artifact the attackers are after, see TargetArtifactChooser
+var _designated_exit : String = "" #lobby: the exit the attackers must leave by, see DesignatedExitChooser
 var _setup_complete : bool = false
 var _spawned_members : Dictionary = {} #lobby: members whose game has spawned the players
 
@@ -65,8 +73,8 @@ func _enter_tree() -> void:
 func _choose_map(option : MapOption) -> void:
 	var level_node : NightShiftLevel = $Level
 	var current : FacilityMap = level_node.get_node("FacilityMap")
-	if option.scene != null and option.scene.resource_path != current.scene_file_path:
-		var chosen : FacilityMap = option.scene.instantiate()
+	if option.scene_path != "" and option.scene_path != current.scene_file_path:
+		var chosen : FacilityMap = (load(option.scene_path) as PackedScene).instantiate()
 		chosen.doors_start = current.doors_start
 		current.name = &"ReplacedMap"
 		chosen.name = &"FacilityMap"
@@ -84,6 +92,8 @@ func _ready() -> void:
 	level.player_lookup = func(peer_id : int) -> Player: return spawner.players.get(peer_id)
 	pickups.spawn_parent = level.actors
 	pickups.player_lookup = level.player_lookup
+	artifact_escape.facility = level.facility
+	artifact_escape.players = func() -> Array: return spawner.players.values()
 	level.projectiles.lag_compensator = lag_compensator
 	level.projectiles.can_hit = func(target : Node) -> bool: return target.is_alive()
 	level.projectiles.projectile_hit.connect(_on_projectile_hit)
@@ -108,6 +118,9 @@ func _ready() -> void:
 	player_setup.spawn_point = level.spawn_position()
 	if not settings.is_deathmatch():
 		player_hud.bind_clock(game_clock) #(a deathmatch has no clock)
+	player_hud.visible = false #shown when play begins, after the phases
+	phases.game = self
+	phases.finished.connect(_begin_play)
 	_configure_role_assigner()
 	if debug_show_role_rings or debug_show_team_rings:
 		_add_debug_rings()
@@ -118,19 +131,38 @@ func _ready() -> void:
 			_ensure_assignment()
 			lobby.member_left.connect(func(_m : LobbyMember) -> void: _spawn_on_lobby_when_ready())
 			lobby.member_left.connect(func(_m : LobbyMember) -> void: match_director.check_elimination())
+			artifact_escape.watch() #the attackers win when the target artifact is carried into an exit zone
 			_spawn_on_lobby_when_ready() #no members: spawns now
 		else:
 			_request_assignment.rpc_id(1)
 
 
+##Every peer, on the start tick the lobby picked. The phases (MatchPhases' children: the role reveal...) run first, and play begins when they end.
 func start() -> void:
 	level.control.broadcast_snapshot() #lobby only: every peer starts from the lobby's doors
+	var start_tick : int = (get_parent() as RollbackGameManager).start_tick
+	if debug_skip_phases or settings.is_deathmatch(): #(a deathmatch has no roles to reveal and nowhere to choose: everyone is dropped in)
+		Main.output("Phases skipped (%s)" % ("deathmatch" if settings.is_deathmatch() else "debug_skip_phases"))
+		phases.hide_cover()
+		_begin_play(start_tick)
+	else:
+		phases.run(start_tick)
+
+
+##Every peer, on the tick the last phase ended (the same tick everywhere): the players can move, the HUD shows, the shift clock starts counting
+##from now, and only now can the match be won or lost.
+func _begin_play(tick : int) -> void:
+	started = true
 	set_players_active(true)
+	player_hud.visible = true
 	if settings.is_deathmatch():
+		play_started.emit()
 		return #no clock, no teams and no win: players just fight and come back
-	game_clock.start((get_parent() as RollbackGameManager).start_tick)
-	if spawner.lobby.is_master:
+	game_clock.start(tick)
+	if spawner.lobby != null and spawner.lobby.is_master:
 		match_director.begin(assignment["teams"], _build_roster(), _is_in_play)
+		match_director.check_elimination() #in case every attacker left during the phases
+	play_started.emit()
 
 
 func end() -> void:
@@ -171,9 +203,10 @@ func _ensure_assignment() -> void:
 	var rng : RandomNumberGenerator = RandomNumberGenerator.new()
 	rng.randomize()
 	assignment = role_assigner.assign(member_ids, rng)
-	if not settings.is_deathmatch(): #(a deathmatch has no artifacts to steal)
+	if not settings.is_deathmatch(): #(a deathmatch has no artifacts to steal, and no exit to take them out by)
 		_artifact_picks = artifact_placer.roll(rng)
 		_target_artifact = target_chooser.choose(_artifact_picks, rng)
+		_designated_exit = exit_chooser.choose(level.facility.exits.keys(), rng)
 
 
 ##Client -> lobby. Asked instead of pushed: the lobby's game always exists by the time a client's request arrives, whereas a pushed
@@ -184,15 +217,17 @@ func _request_assignment() -> void:
 	if not spawner.lobby.is_master or not spawner.lobby.has_member_with_id(sender):
 		return
 	_ensure_assignment()
-	var target_for_sender : int = _target_artifact if assignment["teams"].get(sender) == Team.ATTACKERS else -1 #defenders are never sent it
-	_receive_assignment.rpc_id(sender, assignment["roles"], role_assigner.teams_visible_to(sender, assignment), _artifact_picks, target_for_sender)
+	var is_attacker : bool = assignment["teams"].get(sender) == Team.ATTACKERS #defenders are never sent the target or the exit
+	var target_for_sender : int = _target_artifact if is_attacker else -1
+	_receive_assignment.rpc_id(sender, assignment["roles"], role_assigner.teams_visible_to(sender, assignment), _artifact_picks, target_for_sender, _designated_exit if is_attacker else "")
 
 
 @rpc("authority", "call_remote", "reliable")
-func _receive_assignment(roles : Dictionary, known_teams : Dictionary, artifact_picks : PackedInt32Array, target_artifact : int) -> void:
+func _receive_assignment(roles : Dictionary, known_teams : Dictionary, artifact_picks : PackedInt32Array, target_artifact : int, designated_exit : String) -> void:
 	if not _setup_complete:
 		artifact_placer.place(artifact_picks)
 		target_chooser.set_target(target_artifact)
+		exit_chooser.set_designated(designated_exit)
 		_spawn_players(roles, known_teams)
 		_confirm_spawned.rpc_id(1)
 
@@ -214,6 +249,7 @@ func _spawn_on_lobby_when_ready() -> void:
 			return
 	artifact_placer.place(_artifact_picks)
 	target_chooser.set_target(_target_artifact)
+	exit_chooser.set_designated(_designated_exit)
 	_spawn_players(assignment["roles"], assignment["teams"]) #the lobby knows every team
 
 
@@ -270,7 +306,7 @@ func _send_teams(changed_member_id : int) -> void:
 	for member in spawner.lobby.members:
 		if member.id != multiplayer.get_unique_id():
 			var is_attacker : bool = assignment["teams"].get(member.id) == Team.ATTACKERS
-			_receive_teams.rpc_id(member.id, role_assigner.teams_visible_to(member.id, assignment), _target_artifact if is_attacker else -1)
+			_receive_teams.rpc_id(member.id, role_assigner.teams_visible_to(member.id, assignment), _target_artifact if is_attacker else -1, _designated_exit if is_attacker else "")
 
 
 @rpc("authority", "call_local", "reliable")
@@ -282,8 +318,9 @@ func _apply_role(member_id : int, role_index : int) -> void:
 
 
 @rpc("authority", "call_remote", "reliable")
-func _receive_teams(known_teams : Dictionary, target_artifact : int) -> void:
+func _receive_teams(known_teams : Dictionary, target_artifact : int, designated_exit : String) -> void:
 	target_chooser.set_target(target_artifact)
+	exit_chooser.set_designated(designated_exit)
 	_apply_teams(known_teams)
 
 
@@ -417,5 +454,7 @@ func _on_network_unloader_cease_rpcs_request_received() -> void:
 	level.blood.quiesce()
 	level.hitscan.quiesce()
 	pickups.quiesce()
+	artifact_escape.quiesce()
+	phases.quiesce()
 	spawner.quiesce()
 	($NetworkUnloader as NetworkUnloader).register_as_ceased()
