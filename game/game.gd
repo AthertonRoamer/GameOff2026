@@ -41,6 +41,7 @@ signal setup_complete #the players have been spawned with their roles and teams
 @onready var artifact_placer : ArtifactPlacer = $ArtifactPlacer
 @onready var target_chooser : TargetArtifactChooser = $TargetArtifactChooser
 
+var settings : MatchSettings = MatchSettings.new() #what the host chose for this match: the map, debug, the mode (see MatchSetupPanel)
 var role_assigner : RoleAssigner = RoleAssigner.new()
 var assignment : Dictionary = {} #lobby: every member's role and team. The win check will use it
 var _roles : Dictionary = {} #member id -> role index, every member
@@ -49,6 +50,32 @@ var _artifact_picks : PackedInt32Array = PackedInt32Array() #lobby: which artifa
 var _target_artifact : int = -1 #lobby: the artifact the attackers are after, see TargetArtifactChooser
 var _setup_complete : bool = false
 var _spawned_members : Dictionary = {} #lobby: members whose game has spawned the players
+
+
+##The match setup is applied here, before the children are ready: the map is swapped and debug switched off (DebugRemover strips it when its own _ready runs) before anything reads them.
+func _enter_tree() -> void:
+	if get_parent() is GameManager:
+		settings = MatchSettings.from_dict((get_parent() as GameManager).lobby.match_settings)
+	_choose_map(settings.map_option())
+	if not settings.debug:
+		$DebugRemover.enabled = true
+
+
+## Puts the chosen map in the level where the first one stands (the nodes that point at the map are pointed at the new one) and says where the players start.
+func _choose_map(option : MapOption) -> void:
+	var level_node : NightShiftLevel = $Level
+	var current : FacilityMap = level_node.get_node("FacilityMap")
+	if option.scene != null and option.scene.resource_path != current.scene_file_path:
+		var chosen : FacilityMap = option.scene.instantiate()
+		chosen.doors_start = current.doors_start
+		current.name = &"ReplacedMap"
+		chosen.name = &"FacilityMap"
+		level_node.add_child(chosen)
+		level_node.move_child(chosen, current.get_index())
+		for node_name : String in ["FacilityControl", "UtilityConsoles", "Sound"]:
+			level_node.get_node(node_name).facility = chosen
+		current.free()
+	level_node.spawn_room = option.spawn_room
 
 
 func _ready() -> void:
@@ -74,8 +101,13 @@ func _ready() -> void:
 	$PlayerSight.local_player = func() -> Player: return spawner.local_player
 	level.hitscan.shot_hit.connect(_on_projectile_hit) #(the same hit as a bullet makes: damage and the way it was going)
 	player_hud.bind_hitscan(level.hitscan)
+	level.sound.listener = func() -> Variant: return spawner.local_player.global_position if is_instance_valid(spawner.local_player) else null #sounds are heard from where this peer's own player is
+	level.sound.heard.connect(player_hud.sound_cue.ping)
+	level.blood.splat_made.connect(func(kind : int, at : Vector2) -> void: level.sound.play(level.sound.blood_drip if kind == BloodSplat.Kind.BLEED else level.sound.blood_splat, at))
+	level.hitscan.wall_hit.connect(func(at : Vector2) -> void: level.sound.play(level.sound.bullet_wall, at))
 	player_setup.spawn_point = level.spawn_position()
-	player_hud.bind_clock(game_clock)
+	if not settings.is_deathmatch():
+		player_hud.bind_clock(game_clock) #(a deathmatch has no clock)
 	_configure_role_assigner()
 	if debug_show_role_rings or debug_show_team_rings:
 		_add_debug_rings()
@@ -94,6 +126,8 @@ func _ready() -> void:
 func start() -> void:
 	level.control.broadcast_snapshot() #lobby only: every peer starts from the lobby's doors
 	set_players_active(true)
+	if settings.is_deathmatch():
+		return #no clock, no teams and no win: players just fight and come back
 	game_clock.start((get_parent() as RollbackGameManager).start_tick)
 	if spawner.lobby.is_master:
 		match_director.begin(assignment["teams"], _build_roster(), _is_in_play)
@@ -122,6 +156,9 @@ func _configure_role_assigner() -> void:
 	role_assigner.intruders_know_attackers = intruders_know_attackers
 	role_assigner.attacking_guards_know_each_other = attacking_guards_know_each_other
 	role_assigner.everyone_knows_all_teams = debug_show_team_rings
+	if settings.is_deathmatch():
+		role_assigner.intruder_count = 0 #everyone is a guard, and nobody is secretly on a side
+		role_assigner.attacking_guard_count = 0
 
 
 ##Lobby only: rolls the roles and teams the first time it is needed.
@@ -134,8 +171,9 @@ func _ensure_assignment() -> void:
 	var rng : RandomNumberGenerator = RandomNumberGenerator.new()
 	rng.randomize()
 	assignment = role_assigner.assign(member_ids, rng)
-	_artifact_picks = artifact_placer.roll(rng)
-	_target_artifact = target_chooser.choose(_artifact_picks, rng)
+	if not settings.is_deathmatch(): #(a deathmatch has no artifacts to steal)
+		_artifact_picks = artifact_placer.roll(rng)
+		_target_artifact = target_chooser.choose(_artifact_picks, rng)
 
 
 ##Client -> lobby. Asked instead of pushed: the lobby's game always exists by the time a client's request arrives, whereas a pushed
@@ -182,6 +220,10 @@ func _spawn_on_lobby_when_ready() -> void:
 func _spawn_players(roles : Dictionary, known_teams : Dictionary) -> void:
 	_roles = roles
 	_known_teams = known_teams
+	for index : int in roles.values(): #the skins of the roles in this game are loaded now, while it loads, not when the first player is drawn (each is shared by every player with that role)
+		var role : Role = role_assigner.role_at(index)
+		if role != null:
+			SkinFrames.load_role("res://game/player/skin", role.skin)
 	spawner.spawn_all()
 	var summary : Array[String] = []
 	for id : int in roles:
@@ -272,14 +314,28 @@ func _on_player_spawned(player : Node, member : LobbyMember, index : int) -> voi
 		player_hud.bind_player(player)
 		if player.team == Team.ATTACKERS:
 			player_hud.show_target(target_chooser.target)
+	var is_local : bool = player == spawner.local_player
+	player.footsteps.stepped.connect(func(def : SoundDef, at : Vector2) -> void: level.sound.play(def, at, is_local)) #every peer sees every player's feet, so every peer hears them
+	player.shot_fired.connect(_on_shot_fired.bind(player, is_local))
+	player.damaged.connect(func(_direction : Vector2) -> void: #the health sync tells every peer, so every peer hears the hit (a killing shot has the kill sound instead)
+		if player.health > 0.0:
+			level.sound.play(level.sound.bullet_flesh, player.global_position))
+	player.died.connect(func() -> void: level.sound.play(level.sound.kill, player.global_position))
 	level.blood.players = func() -> Array: return spawner.players.values()
 	player.died.connect(level.blood.on_player_died.bind(player), CONNECT_DEFERRED) #the puddle under the body, on every peer (after the skin has laid the body)
 	if spawner.lobby.is_master:
 		player.damaged.connect(level.blood.on_player_damaged.bind(player)) #a splash where a bullet came through, decided by the lobby
 		player.died.connect(match_director.check_elimination)
-	if debug_respawn_dead_players:
+	if debug_respawn_dead_players or settings.is_deathmatch():
 		player.died.connect(_on_player_died.bind(player))
 		player.health_changed.connect(_on_player_health_changed.bind(player))
+
+
+##A shot, on every peer (the shooter's own, and the lobby's word for everyone else's): the gun's bang, heard through the map from the shooter.
+func _on_shot_fired(player : Player, is_local : bool) -> void:
+	var gun : Gun = player.inventory.active_item as Gun
+	if gun != null:
+		level.sound.play(gun.shot_sound, player.global_position, is_local)
 
 
 func _on_player_died(player : Node) -> void:
@@ -287,7 +343,32 @@ func _on_player_died(player : Node) -> void:
 	if player.is_multiplayer_authority(): #only the authority decides when health comes back; HealthSynchronizer broadcasts it
 		await get_tree().create_timer(3.0).timeout
 		if is_instance_valid(player):
+			if settings.is_deathmatch():
+				_respawn_at.rpc(int(String(player.name)), _respawn_point()) #a deathmatch brings them back somewhere else
 			player.health = player.starting_health
+
+
+##Somewhere on the floor that is far from every living player (the best of a few tries).
+func _respawn_point() -> Vector2:
+	var best : Vector2 = level.spawn_position()
+	var best_gap : float = -1.0
+	for attempt in 6:
+		var point : Vector2 = level.facility.random_floor_point()
+		var gap : float = INF
+		for other : Player in spawner.players.values():
+			if is_instance_valid(other) and other.is_alive():
+				gap = minf(gap, other.global_position.distance_to(point))
+		if gap > best_gap:
+			best_gap = gap
+			best = point
+	return best
+
+
+@rpc("authority", "call_local", "reliable")
+func _respawn_at(member_id : int, point : Vector2) -> void:
+	var player : Player = spawner.players.get(member_id)
+	if is_instance_valid(player):
+		player.teleport(point)
 
 
 func _on_player_health_changed(h : float, player : Node) -> void:

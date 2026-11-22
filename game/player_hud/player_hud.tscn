@@ -1,9 +1,20 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://game/player_hud/player_hud.gd" id="1_hud"]
+[ext_resource type="Script" path="res://game/audio/sound_cue.gd" id="2_cue"]
 
 [node name="PlayerHud" type="CanvasLayer"]
 script = ExtResource("1_hud")
+
+[node name="SoundCue" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("2_cue")
 
 [node name="HealthBar" type="ProgressBar" parent="."]
 anchors_preset = 0

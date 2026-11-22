@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" path="res://game/items/gun.gd" id="1_gun"]
 [ext_resource type="Texture2D" uid="uid://ckxs3fsktcc1o" path="res://icon.svg" id="2_icon"]
+[ext_resource type="Resource" path="res://game/audio/definitions/pistol_shot.tres" id="3_shot"]
 
 [resource]
 script = ExtResource("1_gun")
@@ -10,6 +11,7 @@ bullet_speed = 850.0
 bullet_color = Color(1, 0.72, 0.3, 1)
 hitscan = true
 range_px = 650.0
+shot_sound = ExtResource("3_shot")
 item_name = "Pistol"
 icon = ExtResource("2_icon")
 cooldown_ticks = 20

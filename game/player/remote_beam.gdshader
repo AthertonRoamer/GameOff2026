@@ -23,6 +23,9 @@ uniform float view_near = 110.0;
 uniform float fade_start = 0.4;
 uniform bool use_view = true;
 uniform vec2 bodies[8];
+uniform vec2 lying_a[4]; // fallen bodies: each a line from one end to the other, and how wide it is (a hole shaped like the body)
+uniform vec2 lying_b[4];
+uniform float lying_radius[4];
 uniform int body_count = 0;
 
 varying vec2 world;
@@ -73,5 +76,10 @@ void fragment() {
 		}
 		keep *= 1.0 - 0.85 * (1.0 - smoothstep(5.0, 13.0, length(world - bodies[i]))); // a hole smaller than the body, so the sprite hides its edge
 	}
-	COLOR = vec4(beam_color.rgb, clamp(light * strength * view_fade(world) * keep, 0.0, 1.0));
+	for (int i = 0; i < 4; i++) {
+		vec2 ab = lying_b[i] - lying_a[i];
+		float t = clamp(dot(world - lying_a[i], ab) / max(dot(ab, ab), 0.0001), 0.0, 1.0);
+		float d = length(world - (lying_a[i] + ab * t));
+		keep *= 1.0 - 0.85 * (1.0 - smoothstep(lying_radius[i] * 0.7, lying_radius[i], d));
+	}	COLOR = vec4(beam_color.rgb, clamp(light * strength * view_fade(world) * keep, 0.0, 1.0));
 }

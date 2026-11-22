@@ -562,6 +562,179 @@ STATES += _transitions()
 STATES += _gaits() + _deaths() + _typing() #(after smooth, which the transition states use when they are rendered)
 
 
+# ------------------------------------------------------------------ role gear
+# What each role wears, built from primitives (cubes, spheres, cylinders) and attached to the head or the chest bones by build(). `c` holds the head centre (hc), the
+# chest (spine), the hips, both shoulders and k, the role's build (1.2 for the broad gunner): what sits on the body is sized by k, what sits on the head is scaled with the head.
+ACCENT.update(olive='#4a5a35', olive_dark='#2f3a22', leather='#6b4f33', maroon_dark='#4f2530')
+
+
+def V(*a):
+    return Vector(a)
+
+
+def side(s):
+    return 1.0 if s.x > 0 else -1.0
+
+
+def strap(a, b, width, m):
+    """a flat strap lying from point a to point b"""
+    d = b - a
+    o = prim('cube', (a + b) / 2, (width, d.length, 0.012), m, 'gear')
+    o.rotation_euler = (0, 0, math.atan2(-d.x, d.y))
+    return o
+
+
+def rod(a, b, radius, m, tag='gear'):
+    """a thin cylinder from point a to point b"""
+    d = b - a
+    return prim('cyl', (a + b) / 2, (radius, radius, d.length), m, tag, rot=(math.pi / 2, 0, math.atan2(-d.x, d.y)))
+
+
+def helmet(hc, skull, band, rx, ry, rz, skirt=0.075, peak=0.0):
+    """a simple helmet, like a half helmet: a low dome on straight sides with a flared lip all round (and, with peak, a short peak in front). It reads the same from above
+    and lying on its side, which a plain sphere does not (it looks like a mushroom)"""
+    prim('sphere', hc + V(0, 0.01, 0.025), (rx, ry, rz), skull, 'gear')
+    prim('cyl', hc + V(0, 0.01, -0.012), (rx * 0.99, ry * 0.99, skirt), skull, 'gear')
+    prim('cyl', hc + V(0, 0.01, -0.05), (rx * 1.06, ry * 1.06, 0.012), band, 'gear')
+    if peak:
+        prim('sphere', hc + V(0, 0.01 - ry, -0.046), (rx * 0.75, peak, 0.01), band, 'gear', rot=(math.radians(-6), 0, 0))
+
+
+def chin_strap(hc, rx, m):
+    """a chin strap: a strap down each side of the head from the helmet's lip, and a cup under the chin (tagged 'head' so they turn with the head, below the shoulders' height too)"""
+    for x in (-1.0, 1.0):
+        rod(hc + V(x * rx * 0.97, 0.01, -0.05), hc + V(x * 0.058, -0.045, -0.118), 0.008, m, 'head')
+    prim('cube', hc + V(0, -0.05, -0.124), (0.116, 0.034, 0.014), m, 'head')
+
+
+def gear_cap(c):  # the guard: as it always was
+    hc = c['hc']
+    prim('sphere', hc + Vector((0, 0.01, 0.01)), (0.108, 0.115, 0.08), mat('navydark', (PAL['void'], PAL['g0'], PAL['g1'])), 'gear')
+    prim('cyl', hc + Vector((0, -0.11, 0.0)), (0.08, 0.07, 0.008), mat('brim', (PAL['void'], PAL['deep'], PAL['g0'])), 'gear', rot=(math.radians(-12), 0, 0))
+    prim('sphere', hc + Vector((0, -0.075, 0.07)), (0.016, 0.01, 0.016), mat('badge', PAL['backup']), 'gear')
+
+
+def gear_medic(c):
+    hc, spine, lsh = c['hc'], c['spine'], c['lsh']
+    white = mat('medwhite', (tone(PAL['text'], 0.78), PAL['text'], '#fbf9f3'))
+    grey = mat('medgrey', (tone(PAL['text'], 0.55), tone(PAL['text'], 0.72), tone(PAL['text'], 0.85)))
+    red = mat('medred', PAL['medic'])
+    gear_cap(c)                                                                                           # the guard's cap
+    prim('cube', lsh + V(0.03 * side(lsh), 0.0, 0.058), (0.05, 0.05, 0.008), white, 'gear')            # a shoulder patch
+    prim('cube', lsh + V(0.03 * side(lsh), 0.0, 0.064), (0.028, 0.009, 0.006), red, 'gear')
+    prim('cube', lsh + V(0.03 * side(lsh), 0.0, 0.064), (0.009, 0.028, 0.006), red, 'gear')
+    prim('cube', spine + V(0, 0.19, -0.05), (0.3, 0.16, 0.3), white, 'gear')                              # the medkit pack
+    prim('cube', spine + V(0, 0.208, 0.103), (0.036, 0.1, 0.012), red, 'gear')                            # the cross, in the middle of the part of the lid that shows behind him
+    prim('cube', spine + V(0, 0.208, 0.107), (0.1, 0.036, 0.012), red, 'gear')
+    prim('cube', spine + V(0, 0.14, 0.1), (0.3, 0.01, 0.01), grey, 'gear')                                # a seam across its lid
+
+
+def gear_gunner(c):
+    hc, spine, lsh, rsh, k = c['hc'], c['spine'], c['lsh'], c['rsh'], c['k']
+    armor = mat('armor', (PAL['g0'], PAL['armor'], PAL['g2']))
+    armor_hi = mat('armorhi', (PAL['g1'], PAL['g2'], tone(PAL['g2'], 1.3)))
+    navy = mat('navydark', (PAL['void'], PAL['g0'], PAL['g1']))
+    olive = mat('olive', (ACCENT['olive_dark'], ACCENT['olive'], tone(ACCENT['olive'], 1.35)))
+    helmet(hc, armor, navy, 0.104, 0.113, 0.07, skirt=0.07)                                                # the helmet: a low dome on straight sides with a flared lip all round (no bill)
+    for x in (-0.027, 0.027):                                                                              # two rails along the top
+        prim('cube', hc + V(x, 0.01, 0.092), (0.012, 0.14, 0.012), navy, 'gear')
+    prim('cube', hc + V(0, -0.1, 0.04), (0.07, 0.03, 0.036), navy, 'gear')                                 # the night vision mount, on the front of the dome
+    for x in (-1.0, 1.0):                                                                                  # a rivet on each side
+        prim('sphere', hc + V(0.104 * x, 0.01, 0.02), (0.011, 0.011, 0.011), armor_hi, 'gear')
+    chin_strap(hc, 0.104, navy)                                                                            # and a chin strap
+    prim('cube', spine + V(0, -0.03, 0.04) * k, V(0.34, 0.16, 0.12) * k, armor, 'gear')                    # the plate carrier over the chest
+    prim('cube', spine + V(0, -0.05, 0.1) * k, V(0.22, 0.09, 0.02) * k, armor_hi, 'gear')                  # and its plate
+    for x in (-0.07, 0.0, 0.07):                                                                           # a row of pouches below it
+        prim('cube', spine + V(x, -0.115, 0.07) * k, V(0.055, 0.04, 0.04) * k, navy, 'gear')
+    for x in (-1.0, 1.0):                                                                                  # side panels (the cummerbund)
+        prim('cube', spine + V(0.19 * x, 0.0, 0.05) * k, V(0.04, 0.17, 0.07) * k, navy, 'gear')
+    prim('sphere', spine + V(0, 0.07, 0.07) * k, V(0.13, 0.06, 0.05) * k, armor_hi, 'gear')                # a neck guard behind the helmet
+    arm = c['arm']
+    for sd, s in (('Left', lsh), ('Right', rsh)):                                                          # shoulder armour: two plates riding on each upper arm, just out from the joint
+        p = s + (wpos(arm, f'{sd}ForeArm') - s) * 0.2
+        for i in range(3):                                                                                 # three overlapping plates, each trimmed with a dark edge
+            z = (0.046 + 0.017 * i) * k
+            q = p + (wpos(arm, f'{sd}ForeArm') - s) * 0.07 * i
+            o = prim('sphere', q + V(0, 0, z), V(0.08 - 0.012 * i, 0.092 - 0.013 * i, 0.028) * k, armor_hi if i == 2 else armor, 'bone')
+            attach(arm, o, f'{sd}Arm')
+        strap(s + V(0, 0, 0.1 * k), spine + V(0, 0.08, 0.06) * k, 0.045 * k, navy)                          # the carrier's shoulder strap, over to the back panel
+    prim('cube', spine + V(0, 0.09, 0.05) * k, V(0.3, 0.07, 0.1) * k, navy, 'gear')                         # the carrier's back panel
+    prim('cube', spine + V(0, 0.2, -0.05) * k, V(0.3, 0.15, 0.26) * k, olive, 'gear')                      # the ammo box
+    prim('cube', spine + V(0, 0.2, 0.09) * k, V(0.3, 0.012, 0.01) * k, navy, 'gear')                       # its lid seam
+
+
+def gear_electrician(c):
+    hc, spine, lsh, rsh = c['hc'], c['spine'], c['lsh'], c['rsh']
+    hat = mat('hardhat', PAL['backup'])
+    stripe = mat('reflect', PAL['flash'], emit=True)
+    wire = mat('wire', (tone(PAL['warm'], 0.8), PAL['warm'], tone(PAL['warm'], 1.3)))
+    leather = mat('leather', (tone(ACCENT['leather'], 0.6), ACCENT['leather'], tone(ACCENT['leather'], 1.3)))
+    prim('sphere', hc + V(0, 0, 0.035), (0.106, 0.115, 0.088), hat, 'gear')                               # the hard hat
+    prim('cyl', hc + V(0, -0.01, 0.0), (0.14, 0.15, 0.011), mat('hatbrim', tone(PAL['backup'], 0.85)), 'gear')
+    for x in (-0.035, 0.035):                                                                             # two ribs over the top
+        prim('cube', hc + V(x, 0.0, 0.118), (0.011, 0.16, 0.011), mat('hatrib', tone(PAL['backup'], 0.9)), 'gear')
+    sp = spine + V(0, 0.2, -0.05)
+    plate = mat('reelplate', (PAL['void'], PAL['deep'], PAL['wall']))
+    prim('cube', sp + V(0, -0.02, 0.0), (0.3, 0.1, 0.2), plate, 'gear')                                    # a frame the reel is carried in
+    prim('cyl', sp + V(0, 0.01, 0.1), (0.135, 0.135, 0.03), mat('spool', PAL['warm']), 'gear')            # the cable reel, seen from above
+    prim('cyl', sp + V(0, 0.01, 0.112), (0.1, 0.1, 0.034), mat('spoolwound', (tone(PAL['warm'], 0.8), tone(PAL['warm'], 1.1), tone(PAL['warm'], 1.35))), 'gear')  # the cable wound on it
+    prim('cyl', sp + V(0, 0.01, 0.125), (0.042, 0.042, 0.04), mat('hub', PAL['wall']), 'gear')            # its hub
+    prim('cyl', sp + V(0, 0.01, 0.146), (0.014, 0.014, 0.01), mat('hubdot', PAL['metal']), 'gear')
+    for x in (-0.07, 0.07):                                                                               # reflective stripes
+        prim('cube', spine + V(x, 0.1, 0.03), (0.025, 0.02, 0.2), stripe, 'gear')
+    for s in (lsh, rsh):                                                                                  # tool pouches at the sides
+        prim('cube', spine + V(0.24 * side(s), 0.1, -0.03), (0.06, 0.1, 0.08), leather, 'gear')
+
+
+def gear_hood(c):
+    hc = c['hc']
+    cloth = mat('hood', ('#121a28', '#26324a', '#3a4a66'))
+    seam = mat('hoodseam', ('#1f2b42', '#34445f', '#4d6285'))
+    helmet(hc, cloth, seam, 0.112, 0.128, 0.078, skirt=0.075)                                              # the hood: a snug dome on straight sides, its hem flaring a little
+    prim('cube', hc + V(0, 0.01, 0.105), (0.009, 0.18, 0.009), seam, 'gear')                               # the seam over the top
+    chin_strap(hc, 0.112, mat('hoodstrap', ('#0a0f18', '#161f30', '#26324a')))                             # a chin strap
+
+
+def gear_beanie(c):
+    """the vent rat: a snug helmet in the shade's shape, but cut close to the head, with no flared lip (it has to slide through vents), a chin strap and a flat headlamp"""
+    hc = c['hc']
+    shell = mat('beanie', ACCENT['beanie'])
+    seam = mat('beanierib', (tone(ACCENT['beanie'], 0.6), tone(ACCENT['beanie'], 0.8), ACCENT['beanie']))
+    dark = mat('beaniedark', (PAL['void'], PAL['deep'], PAL['wall']))
+    prim('sphere', hc + V(0, 0.01, 0.022), (0.1, 0.103, 0.07), shell, 'gear')                              # the dome
+    prim('cyl', hc + V(0, 0.01, -0.012), (0.0995, 0.1025, 0.07), shell, 'gear')                            # straight sides down over the ears
+    prim('cyl', hc + V(0, 0.01, -0.046), (0.1015, 0.1045, 0.006), seam, 'gear')                            # a thin edge, flush with the sides
+    prim('cube', hc + V(0, 0.01, 0.092), (0.008, 0.15, 0.008), seam, 'gear')                               # the seam over the top
+    prim('cyl', hc + V(0, 0.01, 0.03), (0.1015, 0.1045, 0.008), dark, 'gear')                              # the lamp's strap, as thin as can be
+    prim('cube', hc + V(0, -0.0925, 0.03), (0.056, 0.01, 0.036), dark, 'gear')                             # the mounting plate, flat on the front
+    prim('cyl', hc + V(0, -0.1, 0.03), (0.024, 0.024, 0.014), mat('lamp', (PAL['wall'], PAL['metal'], tone(PAL['metal'], 1.3))), 'gear', rot=(math.pi / 2, 0, 0))  # the lamp's housing, a short drum
+    prim('cyl', hc + V(0, -0.1075, 0.03), (0.027, 0.027, 0.004), dark, 'gear', rot=(math.pi / 2, 0, 0))    # its bezel
+    prim('cyl', hc + V(0, -0.1105, 0.03), (0.02, 0.02, 0.004), mat('lampglow', PAL['flash'], emit=True), 'gear', rot=(math.pi / 2, 0, 0))  # the lens
+    prim('cyl', hc + V(0, -0.113, 0.03), (0.008, 0.008, 0.003), mat('lampcore', PAL['text'], emit=True), 'gear', rot=(math.pi / 2, 0, 0))  # and its bright centre
+    prim('cube', hc + V(0, -0.1, 0.0525), (0.012, 0.012, 0.01), dark, 'gear')                            # the switch on top
+    for x in (-1.0, 1.0):                                                                                  # clamp bolts at each side of the plate
+        prim('cyl', hc + V(0.027 * x, -0.0985, 0.03), (0.004, 0.004, 0.006), mat('lampbolt', PAL['metal']), 'gear', rot=(math.pi / 2, 0, 0))
+    chin_strap(hc, 0.1, dark)                                                                              # a chin strap
+
+
+
+def gear_nvg(c):
+    hc, spine = c['hc'], c['spine']
+    body = mat('nvgbody', PAL['i2'])
+    prim('sphere', hc + V(0, 0.005, 0.01), (0.115, 0.125, 0.11), mat('balaclava', (PAL['i0'], PAL['i1'], PAL['i2'])), 'gear')
+    prim('cube', hc + V(0, -0.1, 0.04), (0.1, 0.05, 0.04), body, 'gear')                                  # the goggles
+    for x in (-0.03, 0.03):
+        prim('cyl', hc + V(x, -0.135, 0.04), (0.019, 0.019, 0.04), body, 'gear', rot=(math.pi / 2, 0, 0))   # the tubes
+        prim('cyl', hc + V(x, -0.158, 0.04), (0.014, 0.014, 0.008), mat('nvglens', PAL['nv'], emit=True), 'gear', rot=(math.pi / 2, 0, 0))
+    bag = spine + V(0, 0.17, -0.06)
+    prim('cube', bag, (0.36, 0.15, 0.2), mat('duffel', ACCENT['duffel']), 'gear')                          # the duffel
+    for x in (-0.09, 0.09):
+        prim('cube', bag + V(x, 0, 0.102), (0.03, 0.155, 0.012), mat('nvgstrap', PAL['i0']), 'gear')      # its straps
+
+
+GEAR = dict(cap=gear_cap, medic=gear_medic, gunner=gear_gunner, electrician=gear_electrician, hood=gear_hood, beanie=gear_beanie, nvg=gear_nvg)
+
+
 # ------------------------------------------------------------------ build one role
 def build(role):
     cfg = dict(ROLES[role], _role=role)
@@ -608,7 +781,7 @@ def build(role):
         if not b.name.startswith('mixamorig:'):
             b.name = 'mixamorig:' + b.name
     arm.rotation_mode = 'XYZ'
-    k = cfg.get('scale', 1.0)
+    k = ROLE_K = cfg.get('scale', 1.0)
     arm.scale = (k, k, k)
     sc = bpy.context.scene
     acts = bpy.data.actions
@@ -696,48 +869,12 @@ def build(role):
 
     # ---- role gear ----
     n0 = len(PROPS)
-    g = cfg['gear']
-    if g == 'cap':
-        prim('sphere', hc + Vector((0, 0.01, 0.01)), (0.108, 0.115, 0.08), navy, 'gear')
-        prim('cyl', hc + Vector((0, -0.11, 0.0)), (0.08, 0.07, 0.008), mat('brim', (PAL['void'], PAL['deep'], PAL['g0'])), 'gear', rot=(math.radians(-12), 0, 0))
-        prim('sphere', hc + Vector((0, -0.075, 0.07)), (0.016, 0.01, 0.016), mat('badge', PAL['backup']), 'gear')
-    elif g == 'medic':
-        white = mat('medwhite', (tone(PAL['text'], 0.78), PAL['text'], '#fbf9f3'))
-        red = mat('medred', PAL['medic'])
-        prim('sphere', hc + Vector((0, 0.005, 0.02)), (0.122, 0.132, 0.1), mat('medhelm', (PAL['g0'], PAL['g1'], PAL['g2'])), 'gear')
-        prim('cyl', hc + Vector((0, 0.005, -0.02)), (0.13, 0.14, 0.012), mat('medhelmrim', (PAL['void'], PAL['g0'], PAL['g1'])), 'gear')
-        prim('cube', spine + Vector((0, 0.17, -0.05)), (0.3, 0.12, 0.3), white, 'gear')
-        prim('cube', spine + Vector((0, 0.17, 0.103)), (0.05, 0.16, 0.012), red, 'gear')
-        prim('cube', spine + Vector((0, 0.17, 0.107)), (0.16, 0.05, 0.012), red, 'gear')
-    elif g == 'gunner':
-        armor = mat('armor', (PAL['g0'], PAL['armor'], PAL['g2']))
-        prim('sphere', hc, (0.12, 0.13, 0.11), armor, 'gear')
-        prim('cube', hc + Vector((0, -0.11, 0.06)), (0.07, 0.03, 0.035), navy, 'gear')
-        prim('cube', spine + Vector((0, -0.1, 0.0)), (0.3, 0.08, 0.32), armor, 'gear')
-        for s in (lsh, rsh):
-            prim('sphere', s + Vector((0.02 if s.x > 0 else -0.02, 0.01, 0.04)), (0.075, 0.085, 0.04), armor, 'gear')
-        prim('cube', spine + Vector((0, 0.17, -0.05)), (0.28, 0.14, 0.3), mat('ammo', (PAL['wall'], PAL['metal'], tone(PAL['metal'], 1.25))), 'gear')
-    elif g == 'electrician':
-        prim('sphere', hc + Vector((0, 0, 0.04)), (0.12, 0.13, 0.1), mat('hardhat', PAL['backup']), 'gear')
-        prim('cyl', hc + Vector((0, -0.01, 0.0)), (0.16, 0.17, 0.012), mat('hatbrim', tone(PAL['backup'], 0.85)), 'gear')
-        prim('cyl', spine + Vector((0, 0.18, -0.02)), (0.13, 0.13, 0.14), mat('spool', PAL['warm']), 'gear', rot=(0, math.pi / 2, 0))
-        prim('cyl', spine + Vector((0, 0.18, -0.02)), (0.05, 0.05, 0.2), mat('hub', PAL['wall']), 'gear', rot=(0, math.pi / 2, 0))
-        for x in (-0.07, 0.07):
-            prim('cube', spine + Vector((x, 0.1, 0.03)), (0.025, 0.02, 0.2), mat('reflect', PAL['flash'], emit=True), 'gear')
-    elif g == 'hood':
-        prim('sphere', hc + Vector((0, 0.025, 0.01)), (0.13, 0.15, 0.12), mat('hood', ('#121a28', '#26324a', '#3a4a66')), 'gear')
-    elif g == 'beanie':
-        prim('sphere', hc + Vector((0, 0.005, 0.035)), (0.113, 0.12, 0.085), mat('beanie', ACCENT['beanie']), 'gear')
-        prim('cube', hc + Vector((0, -0.1, 0.05)), (0.04, 0.03, 0.025), mat('lamp', PAL['text']), 'gear')
-        prim('cyl', hc + Vector((0, -0.118, 0.05)), (0.01, 0.01, 0.01), mat('lampglow', PAL['flash'], emit=True), 'gear', rot=(math.pi / 2, 0, 0))
-    elif g == 'nvg':
-        prim('sphere', hc + Vector((0, 0.005, 0.01)), (0.115, 0.125, 0.11), mat('balaclava', (PAL['i0'], PAL['i1'], PAL['i2'])), 'gear')
-        prim('cube', hc + Vector((0, -0.1, 0.04)), (0.1, 0.05, 0.04), mat('nvgbody', PAL['i2']), 'gear')
-        for x in (-0.03, 0.03):
-            prim('cyl', hc + Vector((x, -0.135, 0.04)), (0.017, 0.017, 0.03), mat('nvglens', PAL['nv'], emit=True), 'gear', rot=(math.pi / 2, 0, 0))
-        prim('cube', spine + Vector((0, 0.17, -0.06)), (0.36, 0.15, 0.2), mat('duffel', ACCENT['duffel']), 'gear')
-    for o, _ in PROPS[n0:]:
-        on_head = o.matrix_world.translation.z > lsh.z + 0.08
+    ctx = dict(hc=hc, spine=spine, hips=hips, lsh=lsh, rsh=rsh, k=ROLE_K, arm=arm)
+    GEAR[cfg['gear']](ctx)
+    for o, tag in PROPS[n0:]:
+        if tag == 'bone':
+            continue #(already on its bone)
+        on_head = tag == 'head' or o.matrix_world.translation.z > lsh.z + 0.08
         if on_head:
             o.location = hc + (o.location - hc) * hk
             o.scale = (hk, hk, hk)
@@ -899,6 +1036,8 @@ def build(role):
         for i in range(n):
             arm.rotation_euler = (0, 0, 0)
             arm.location = (0, 0, 0)
+            kk = 1.0 if st['layer'] == 'legs' else ROLE_K #the legs are the guard's, whatever the role's build: only the body above them is bigger or smaller
+            arm.scale = (kk, kk, kk)
             if st.get('mix'):
                 yaw_deg = mix_pose(st['mix'](i, n), st['layer'])
             else:

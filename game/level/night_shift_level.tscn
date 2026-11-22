@@ -7,6 +7,17 @@
 [ext_resource type="Script" path="res://game/utility/utility_consoles.gd" id="5_consoles"]
 [ext_resource type="Script" path="res://game/blood/blood_splats.gd" id="6_blood"]
 [ext_resource type="Script" path="res://game/hitscan/hitscan_manager.gd" id="7_hitscan"]
+[ext_resource type="Script" path="res://game/audio/sound_system.gd" id="8_sound"]
+[ext_resource type="Resource" path="res://game/audio/acoustics.tres" id="9_acoustics"]
+[ext_resource type="Script" path="res://game/audio/acoustic_map.gd" id="10_acoustic_map"]
+[ext_resource type="Resource" path="res://game/audio/definitions/door_open.tres" id="11_door_open"]
+[ext_resource type="Resource" path="res://game/audio/definitions/door_close.tres" id="12_door_close"]
+[ext_resource type="Resource" path="res://game/audio/definitions/door_locked.tres" id="13_door_locked"]
+[ext_resource type="Resource" path="res://game/audio/definitions/bullet_wall.tres" id="14_bullet_wall"]
+[ext_resource type="Resource" path="res://game/audio/definitions/bullet_flesh.tres" id="15_bullet_flesh"]
+[ext_resource type="Resource" path="res://game/audio/definitions/kill.tres" id="16_kill"]
+[ext_resource type="Resource" path="res://game/audio/definitions/blood_splat.tres" id="17_blood_splat"]
+[ext_resource type="Resource" path="res://game/audio/definitions/blood_drip.tres" id="18_blood_drip"]
 
 [node name="Level" type="Node2D"]
 script = ExtResource("1_level")
@@ -39,3 +50,20 @@ facility = NodePath("../FacilityMap")
 script = ExtResource("5_consoles")
 facility = NodePath("../FacilityMap")
 control = NodePath("../FacilityControl")
+
+[node name="Sound" type="Node" parent="." node_paths=PackedStringArray("facility", "acoustic_map")]
+script = ExtResource("8_sound")
+acoustics = ExtResource("9_acoustics")
+facility = NodePath("../FacilityMap")
+acoustic_map = NodePath("AcousticMap")
+bullet_wall = ExtResource("14_bullet_wall")
+bullet_flesh = ExtResource("15_bullet_flesh")
+kill = ExtResource("16_kill")
+blood_splat = ExtResource("17_blood_splat")
+blood_drip = ExtResource("18_blood_drip")
+door_open = ExtResource("11_door_open")
+door_close = ExtResource("12_door_close")
+door_locked = ExtResource("13_door_locked")
+
+[node name="AcousticMap" type="Node" parent="Sound"]
+script = ExtResource("10_acoustic_map")

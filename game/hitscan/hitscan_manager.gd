@@ -11,6 +11,7 @@ extends Node2D
 
 signal shot_hit(shot : Dictionary, target : Node) #lobby only
 signal hit_confirmed(damage : float) #on the shooter's own peer
+signal wall_hit(at : Vector2) #a shot ended on a wall (on every peer that is told of the shot: the impact sound)
 
 @export var world_collision_mask : int = 10 #walls and closed doors stop a shot
 @export var duplicate_window_ticks : int = 8 #a shot this close in time to the owner's last one is the same shot again
@@ -74,6 +75,8 @@ func fire(owner_node : Node, owner_id : int, origin : Vector2, direction : Vecto
 
 func _show(origin : Vector2, end : Vector2, color : Color, on_wall : bool) -> void:
 	shots_seen += 1
+	if on_wall:
+		wall_hit.emit(end) #every peer, whether or not it can see the shot: the sound is heard through the map
 	var tracer : ShotTracer = ShotTracer.new()
 	add_child(tracer)
 	tracer.visibility = sight

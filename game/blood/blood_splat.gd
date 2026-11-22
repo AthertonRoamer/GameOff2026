@@ -28,10 +28,10 @@ var _radius : float = 8.0
 
 
 ## Makes the splat's shape for this kind, from the seed, at the node's position (so it must be in the tree there). direction: the way a HIT was going.
-func start(splat_kind : int, direction : Vector2, seed : int) -> void:
+func start(splat_kind : int, direction : Vector2, splat_seed : int) -> void:
 	kind = splat_kind
 	var rng : RandomNumberGenerator = RandomNumberGenerator.new()
-	rng.seed = seed
+	rng.seed = splat_seed
 	var dir : Vector2 = direction.normalized() if direction != Vector2.ZERO else Vector2.from_angle(rng.randf() * TAU)
 	var stretch : float = 1.0
 	var drop_count : int = 0

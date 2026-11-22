@@ -62,16 +62,22 @@ func quiesce() -> void:
 	if multiplayer.multiplayer_peer == null or multiplayer.multiplayer_peer.get_connection_status() == MultiplayerPeer.CONNECTION_DISCONNECTED:
 		return #this peer already left, so nothing of ours is being sent and the synchronizers cannot be reconfigured
 	for player in players.values():
-		if not is_instance_valid(player):
-			continue
-		for synchronizer in player.find_children("*", "RollbackSynchronizer", true, false):
-			synchronizer.state_properties = [] as Array[String]
-			synchronizer.input_properties = [] as Array[String]
-			synchronizer.process_settings()
-		for synchronizer in player.find_children("*", "StateSynchronizer", true, false):
-			synchronizer.properties = [] as Array[String]
-			synchronizer.process_settings()
+		if is_instance_valid(player):
+			_silence(player)
 
+
+##Stops one player's synchronizers sending state and input (see quiesce()).
+func _silence(player : Node) -> void:
+	for synchronizer in player.find_children("*", "RollbackSynchronizer", true, false):
+		synchronizer.state_properties = [] as Array[String]
+		synchronizer.input_properties = [] as Array[String]
+		synchronizer.process_settings()
+	for synchronizer in player.find_children("*", "StateSynchronizer", true, false):
+		synchronizer.properties = [] as Array[String]
+		synchronizer.process_settings()
+
+
+const LEAVER_LINGER_SECONDS : float = 2.0 ## how long a player who left stays in the tree, silent and out of the game, for packets already on their way to it
 
 func remove_player(member_id : int) -> void:
 	if not players.has(member_id):
@@ -80,8 +86,17 @@ func remove_player(member_id : int) -> void:
 	players.erase(member_id)
 	if player == local_player:
 		local_player = null
-	if is_instance_valid(player):
-		player.queue_free()
+	if not is_instance_valid(player):
+		return
+	#The other peers (the lobby, above all) may still send this player's state for a moment: freeing the node at once logs "Node not found" RPC errors for every packet.
+	#So it stays a little, doing nothing, invisible and out of the physics, and is freed when the last packets have come.
+	_silence(player)
+	if player is CanvasItem:
+		(player as CanvasItem).visible = false
+	if player is CollisionObject2D:
+		(player as CollisionObject2D).collision_layer = 0
+		(player as CollisionObject2D).collision_mask = 0
+	get_tree().create_timer(LEAVER_LINGER_SECONDS).timeout.connect(player.queue_free)
 
 
 func _on_member_left(member : LobbyMember) -> void:

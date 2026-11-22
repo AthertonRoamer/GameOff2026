@@ -14,6 +14,8 @@ const SLIDE_STEP : float = 3.0 #the rings of places tried by sliding are this fa
 const RINGS : int = 20 #how many widening rings of places are tried when the player stood against a wall
 
 var landing : Vector2 = Vector2.ZERO #where the middle of the body ends up, in the skin's space (set when it falls)
+var axis : Vector2 = Vector2.ZERO #from the middle of the body to one end of it, in the skin's space (set when it falls)
+var half_width : float = 0.0 #how wide the body is (half), in the skin's space
 var _tween : Tween #the body (and its shadow) sliding along with the fall
 var _shadow_rest : Array = [] #the shadow's position and scale while standing, put back on revive
 
@@ -93,19 +95,14 @@ func _follow(sheet : String, mirrored : bool, source_angle_deg : float) -> void:
 	landing = centre + pull
 	if _tween != null and _tween.is_valid():
 		_tween.kill()
-	_tween = create_tween().set_parallel(true)
-	var time : float = data["frames"] / maxf(1.0, data["fps"])
-	if not pull.is_zero_approx():
+	if not pull.is_zero_approx(): #(a tween with nothing to do is an error)
+		_tween = create_tween()
+		var time : float = data["frames"] / maxf(1.0, data["fps"])
 		_tween.tween_property(full, "position", pull, time).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	var shadow := _skin.get_node_or_null("Shadow") as Sprite2D
-	if shadow != null:
-		shadow.visible = true
-		if _shadow_rest.is_empty():
-			_shadow_rest = [shadow.position, shadow.scale]
-		var shape : Array = data.get("end_shadow", [0.0, 128.0, 128.0]) #the body's direction, length and width: the shadow lies along it
-		shadow.rotation = (PI - shape[0] if mirrored else shape[0]) + full.rotation
-		_tween.tween_property(shadow, "position", centre + pull, time).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-		_tween.tween_property(shadow, "scale", Vector2(shape[1] * 1.2, shape[2] * 1.3) / float(shadow.texture.get_width()), time)
+	#(no blob of shadow under a fallen body: it showed as a dark circle wherever a flashlight lit the floor round it)
+	var shape : Array = data.get("end_shadow", [0.0, 128.0, 128.0]) #the body's direction, length and width
+	half_width = shape[2] * 0.5
+	axis = Vector2.from_angle((PI - shape[0] if mirrored else shape[0]) + full.rotation) * shape[1] * 0.5
 
 
 ## {turn (radians to add to the fall's rotation), pull (skin space, how far to slide it)} for a body with this outline falling at this rotation: no turn and no

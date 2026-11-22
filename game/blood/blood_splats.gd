@@ -9,6 +9,8 @@ extends Node2D
 ## The lobby decides every hit and bleeding splat (its position and a random seed) and tells every peer, so each peer draws the same splat; a splat then lives ten
 ## seconds or so. Offline (the playground) the local peer is the lobby. The splats keep off walls (see BloodSplat).
 
+signal splat_made(kind : int, at : Vector2) ## every splat that lands, on every peer (the sound of it, see SoundSystem)
+
 const THROW_DISTANCE : float = 15.0 #how far behind the player a hit's splash is centred, in world pixels
 
 @export var max_splats : int = 150 #the oldest goes first
@@ -72,17 +74,18 @@ func _process(delta : float) -> void:
 
 
 ## Lobby: makes a splat here and on every other peer.
-func _make(kind : int, at : Vector2, direction : Vector2, seed : int) -> void:
-	_add(kind, at, direction, seed)
+func _make(kind : int, at : Vector2, direction : Vector2, splat_seed : int) -> void:
+	_add(kind, at, direction, splat_seed)
 	if not multiplayer.get_peers().is_empty():
-		_splat_remote.rpc(kind, at, direction, seed)
+		_splat_remote.rpc(kind, at, direction, splat_seed)
 
 
-func _add(kind : int, at : Vector2, direction : Vector2, seed : int) -> BloodSplat:
+func _add(kind : int, at : Vector2, direction : Vector2, splat_seed : int) -> BloodSplat:
 	var splat : BloodSplat = BloodSplat.new()
 	add_child(splat)
 	splat.global_position = at
-	splat.start(kind, direction, seed)
+	splat.start(kind, direction, splat_seed)
+	splat_made.emit(kind, at)
 	_splats.append(splat)
 	_splats.assign(_splats.filter(func(s) -> bool: return is_instance_valid(s))) #(untyped: a splat that faded away is a freed object, which a typed argument refuses)
 	while _splats.size() > max_splats:
@@ -100,6 +103,6 @@ func _is_lobby() -> bool:
 
 
 @rpc("authority", "call_remote", "reliable")
-func _splat_remote(kind : int, at : Vector2, direction : Vector2, seed : int) -> void:
+func _splat_remote(kind : int, at : Vector2, direction : Vector2, splat_seed : int) -> void:
 	if _active:
-		_add(kind, at, direction, seed)
+		_add(kind, at, direction, splat_seed)

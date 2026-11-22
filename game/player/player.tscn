@@ -12,6 +12,9 @@
 [ext_resource type="Script" uid="uid://chr4omg2hy3yu" path="res://addons/netfox/rewindable-action.gd" id="7_action"]
 [ext_resource type="Script" uid="uid://3lbngqcexe0l" path="res://addons/netfox/state-synchronizer.gd" id="8_state"]
 [ext_resource type="Script" uid="uid://dsac5hy6upn17" path="res://game/player/player_interactor.gd" id="9_interactor"]
+[ext_resource type="Script" path="res://game/audio/footsteps.gd" id="10_footsteps"]
+[ext_resource type="Resource" path="res://game/audio/definitions/footstep_walk.tres" id="11_walk"]
+[ext_resource type="Resource" path="res://game/audio/definitions/footstep_run.tres" id="12_run"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_body"]
 radius = 12.0
@@ -70,3 +73,9 @@ script = ExtResource("7_action")
 
 [node name="Interactor" type="Node" parent="." unique_id=333458300]
 script = ExtResource("9_interactor")
+
+[node name="Footsteps" type="Node" parent="." node_paths=PackedStringArray("legs")]
+script = ExtResource("10_footsteps")
+legs = NodePath("../Skin/Legs")
+walk = ExtResource("11_walk")
+run = ExtResource("12_run")

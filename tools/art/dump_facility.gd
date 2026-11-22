@@ -19,7 +19,12 @@ func _ready() -> void:
 			rects.append("%d,%d,%d,%d" % [rect.position.x, rect.position.y, rect.end.x - 1, rect.end.y - 1])
 		rects.sort()
 		lines.append("room %s name=%s kind=%s function=%s exterior=%s rects=%s" % [id, room["name"], room["kind"], room["function"], room["exterior"], " ".join(rects)])
-	var floor_keys : Array = map.floor_cells.keys()
+	map.paint_all()
+	var floor_keys : Array = []
+	for rect : Rect2i in map.floor_rects:
+		for y in range(rect.position.y, rect.end.y):
+			for x in range(rect.position.x, rect.end.x):
+				floor_keys.append(Vector2i(x, y))
 	floor_keys.sort()
 	var floor_text : PackedStringArray = []
 	for cell : Vector2i in floor_keys:
