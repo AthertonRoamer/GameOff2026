@@ -17,6 +17,7 @@ const CONSOLE_REACH_SLACK : float = 1.5 #the lobby's view of a player can be a f
 @onready var control : FacilityControl = $FacilityControl
 @onready var consoles : UtilityConsoles = $UtilityConsoles
 @onready var blood : BloodSplats = $BloodSplats #the blood on the floor (above the floor, below the bodies)
+@onready var sound : SoundSystem = $Sound #plays footsteps, shots and doors for the local player, shaped by the map (see game/audio)
 
 ##(peer_id : int) -> Player, or null. Set by the scene that spawns the players.
 var player_lookup : Callable = Callable()

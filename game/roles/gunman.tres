@@ -9,4 +9,5 @@
 script = ExtResource("1_role")
 role_name = "Gunman"
 color = Color(1, 0.55, 0.1, 1)
+skin = "gunner"
 starting_items = Array[ExtResource("2_item")]([ExtResource("3_pistol"), ExtResource("4_rifle")])

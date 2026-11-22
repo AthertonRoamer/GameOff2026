@@ -280,11 +280,34 @@ func request_begin_game() -> void:
 			trigger_begin_game()
 
 	
+var match_settings : Dictionary = {} ## what the host chose for the next match (see MatchSettings). The master lobby sends it to every peer as the match begins
+
+
+func trigger_set_match_settings(settings : Dictionary) -> void: #from the host to the master lobby
+	if is_master:
+		match_settings = settings
+	else:
+		set_match_settings.rpc_id(1, settings)
+
+
+@rpc("reliable", "any_peer")
+func set_match_settings(settings : Dictionary) -> void:
+	if is_master and is_member_authority(multiplayer.get_remote_sender_id()):
+		match_settings = settings
+
+
+@rpc("reliable")
+func receive_match_settings(settings : Dictionary) -> void:
+	if not is_master:
+		match_settings = settings
+
+
 func trigger_begin_game() -> void:
 	if is_master:
 		if game_manager.in_game:
 			push_warning("trigger_begin_game() called on lobby while lobby is already in game")
 			return
+		receive_match_settings.rpc(match_settings) #(first: reliable messages arrive in order, so every peer has them before the game loads)
 		begin_game.rpc()
 	
 	

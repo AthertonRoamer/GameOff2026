@@ -24,6 +24,7 @@ const HALO_ENERGY : float = 0.55
 const MAX_BODY_GAIN : float = 2.4 #the most a light brightens a body, as a multiple of its colours in the dark (the colours stay as they are)
 const BODY_GAIN_SOFTNESS : float = 4.0 #how quickly a body reaches that: bigger is gentler
 const MAX_BODIES : int = 8 #how many players the shader leaves a hole round (the nearest ones)
+const MAX_LYING : int = 4 #and how many fallen bodies it leaves a body-shaped hole along
 
 @export var view_half_angle_deg : float = 55.0 #how wide the view reaches forward, to either side of the way the mouse is
 @export var view_range : float = 900.0 #in world pixels: further than the screen
@@ -51,6 +52,9 @@ var _facing : float = 0.0
 var _alpha : Dictionary = {} #player -> how seen their body is now, 0 to 1
 var _lights : Dictionary = {} #player -> {"beam": RemoteBeam, "glow": RemoteBeam}
 var _bodies : PackedVector2Array = PackedVector2Array() #where the players are, for the shader's holes
+var _lying_a : PackedVector2Array = PackedVector2Array() #the fallen bodies' ends and half widths, for the shader's body-shaped holes
+var _lying_b : PackedVector2Array = PackedVector2Array()
+var _lying_radius : PackedFloat32Array = PackedFloat32Array()
 var _layer : CanvasLayer
 
 
@@ -75,15 +79,15 @@ func _process(delta : float) -> void:
 		if not _lights.has(player):
 			_lights[player] = {"beam": _add_light(), "glow": _add_light()}
 			player.paint_flashlight_in_view()
-		var lighting : Dictionary = _lighting_of(me, player)
+		player.flashlight.set_painted(not sees_all) #(a dead local player sees by the scene's own lights: nothing is drawn over the bodies)
+		var lighting : Dictionary = {"lit": true, "tint": Color.WHITE} if sees_all else _lighting_of(me, player)
 		var target : float = 1.0 if sees_all else _body_seen(me, player, lighting["lit"])
 		var alpha : float = move_toward(_alpha.get(player, target), target, delta / maxf(fade_seconds, 0.001))
 		_alpha[player] = alpha
 		player.set_body_seen(alpha, lighting["tint"])
 		player.set_muzzle_seen(sees_all or visibility(player.global_position) > 0.3)
-		_update_lights(player)
-	if not sees_all:
-		me.set_body_seen(1.0, _lighting_of(me, me)["tint"]) #(the local player's own body is lit by the others' drawn lights too)
+		_update_lights(player, sees_all)
+	me.set_body_seen(1.0, Color.WHITE if sees_all else _lighting_of(me, me)["tint"]) #(the local player's own body is lit by the others' drawn lights too, alive or fallen)
 
 
 func _add_light() -> RemoteBeam:
@@ -172,24 +176,39 @@ func _refine(space : PhysicsDirectSpaceState2D, origin : Vector2, angle_a : floa
 	_refine(space, origin, angle_mid, point_mid, angle_b, point_b, depth - 1, reach_at, out)
 
 
-## Where the players are (the nearest few, to the local player): the shader leaves a soft hole round each in the drawn lights.
+## Where the players are (the nearest few, to the local player): the shader leaves a soft hole round each in the drawn lights, so the body is lit by its own brightening only.
+## A fallen body is long and lies away from where its player stood: its hole is a capsule along it (see `_lying`).
 func _update_bodies() -> void:
 	var all : Array = players.call()
 	all = all.filter(func(p) -> bool: return is_instance_valid(p))
-	all.sort_custom(func(a : Player, b : Player) -> bool: return a.global_position.distance_squared_to(_apex) < b.global_position.distance_squared_to(_apex))
+	all.sort_custom(func(a : Player, b : Player) -> bool: return a.skin.body_position().distance_squared_to(_apex) < b.skin.body_position().distance_squared_to(_apex))
 	_bodies = PackedVector2Array()
-	for player : Player in all.slice(0, MAX_BODIES):
-		_bodies.append(player.global_position)
+	_lying_a = PackedVector2Array()
+	_lying_b = PackedVector2Array()
+	_lying_radius = PackedFloat32Array()
+	for player : Player in all:
+		var at : Vector2 = player.skin.body_position()
+		var axis : Vector2 = player.skin.body_axis()
+		if axis.is_zero_approx():
+			if _bodies.size() < MAX_BODIES:
+				_bodies.append(at)
+		elif _lying_a.size() < MAX_LYING:
+			_lying_a.append(at - axis)
+			_lying_b.append(at + axis)
+			_lying_radius.append(player.skin.body_half_width())
 	while _bodies.size() < MAX_BODIES:
 		_bodies.append(Vector2(1.0e7, 1.0e7))
-
+	while _lying_a.size() < MAX_LYING:
+		_lying_a.append(Vector2(1.0e7, 1.0e7))
+		_lying_b.append(Vector2(1.0e7, 1.0e7))
+		_lying_radius.append(1.0)
 
 ## Sets up the drawn beam and glow of another player's flashlight for this frame: their shapes (where the light reaches, cut to the view) and the shader's numbers.
-func _update_lights(player : Player) -> void:
+func _update_lights(player : Player, sees_all : bool) -> void:
 	var lights : Dictionary = _lights[player]
 	var beam : RemoteBeam = lights["beam"]
 	var glow : RemoteBeam = lights["glow"]
-	if not player.flashlight.on or not player.is_alive():
+	if sees_all or not player.flashlight.on or not player.is_alive():
 		beam.polygons = []
 		glow.polygons = []
 		return
@@ -233,16 +252,20 @@ func _set_view_uniforms(shader_material : ShaderMaterial) -> void:
 	shader_material.set_shader_parameter("fade_start", fade_start)
 	shader_material.set_shader_parameter("bodies", _bodies)
 	shader_material.set_shader_parameter("body_count", MAX_BODIES)
+	shader_material.set_shader_parameter("lying_a", _lying_a)
+	shader_material.set_shader_parameter("lying_b", _lying_b)
+	shader_material.set_shader_parameter("lying_radius", _lying_radius)
 
 
 ## How much of another player's body is seen: very close and unblocked, or inside the view and lit.
 func _body_seen(me : Player, other : Player, lit : bool) -> float:
+	var at : Vector2 = other.skin.body_position() #(a fallen body lies away from where its player stood)
 	var space : PhysicsDirectSpaceState2D = get_world_2d().direct_space_state
 	var near : float = 0.0
-	var distance : float = me.global_position.distance_to(other.global_position)
-	if distance <= near_radius and space.intersect_ray(PhysicsRayQueryParameters2D.create(me.global_position, other.global_position, WALLS)).is_empty():
+	var distance : float = me.global_position.distance_to(at)
+	if distance <= near_radius and space.intersect_ray(PhysicsRayQueryParameters2D.create(me.global_position, at, WALLS)).is_empty():
 		near = 1.0 - smoothstep(near_radius * 0.6, near_radius, distance)
-	var seen_lit : float = visibility(other.global_position) if lit else 0.0
+	var seen_lit : float = visibility(at) if lit else 0.0
 	return maxf(near, seen_lit)
 
 
@@ -250,16 +273,17 @@ func _body_seen(me : Player, other : Player, lit : bool) -> float:
 ## its beam with nothing solid between, "tint": what the drawn lights multiply their colours by}. Only the other players' flashlights tint a body: the local player's own beam is
 ## a scene light, which already brightens what it falls on, the way the drawn ones are made to look like.
 func _lighting_of(me : Player, other : Player) -> Dictionary:
+	var at : Vector2 = other.skin.body_position()
 	var lit : bool = false
 	var added : Color = Color(0, 0, 0, 0) #the light that falls on them, in the scene lights' units
 	for holder : Player in players.call():
 		if not is_instance_valid(holder) or not holder.flashlight.on or not holder.is_alive():
 			continue
 		var origin : Vector2 = holder.flashlight.global_position
-		var offset : Vector2 = other.global_position - origin
+		var offset : Vector2 = at - origin
 		var distance : float = offset.length()
-		var glow : float = 1.0 - smoothstep(0.0, halo_radius, holder.global_position.distance_to(other.global_position))
-		var in_glow : bool = holder.global_position.distance_to(other.global_position) <= halo_radius
+		var glow : float = 1.0 - smoothstep(0.0, halo_radius, holder.global_position.distance_to(at))
+		var in_glow : bool = holder.global_position.distance_to(at) <= halo_radius
 		var beam : float = 0.0 #how strong the beam is on them, 0 to 1, as the scene's beam light would have it
 		var in_beam : bool = false
 		if distance <= beam_range + body_radius:
@@ -273,7 +297,7 @@ func _lighting_of(me : Player, other : Player) -> Dictionary:
 				beam = 1.0 if distance <= body_radius else along * side
 		if not (in_glow or in_beam):
 			continue
-		if holder != other and not get_world_2d().direct_space_state.intersect_ray(PhysicsRayQueryParameters2D.create(origin, other.global_position, WALLS)).is_empty():
+		if holder != other and not get_world_2d().direct_space_state.intersect_ray(PhysicsRayQueryParameters2D.create(origin, at, WALLS)).is_empty():
 			continue
 		lit = true
 		if holder != me:

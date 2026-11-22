@@ -1,0 +1,45 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://game/match_setup/match_setup_panel.gd" id="1_panel"]
+
+[node name="MatchSetupPanel" type="VBoxContainer"]
+script = ExtResource("1_panel")
+
+[node name="Title" type="Label" parent="."]
+layout_mode = 2
+text = "Match setup"
+
+[node name="MapRow" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MapRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Map"
+
+[node name="Map" type="OptionButton" parent="MapRow"]
+custom_minimum_size = Vector2(170, 0)
+layout_mode = 2
+
+[node name="ModeRow" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="ModeRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Game mode"
+
+[node name="Mode" type="OptionButton" parent="ModeRow"]
+custom_minimum_size = Vector2(170, 0)
+layout_mode = 2
+
+[node name="DebugRow" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="DebugRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Launch with debug"
+
+[node name="Debug" type="CheckButton" parent="DebugRow"]
+layout_mode = 2

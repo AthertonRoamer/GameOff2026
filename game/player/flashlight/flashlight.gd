@@ -40,6 +40,13 @@ func paint_instead() -> void:
 	set_on(on)
 
 
+## Draws it (true) or lets the scene light it (false): a dead local player has no view to cut the beam to, so the real lights show the facility exactly as they do for everyone else.
+func set_painted(value : bool) -> void:
+	if painted != value:
+		painted = value
+		set_on(on)
+
+
 func set_on(value : bool) -> void:
 	on = value
 	if is_node_ready():

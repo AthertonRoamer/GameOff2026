@@ -24,6 +24,8 @@ const DEAD_Z : int = -10 #z_index of a dead player: above the floor (FacilityMap
 @onready var skin : NightShiftCharacter = $Skin
 @onready var flashlight : Flashlight = $Skin/Torso/Lamp/Flashlight #the shoulder lamp's beam; the lamp is on the torso, so it follows the aim
 @onready var interactor : PlayerInteractor = $Interactor #uses consoles and other interactables (local player only)
+var footsteps : Footsteps: #makes a step sound as each foot comes down, on every peer (a getter, as the game connects to it before the player is in the tree)
+	get: return $Footsteps
 
 var lag_compensator : LagCompensator
 var projectile_manager : ProjectileManager
@@ -63,6 +65,8 @@ var health : float = starting_health:
 
 func _ready() -> void:
 	_derive_movement()
+	if role != null:
+		skin.use_skin(role.skin, role.legs_tint)
 	_shown_health = health #(its initial value came before starting_health was set: the first hit was not noticed)
 	camera.enabled = input.is_multiplayer_authority()
 	if name_display != null:
@@ -85,6 +89,7 @@ func change_role(new_role : Role) -> void:
 	if new_role == null:
 		return
 	new_role.apply(self)
+	skin.use_skin(new_role.skin, new_role.legs_tint)
 	_derive_movement()
 	inventory.set_items(starting_items)
 

@@ -3,6 +3,7 @@ extends CanvasLayer
 ##Shows the locally-controlled player's health and inventory. Call bind_player() with that one
 ##player once it spawns (Game only calls this for spawner.local_player, never for remote players).
 
+@onready var sound_cue : SoundCue = $SoundCue #the arcs at the edge of the screen that point to where a sound came from
 @onready var health_bar : ProgressBar = $HealthBar
 @onready var slots_box : HBoxContainer = $InventorySlots
 @onready var interact_prompt : Label = $InteractPrompt #"E   use the ..." while a console is in reach

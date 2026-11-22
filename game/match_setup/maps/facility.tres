@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="MapOption" format=3]
+
+[ext_resource type="Script" path="res://game/match_setup/map_option.gd" id="1_option"]
+
+[resource]
+script = ExtResource("1_option")
+display_name = "Facility"
+scene_path = "res://game/environment/facility_map.tscn"
+spawn_room = "ring"

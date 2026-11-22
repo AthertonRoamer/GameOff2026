@@ -33,6 +33,14 @@ $mapPass = (Select-String -Path "$env:TEMP\maptest.out" -Pattern "RESULT: PASS" 
 $results["facility map unit test"] = $mapPass
 "{0,-62} {1}" -f "facility map unit test", $(if ($mapPass) { "PASS" } else { "FAIL" })
 if (-not $mapPass) { Select-String -Path "$env:TEMP\maptest.out" -Pattern "FAIL" | ForEach-Object { "      " + $_.Line } }
+# unit test of the map streaming: tiles near the view only, decor in and out of the tree
+$p = Start-Process $Godot -ArgumentList "--headless", "--path", "`"$project`"", "res://tests/unit/test_map_streaming.tscn" -NoNewWindow -PassThru `
+	-RedirectStandardOutput "$env:TEMP\streamtest.out" -RedirectStandardError "$env:TEMP\streamtest.err"
+if (-not $p.WaitForExit(90000)) { Stop-Process -Id $p.Id -Force }
+$streamPass = (Select-String -Path "$env:TEMP\streamtest.out" -Pattern "RESULT: PASS" -Quiet)
+$results["map streaming unit test"] = $streamPass
+"{0,-62} {1}" -f "map streaming unit test", $(if ($streamPass) { "PASS" } else { "FAIL" })
+if (-not $streamPass) { Select-String -Path "$env:TEMP\streamtest.out" -Pattern "FAIL" | ForEach-Object { "      " + $_.Line } }
 # unit test of role and team assignment
 $p = Start-Process $Godot -ArgumentList "--headless", "--path", "`"$project`"", "res://tests/unit/test_role_assigner.tscn" -NoNewWindow -PassThru `
 	-RedirectStandardOutput "$env:TEMP\roletest.out" -RedirectStandardError "$env:TEMP\roletest.err"

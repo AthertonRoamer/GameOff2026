@@ -1,0 +1,4071 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://game/environment/facility_map.gd" id="1_map"]
+[ext_resource type="Script" path="res://game/environment/facility_room.gd" id="3_room"]
+[ext_resource type="PackedScene" path="res://game/environment/facility_door.tscn" id="4_door"]
+[ext_resource type="PackedScene" path="res://game/utility/door_control_panel.tscn" id="6_panel"]
+[ext_resource type="Script" path="res://game/pickups/artifact_location.gd" id="7_loc"]
+[ext_resource type="Script" path="res://game/environment/facility_room_rect.gd" id="rect_script"]
+
+[node name="FacilityMap" type="Node2D"]
+texture_filter = 4
+script = ExtResource("1_map")
+
+[node name="Rooms" type="Node2D" parent="."]
+
+[node name="atrium" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Central Atrium"
+kind = 0
+
+[node name="Rect1" type="Control" parent="Rooms/atrium"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 2816.0
+offset_top = 2728.0
+offset_right = 4125.0
+offset_bottom = 3685.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="north_corridor" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "North Corridor"
+kind = 0
+
+[node name="Rect1" type="Control" parent="Rooms/north_corridor"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 3344.0
+offset_top = 1232.0
+offset_right = 3597.0
+offset_bottom = 2717.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="Rect2" type="Control" parent="Rooms/north_corridor"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 2288.0
+offset_top = 968.0
+offset_right = 4653.0
+offset_bottom = 1221.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="Bridge1" type="Control" parent="Rooms/north_corridor"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 3344.0
+offset_top = 1221.0
+offset_right = 3597.0
+offset_bottom = 1232.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="north_armory" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Armory"
+kind = 2
+
+[node name="Rect1" type="Control" parent="Rooms/north_armory"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 2728.0
+offset_top = 1232.0
+offset_right = 3333.0
+offset_bottom = 1661.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="north_evidence" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Evidence Room"
+kind = 2
+
+[node name="Rect1" type="Control" parent="Rooms/north_evidence"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 2728.0
+offset_top = 1672.0
+offset_right = 3333.0
+offset_bottom = 2013.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="north_interview" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Interview Rooms"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/north_interview"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 2728.0
+offset_top = 2024.0
+offset_right = 3333.0
+offset_bottom = 2365.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="doors_north" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "North Door Control"
+kind = 1
+function = 2
+
+[node name="Rect1" type="Control" parent="Rooms/doors_north"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 2728.0
+offset_top = 2376.0
+offset_right = 3333.0
+offset_bottom = 2717.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="north_cameras" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Camera Room"
+kind = 1
+function = 1
+
+[node name="Rect1" type="Control" parent="Rooms/north_cameras"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 3608.0
+offset_top = 1232.0
+offset_right = 4037.0
+offset_bottom = 1749.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="north_turrets" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Turret Control"
+kind = 1
+function = 5
+
+[node name="Rect1" type="Control" parent="Rooms/north_turrets"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 3608.0
+offset_top = 1760.0
+offset_right = 4037.0
+offset_bottom = 2101.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="north_lockers" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Locker Room"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/north_lockers"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 3608.0
+offset_top = 2112.0
+offset_right = 4037.0
+offset_bottom = 2365.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="spawn_north" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Guard Post"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/spawn_north"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 3608.0
+offset_top = 2376.0
+offset_right = 4037.0
+offset_bottom = 2717.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="entrance_garage" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Parking Garage"
+kind = 4
+
+[node name="Rect1" type="Control" parent="Rooms/entrance_garage"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 2288.0
+offset_top = 528.0
+offset_right = 2805.0
+offset_bottom = 957.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="entrance_north" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "North Gatehouse"
+kind = 4
+
+[node name="Rect1" type="Control" parent="Rooms/entrance_north"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 2816.0
+offset_top = 528.0
+offset_right = 3421.0
+offset_bottom = 957.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="north_registry" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Registry"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/north_registry"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 3432.0
+offset_top = 528.0
+offset_right = 3861.0
+offset_bottom = 957.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="north_briefing" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Briefing Room"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/north_briefing"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 3872.0
+offset_top = 528.0
+offset_right = 4301.0
+offset_bottom = 957.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="north_annex" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Records Annex"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/north_annex"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 4312.0
+offset_top = 528.0
+offset_right = 4653.0
+offset_bottom = 957.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="pad_north" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "North Pad"
+kind = 5
+
+[node name="Rect1" type="Control" parent="Rooms/pad_north"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 2464.0
+offset_top = 176.0
+offset_right = 4477.0
+offset_bottom = 517.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="east_corridor" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "East Corridor"
+kind = 0
+
+[node name="Rect1" type="Control" parent="Rooms/east_corridor"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 4136.0
+offset_top = 3036.0
+offset_right = 6149.0
+offset_bottom = 3289.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="Rect2" type="Control" parent="Rooms/east_corridor"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 6160.0
+offset_top = 2024.0
+offset_right = 6413.0
+offset_bottom = 4081.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="Bridge1" type="Control" parent="Rooms/east_corridor"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 6149.0
+offset_top = 3036.0
+offset_right = 6160.0
+offset_bottom = 3289.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="doors_east" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "East Door Control"
+kind = 1
+function = 2
+
+[node name="Rect1" type="Control" parent="Rooms/doors_east"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 4136.0
+offset_top = 2288.0
+offset_right = 4653.0
+offset_bottom = 3025.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="east_generator" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Generator Hall"
+kind = 1
+function = 4
+
+[node name="Rect1" type="Control" parent="Rooms/east_generator"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 4664.0
+offset_top = 2288.0
+offset_right = 5709.0
+offset_bottom = 3025.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="east_breakers" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Breaker Room"
+kind = 1
+function = 6
+
+[node name="Rect1" type="Control" parent="Rooms/east_breakers"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 5720.0
+offset_top = 2288.0
+offset_right = 6149.0
+offset_bottom = 3025.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="spawn_east" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Crew Room"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/spawn_east"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 4136.0
+offset_top = 3300.0
+offset_right = 4565.0
+offset_bottom = 3817.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="east_workshop" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Maintenance Bay"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/east_workshop"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 4576.0
+offset_top = 3300.0
+offset_right = 5093.0
+offset_bottom = 3817.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="east_stores" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Parts Store"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/east_stores"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 5104.0
+offset_top = 3300.0
+offset_right = 5621.0
+offset_bottom = 3817.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="east_pump_house" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Pump House"
+kind = 1
+
+[node name="Rect1" type="Control" parent="Rooms/east_pump_house"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 5632.0
+offset_top = 3300.0
+offset_right = 6149.0
+offset_bottom = 3817.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="east_plant_office" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Plant Office"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/east_plant_office"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 6424.0
+offset_top = 2024.0
+offset_right = 6941.0
+offset_bottom = 2453.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="extract_east" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "East Loading Dock"
+kind = 4
+
+[node name="Rect1" type="Control" parent="Rooms/extract_east"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 6424.0
+offset_top = 2464.0
+offset_right = 6941.0
+offset_bottom = 3069.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="east_cold_store" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Cold Store"
+kind = 1
+
+[node name="Rect1" type="Control" parent="Rooms/east_cold_store"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 6424.0
+offset_top = 3080.0
+offset_right = 6941.0
+offset_bottom = 3597.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="extract_rail" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Rail Platform"
+kind = 4
+
+[node name="Rect1" type="Control" parent="Rooms/extract_rail"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 6424.0
+offset_top = 3608.0
+offset_right = 6941.0
+offset_bottom = 4081.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="pad_east" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "East Pad"
+kind = 5
+
+[node name="Rect1" type="Control" parent="Rooms/pad_east"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 6952.0
+offset_top = 2464.0
+offset_right = 7293.0
+offset_bottom = 4081.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="south_corridor" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "South Corridor"
+kind = 0
+
+[node name="Rect1" type="Control" parent="Rooms/south_corridor"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 3080.0
+offset_top = 3696.0
+offset_right = 3333.0
+offset_bottom = 5269.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="Rect2" type="Control" parent="Rooms/south_corridor"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1936.0
+offset_top = 5280.0
+offset_right = 4477.0
+offset_bottom = 5533.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="Bridge1" type="Control" parent="Rooms/south_corridor"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 3080.0
+offset_top = 5269.0
+offset_right = 3333.0
+offset_bottom = 5280.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="spawn_south" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Barracks"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/spawn_south"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 2464.0
+offset_top = 3696.0
+offset_right = 3069.0
+offset_bottom = 4301.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="doors_south" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "South Door Control"
+kind = 1
+function = 2
+
+[node name="Rect1" type="Control" parent="Rooms/doors_south"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 2464.0
+offset_top = 4312.0
+offset_right = 3069.0
+offset_bottom = 4653.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="south_dormitory" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Dormitory"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/south_dormitory"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 2464.0
+offset_top = 4664.0
+offset_right = 3069.0
+offset_bottom = 5269.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="south_break_room" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Break Room"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/south_break_room"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 3344.0
+offset_top = 3696.0
+offset_right = 3949.0
+offset_bottom = 4125.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="south_cafeteria" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Cafeteria"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/south_cafeteria"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 3344.0
+offset_top = 4136.0
+offset_right = 3949.0
+offset_bottom = 4917.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="south_infirmary" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Infirmary"
+kind = 1
+
+[node name="Rect1" type="Control" parent="Rooms/south_infirmary"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 3344.0
+offset_top = 4928.0
+offset_right = 3949.0
+offset_bottom = 5269.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="entrance_service" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Service Exit"
+kind = 4
+
+[node name="Rect1" type="Control" parent="Rooms/entrance_service"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1936.0
+offset_top = 5544.0
+offset_right = 2453.0
+offset_bottom = 5973.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="entrance_south" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Cargo Garage"
+kind = 4
+
+[node name="Rect1" type="Control" parent="Rooms/entrance_south"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 2464.0
+offset_top = 5544.0
+offset_right = 3069.0
+offset_bottom = 5973.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="south_fuel_depot" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Fuel Depot"
+kind = 1
+
+[node name="Rect1" type="Control" parent="Rooms/south_fuel_depot"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 3080.0
+offset_top = 5544.0
+offset_right = 3509.0
+offset_bottom = 5973.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="south_garage" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Vehicle Bay"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/south_garage"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 3520.0
+offset_top = 5544.0
+offset_right = 4037.0
+offset_bottom = 5973.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="south_stores" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Stores"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/south_stores"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 4048.0
+offset_top = 5544.0
+offset_right = 4477.0
+offset_bottom = 5973.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="pad_south" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "South Pad"
+kind = 5
+
+[node name="Rect1" type="Control" parent="Rooms/pad_south"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 2112.0
+offset_top = 5984.0
+offset_right = 4301.0
+offset_bottom = 6325.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="west_corridor" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "West Corridor"
+kind = 0
+
+[node name="Rect1" type="Control" parent="Rooms/west_corridor"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1144.0
+offset_top = 2904.0
+offset_right = 2805.0
+offset_bottom = 3157.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="Rect2" type="Control" parent="Rooms/west_corridor"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 880.0
+offset_top = 2112.0
+offset_right = 1133.0
+offset_bottom = 3993.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="Bridge1" type="Control" parent="Rooms/west_corridor"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1133.0
+offset_top = 2904.0
+offset_right = 1144.0
+offset_bottom = 3157.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="west_vault" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Vault"
+kind = 2
+
+[node name="Rect1" type="Control" parent="Rooms/west_vault"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1144.0
+offset_top = 2288.0
+offset_right = 1573.0
+offset_bottom = 2893.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="doors_west" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "West Door Control"
+kind = 1
+function = 2
+
+[node name="Rect1" type="Control" parent="Rooms/doors_west"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1584.0
+offset_top = 2288.0
+offset_right = 1925.0
+offset_bottom = 2893.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="west_records" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Records"
+kind = 2
+
+[node name="Rect1" type="Control" parent="Rooms/west_records"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1936.0
+offset_top = 2288.0
+offset_right = 2365.0
+offset_bottom = 2893.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="west_server" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Server Room"
+kind = 1
+
+[node name="Rect1" type="Control" parent="Rooms/west_server"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 2376.0
+offset_top = 2288.0
+offset_right = 2717.0
+offset_bottom = 2893.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="west_lights" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Light Control"
+kind = 1
+function = 3
+
+[node name="Rect1" type="Control" parent="Rooms/west_lights"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1144.0
+offset_top = 3168.0
+offset_right = 1661.0
+offset_bottom = 3685.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="west_lab_b" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Lab B"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/west_lab_b"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1672.0
+offset_top = 3168.0
+offset_right = 2189.0
+offset_bottom = 3685.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="spawn_west" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Staff Lounge"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/spawn_west"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 2200.0
+offset_top = 3168.0
+offset_right = 2805.0
+offset_bottom = 3685.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="west_lobby" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Research Lobby"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/west_lobby"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 352.0
+offset_top = 2112.0
+offset_right = 869.0
+offset_bottom = 2585.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="entrance_west" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Service Tunnel"
+kind = 4
+
+[node name="Rect1" type="Control" parent="Rooms/entrance_west"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 352.0
+offset_top = 2596.0
+offset_right = 869.0
+offset_bottom = 3113.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="west_lab_a" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Lab A"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/west_lab_a"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 352.0
+offset_top = 3124.0
+offset_right = 869.0
+offset_bottom = 3553.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="west_boat_house" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Boat House"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/west_boat_house"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 352.0
+offset_top = 3564.0
+offset_right = 869.0
+offset_bottom = 3993.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="pad_west" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "West Pad"
+kind = 5
+
+[node name="Rect1" type="Control" parent="Rooms/pad_west"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 0.0
+offset_top = 2596.0
+offset_right = 341.0
+offset_bottom = 3113.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="nw_corridor" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "NW Corridor"
+kind = 0
+
+[node name="Rect1" type="Control" parent="Rooms/nw_corridor"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1144.0
+offset_top = 176.0
+offset_right = 1309.0
+offset_bottom = 1749.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="Rect2" type="Control" parent="Rooms/nw_corridor"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1320.0
+offset_top = 704.0
+offset_right = 1925.0
+offset_bottom = 869.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="Rect3" type="Control" parent="Rooms/nw_corridor"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1320.0
+offset_top = 1232.0
+offset_right = 1925.0
+offset_bottom = 1397.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="Bridge1" type="Control" parent="Rooms/nw_corridor"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1309.0
+offset_top = 704.0
+offset_right = 1320.0
+offset_bottom = 869.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="Bridge2" type="Control" parent="Rooms/nw_corridor"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1309.0
+offset_top = 1232.0
+offset_right = 1320.0
+offset_bottom = 1397.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="nw_archive" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Archive Stacks"
+kind = 2
+
+[node name="Rect1" type="Control" parent="Rooms/nw_archive"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 528.0
+offset_top = 176.0
+offset_right = 1133.0
+offset_bottom = 605.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="nw_files" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Filing Room"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/nw_files"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 528.0
+offset_top = 616.0
+offset_right = 1133.0
+offset_bottom = 957.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="nw_hr" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "HR Office"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/nw_hr"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 528.0
+offset_top = 968.0
+offset_right = 1133.0
+offset_bottom = 1397.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="nw_mail" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Mail Room"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/nw_mail"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 528.0
+offset_top = 1408.0
+offset_right = 1133.0
+offset_bottom = 1749.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="nw_conference" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Conference Room"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/nw_conference"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1320.0
+offset_top = 176.0
+offset_right = 1661.0
+offset_bottom = 693.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="nw_director" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Director's Office"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/nw_director"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1672.0
+offset_top = 176.0
+offset_right = 1925.0
+offset_bottom = 693.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="nw_accounts" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Accounts"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/nw_accounts"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1320.0
+offset_top = 880.0
+offset_right = 1617.0
+offset_bottom = 1221.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="nw_kitchen" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Staff Kitchen"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/nw_kitchen"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1628.0
+offset_top = 880.0
+offset_right = 1925.0
+offset_bottom = 1221.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="nw_supply" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Supply Closet"
+kind = 1
+
+[node name="Rect1" type="Control" parent="Rooms/nw_supply"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1320.0
+offset_top = 1408.0
+offset_right = 1661.0
+offset_bottom = 1749.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="nw_print" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Print Room"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/nw_print"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1672.0
+offset_top = 1408.0
+offset_right = 1925.0
+offset_bottom = 1749.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="sw_corridor" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "SW Corridor"
+kind = 0
+
+[node name="Rect1" type="Control" parent="Rooms/sw_corridor"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 704.0
+offset_top = 4356.0
+offset_right = 869.0
+offset_bottom = 6325.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="Rect2" type="Control" parent="Rooms/sw_corridor"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 880.0
+offset_top = 5016.0
+offset_right = 1573.0
+offset_bottom = 5181.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="Rect3" type="Control" parent="Rooms/sw_corridor"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 880.0
+offset_top = 5720.0
+offset_right = 1573.0
+offset_bottom = 5885.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="Bridge1" type="Control" parent="Rooms/sw_corridor"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 869.0
+offset_top = 5016.0
+offset_right = 880.0
+offset_bottom = 5181.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="Bridge2" type="Control" parent="Rooms/sw_corridor"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 869.0
+offset_top = 5720.0
+offset_right = 880.0
+offset_bottom = 5885.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="sw_receiving" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Receiving Bay"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/sw_receiving"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 0.0
+offset_top = 4356.0
+offset_right = 693.0
+offset_bottom = 4873.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="sw_cold_store" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Cold Storage"
+kind = 1
+
+[node name="Rect1" type="Control" parent="Rooms/sw_cold_store"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 0.0
+offset_top = 4884.0
+offset_right = 693.0
+offset_bottom = 5357.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="sw_parts" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Parts Warehouse"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/sw_parts"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 0.0
+offset_top = 5368.0
+offset_right = 693.0
+offset_bottom = 5885.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="sw_tool_crib" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Tool Crib"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/sw_tool_crib"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 0.0
+offset_top = 5896.0
+offset_right = 693.0
+offset_bottom = 6325.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="sw_battery" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Battery Room"
+kind = 1
+
+[node name="Rect1" type="Control" parent="Rooms/sw_battery"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 880.0
+offset_top = 4356.0
+offset_right = 1265.0
+offset_bottom = 5005.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="sw_compressor" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Compressor Room"
+kind = 1
+
+[node name="Rect1" type="Control" parent="Rooms/sw_compressor"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1276.0
+offset_top = 4356.0
+offset_right = 1573.0
+offset_bottom = 5005.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="sw_paint" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Paint Shop"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/sw_paint"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 880.0
+offset_top = 5192.0
+offset_right = 1221.0
+offset_bottom = 5709.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="sw_welding" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Welding Shop"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/sw_welding"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1232.0
+offset_top = 5192.0
+offset_right = 1573.0
+offset_bottom = 5709.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="sw_dispatch" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Dispatch"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/sw_dispatch"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 880.0
+offset_top = 5896.0
+offset_right = 1221.0
+offset_bottom = 6325.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="sw_lounge" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Driver Lounge"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/sw_lounge"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1232.0
+offset_top = 5896.0
+offset_right = 1573.0
+offset_bottom = 6325.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="ne_corridor" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "NE Corridor"
+kind = 0
+
+[node name="Rect1" type="Control" parent="Rooms/ne_corridor"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 5016.0
+offset_top = 616.0
+offset_right = 7293.0
+offset_bottom = 781.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="Rect2" type="Control" parent="Rooms/ne_corridor"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 6600.0
+offset_top = 792.0
+offset_right = 6765.0
+offset_bottom = 1661.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="Rect3" type="Control" parent="Rooms/ne_corridor"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 5016.0
+offset_top = 1144.0
+offset_right = 6589.0
+offset_bottom = 1309.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="Bridge1" type="Control" parent="Rooms/ne_corridor"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 6600.0
+offset_top = 781.0
+offset_right = 6765.0
+offset_bottom = 792.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="Bridge2" type="Control" parent="Rooms/ne_corridor"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 6589.0
+offset_top = 1144.0
+offset_right = 6600.0
+offset_bottom = 1309.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="extract_helipad" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Helipad Hangar"
+kind = 4
+
+[node name="Rect1" type="Control" parent="Rooms/extract_helipad"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 5280.0
+offset_top = -176.0
+offset_right = 6765.0
+offset_bottom = 605.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="ne_fuel_bunker" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Fuel Bunker"
+kind = 1
+
+[node name="Rect1" type="Control" parent="Rooms/ne_fuel_bunker"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 5016.0
+offset_top = -176.0
+offset_right = 5269.0
+offset_bottom = 209.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="ne_flight_ops" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Flight Ops"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/ne_flight_ops"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 5016.0
+offset_top = 220.0
+offset_right = 5269.0
+offset_bottom = 605.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="ne_radio" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Radio Room"
+kind = 1
+
+[node name="Rect1" type="Control" parent="Rooms/ne_radio"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 6776.0
+offset_top = -176.0
+offset_right = 7293.0
+offset_bottom = 209.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="ne_briefing" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Pilot Briefing"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/ne_briefing"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 6776.0
+offset_top = 220.0
+offset_right = 7293.0
+offset_bottom = 605.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="ne_stores_a" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Aviation Stores"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/ne_stores_a"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 5016.0
+offset_top = 792.0
+offset_right = 5533.0
+offset_bottom = 1133.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="ne_stores_b" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Hangar Stores"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/ne_stores_b"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 5544.0
+offset_top = 792.0
+offset_right = 6061.0
+offset_bottom = 1133.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="ne_tools" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Tool Room"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/ne_tools"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 6072.0
+offset_top = 792.0
+offset_right = 6589.0
+offset_bottom = 1133.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="ne_crew_a" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Crew Room A"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/ne_crew_a"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 5016.0
+offset_top = 1320.0
+offset_right = 5533.0
+offset_bottom = 1661.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="ne_crew_b" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Crew Room B"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/ne_crew_b"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 5544.0
+offset_top = 1320.0
+offset_right = 6061.0
+offset_bottom = 1661.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="ne_lockers" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Pilot Lockers"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/ne_lockers"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 6072.0
+offset_top = 1320.0
+offset_right = 6589.0
+offset_bottom = 1661.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="ne_ops" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Operations"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/ne_ops"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 6776.0
+offset_top = 792.0
+offset_right = 7293.0
+offset_bottom = 1221.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="ne_security" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Hangar Security"
+kind = 1
+
+[node name="Rect1" type="Control" parent="Rooms/ne_security"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 6776.0
+offset_top = 1232.0
+offset_right = 7293.0
+offset_bottom = 1661.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="pad_helipad" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Helipad"
+kind = 5
+
+[node name="Rect1" type="Control" parent="Rooms/pad_helipad"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 5280.0
+offset_top = -352.0
+offset_right = 6765.0
+offset_bottom = -187.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="se_corridor" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "SE Corridor"
+kind = 0
+
+[node name="Rect1" type="Control" parent="Rooms/se_corridor"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 4840.0
+offset_top = 5104.0
+offset_right = 7293.0
+offset_bottom = 5269.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="Rect2" type="Control" parent="Rooms/se_corridor"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 5632.0
+offset_top = 4444.0
+offset_right = 5797.0
+offset_bottom = 6325.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="Rect3" type="Control" parent="Rooms/se_corridor"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 6600.0
+offset_top = 4444.0
+offset_right = 6765.0
+offset_bottom = 6325.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="se_freight_office" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Freight Office"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/se_freight_office"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 4840.0
+offset_top = 4444.0
+offset_right = 5225.0
+offset_bottom = 5093.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="se_customs" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Customs"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/se_customs"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 5236.0
+offset_top = 4444.0
+offset_right = 5621.0
+offset_bottom = 5093.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="se_container_store" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Container Store"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/se_container_store"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 5808.0
+offset_top = 4444.0
+offset_right = 6193.0
+offset_bottom = 5093.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="se_weigh_station" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Weigh Station"
+kind = 1
+
+[node name="Rect1" type="Control" parent="Rooms/se_weigh_station"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 6204.0
+offset_top = 4444.0
+offset_right = 6589.0
+offset_bottom = 5093.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="se_rail_office" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Rail Office"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/se_rail_office"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 6776.0
+offset_top = 4444.0
+offset_right = 7293.0
+offset_bottom = 5093.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="se_bay_1" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Freight Bay 1"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/se_bay_1"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 4840.0
+offset_top = 5280.0
+offset_right = 5621.0
+offset_bottom = 5797.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="se_bay_2" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Freight Bay 2"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/se_bay_2"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 4840.0
+offset_top = 5808.0
+offset_right = 5621.0
+offset_bottom = 6325.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="se_bay_3" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Freight Bay 3"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/se_bay_3"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 5808.0
+offset_top = 5280.0
+offset_right = 6589.0
+offset_bottom = 5797.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="se_tank_room" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Tank Room"
+kind = 1
+
+[node name="Rect1" type="Control" parent="Rooms/se_tank_room"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 5808.0
+offset_top = 5808.0
+offset_right = 6589.0
+offset_bottom = 6325.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="se_switch_room" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Switch Room"
+kind = 1
+
+[node name="Rect1" type="Control" parent="Rooms/se_switch_room"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 6776.0
+offset_top = 5280.0
+offset_right = 7293.0
+offset_bottom = 5797.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="se_loco_shed" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Loco Shed"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/se_loco_shed"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 6776.0
+offset_top = 5808.0
+offset_right = 7293.0
+offset_bottom = 6325.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="nn_chase" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Service Chase"
+kind = 1
+
+[node name="Rect1" type="Control" parent="Rooms/nn_chase"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 2288.0
+offset_top = 1232.0
+offset_right = 2717.0
+offset_bottom = 1573.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="nn_janitor" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Janitor Closet"
+kind = 1
+
+[node name="Rect1" type="Control" parent="Rooms/nn_janitor"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 2288.0
+offset_top = 1584.0
+offset_right = 2717.0
+offset_bottom = 1925.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="nn_core" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Utility Core"
+kind = 1
+
+[node name="Rect1" type="Control" parent="Rooms/nn_core"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 2288.0
+offset_top = 1936.0
+offset_right = 2717.0
+offset_bottom = 2277.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="link_corridor" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "West Link Corridor"
+kind = 0
+
+[node name="Rect1" type="Control" parent="Rooms/link_corridor"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1144.0
+offset_top = 2112.0
+offset_right = 2277.0
+offset_bottom = 2277.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="sw_link" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "SW Link Corridor"
+kind = 0
+
+[node name="Rect1" type="Control" parent="Rooms/sw_link"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1936.0
+offset_top = 3696.0
+offset_right = 2101.0
+offset_bottom = 5269.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="sl_boiler" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Boiler Room"
+kind = 1
+
+[node name="Rect1" type="Control" parent="Rooms/sl_boiler"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 2112.0
+offset_top = 3696.0
+offset_right = 2453.0
+offset_bottom = 4213.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="sl_linen" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Linen Store"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/sl_linen"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 2112.0
+offset_top = 4224.0
+offset_right = 2453.0
+offset_bottom = 4741.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="sl_workshop" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Maintenance Workshop"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/sl_workshop"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 2112.0
+offset_top = 4752.0
+offset_right = 2453.0
+offset_bottom = 5269.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="ss_link" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "South Service Corridor"
+kind = 0
+
+[node name="Rect1" type="Control" parent="Rooms/ss_link"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 3960.0
+offset_top = 3828.0
+offset_right = 4125.0
+offset_bottom = 5269.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="ss_truck_bay" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Truck Bay"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/ss_truck_bay"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 4136.0
+offset_top = 3828.0
+offset_right = 4477.0
+offset_bottom = 4301.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="ss_wash_bay" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Wash Bay"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/ss_wash_bay"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 4136.0
+offset_top = 4312.0
+offset_right = 4477.0
+offset_bottom = 4785.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="ss_tyre_store" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Tyre Store"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/ss_tyre_store"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 4136.0
+offset_top = 4796.0
+offset_right = 4477.0
+offset_bottom = 5269.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="east_service" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "East Service Corridor"
+kind = 0
+
+[node name="Rect1" type="Control" parent="Rooms/east_service"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 4488.0
+offset_top = 3828.0
+offset_right = 6149.0
+offset_bottom = 4081.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="na_offices" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Admin Offices"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/na_offices"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 4048.0
+offset_top = 1232.0
+offset_right = 4653.0
+offset_bottom = 1573.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="na_comms" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Comms Room"
+kind = 1
+
+[node name="Rect1" type="Control" parent="Rooms/na_comms"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 4048.0
+offset_top = 1584.0
+offset_right = 4653.0
+offset_bottom = 1925.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="na_records" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Annex Records"
+kind = 2
+
+[node name="Rect1" type="Control" parent="Rooms/na_records"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 4048.0
+offset_top = 1936.0
+offset_right = 4653.0
+offset_bottom = 2277.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="nw_press" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Press Room"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/nw_press"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 352.0
+offset_top = 1760.0
+offset_right = 869.0
+offset_bottom = 2101.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="nw_reception" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Reception"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/nw_reception"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1320.0
+offset_top = 1760.0
+offset_right = 1925.0
+offset_bottom = 2101.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="nw_gate_post" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Gate Post"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/nw_gate_post"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1936.0
+offset_top = 176.0
+offset_right = 2277.0
+offset_bottom = 517.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="nw_valet" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Valet Lockers"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/nw_valet"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1936.0
+offset_top = 704.0
+offset_right = 2277.0
+offset_bottom = 1221.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="nw_depot" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Delivery Depot"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/nw_depot"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1936.0
+offset_top = 1232.0
+offset_right = 2277.0
+offset_bottom = 1573.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="nw_spares" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Spare Parts"
+kind = 1
+
+[node name="Rect1" type="Control" parent="Rooms/nw_spares"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1936.0
+offset_top = 1584.0
+offset_right = 2277.0
+offset_bottom = 1925.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="ne_guard_shack" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Guard Shack"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/ne_guard_shack"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 4664.0
+offset_top = -176.0
+offset_right = 5005.0
+offset_bottom = 209.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="ne_supply_shed" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Supply Shed"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/ne_supply_shed"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 4664.0
+offset_top = 220.0
+offset_right = 5005.0
+offset_bottom = 605.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="ne_west_gate" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "West Gate"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/ne_west_gate"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 4664.0
+offset_top = 792.0
+offset_right = 5005.0
+offset_bottom = 1309.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="ne_west_lockers" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Ground Crew Lockers"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/ne_west_lockers"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 4664.0
+offset_top = 1320.0
+offset_right = 5005.0
+offset_bottom = 1661.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="ne_ground_support" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Ground Support"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/ne_ground_support"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 5016.0
+offset_top = 1672.0
+offset_right = 5533.0
+offset_bottom = 2277.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="ne_fuel_pumps" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Fuel Pumps"
+kind = 1
+
+[node name="Rect1" type="Control" parent="Rooms/ne_fuel_pumps"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 5544.0
+offset_top = 1672.0
+offset_right = 6149.0
+offset_bottom = 2277.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="ne_checkpoint" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Checkpoint"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/ne_checkpoint"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 6160.0
+offset_top = 1672.0
+offset_right = 6413.0
+offset_bottom = 2013.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="ne_plant_gate" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Plant Gate"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/ne_plant_gate"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 6424.0
+offset_top = 1672.0
+offset_right = 6765.0
+offset_bottom = 2013.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="se_gatehouse" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Rail Gatehouse"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/se_gatehouse"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 4840.0
+offset_top = 4092.0
+offset_right = 5621.0
+offset_bottom = 4433.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="se_scale_house" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Scale House"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/se_scale_house"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 5808.0
+offset_top = 4092.0
+offset_right = 6589.0
+offset_bottom = 4433.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="sw_watch_post" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Watch Post"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/sw_watch_post"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 616.0
+offset_top = 4004.0
+offset_right = 869.0
+offset_bottom = 4345.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="sw_overlook" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Yard Overlook"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/sw_overlook"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 880.0
+offset_top = 4004.0
+offset_right = 1925.0
+offset_bottom = 4345.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="sw_east_store" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "East Store"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/sw_east_store"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1584.0
+offset_top = 4356.0
+offset_right = 1925.0
+offset_bottom = 5005.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="sw_east_bay" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "East Bay"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/sw_east_bay"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1584.0
+offset_top = 5192.0
+offset_right = 1925.0
+offset_bottom = 5709.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="sw_east_garage" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Equipment Garage"
+kind = 3
+
+[node name="Rect1" type="Control" parent="Rooms/sw_east_garage"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1584.0
+offset_top = 5720.0
+offset_right = 1925.0
+offset_bottom = 6325.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="east_road" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "East Perimeter Road"
+kind = 0
+
+[node name="Rect1" type="Control" parent="Rooms/east_road"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 7304.0
+offset_top = 1408.0
+offset_right = 7469.0
+offset_bottom = 5357.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="south_road" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "South Perimeter Road"
+kind = 0
+
+[node name="Rect1" type="Control" parent="Rooms/south_road"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 0.0
+offset_top = 6336.0
+offset_right = 7293.0
+offset_bottom = 6501.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="link_nw_mail_west_corridor" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Link Passage"
+kind = 0
+
+[node name="Rect1" type="Control" parent="Rooms/link_nw_mail_west_corridor"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 924.0
+offset_top = 1760.0
+offset_right = 1089.0
+offset_bottom = 2101.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="link_nw_director_entrance_garage" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Link Passage"
+kind = 0
+
+[node name="Rect1" type="Control" parent="Rooms/link_nw_director_entrance_garage"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1936.0
+offset_top = 528.0
+offset_right = 2277.0
+offset_bottom = 693.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="link_sw_receiving_west_boat_house" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Link Passage"
+kind = 0
+
+[node name="Rect1" type="Control" parent="Rooms/link_sw_receiving_west_boat_house"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 440.0
+offset_top = 4004.0
+offset_right = 605.0
+offset_bottom = 4345.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="link_ne_security_east_plant_office" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Link Passage"
+kind = 0
+
+[node name="Rect1" type="Control" parent="Rooms/link_ne_security_east_plant_office"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 6776.0
+offset_top = 1672.0
+offset_right = 6941.0
+offset_bottom = 2013.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="link_se_rail_office_extract_rail" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Link Passage"
+kind = 0
+
+[node name="Rect1" type="Control" parent="Rooms/link_se_rail_office_extract_rail"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 6776.0
+offset_top = 4092.0
+offset_right = 6941.0
+offset_bottom = 4433.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="link_link_corridor_nw_corridor" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Link Passage"
+kind = 0
+
+[node name="Rect1" type="Control" parent="Rooms/link_link_corridor_nw_corridor"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1144.0
+offset_top = 1760.0
+offset_right = 1309.0
+offset_bottom = 2101.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="link_sw_link_sw_corridor" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Link Passage"
+kind = 0
+
+[node name="Rect1" type="Control" parent="Rooms/link_sw_link_sw_corridor"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1584.0
+offset_top = 5016.0
+offset_right = 1925.0
+offset_bottom = 5181.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="link_east_service_se_corridor" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "Link Passage"
+kind = 0
+
+[node name="Rect1" type="Control" parent="Rooms/link_east_service_se_corridor"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 5632.0
+offset_top = 4092.0
+offset_right = 5797.0
+offset_bottom = 4433.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="Doors" type="Node2D" parent="."]
+z_index = 1
+
+[node name="Door_north_corridor_north_armory" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2904, 1226.5)
+
+[node name="Door_north_corridor_north_armory_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(3168, 1226.5)
+
+[node name="Door_north_corridor_north_evidence" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(3338.5, 1848)
+horizontal = false
+
+[node name="Door_north_corridor_north_interview" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(3338.5, 2200)
+horizontal = false
+
+[node name="Door_north_corridor_doors_north" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(3338.5, 2552)
+horizontal = false
+
+[node name="Door_north_corridor_north_cameras" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(3602.5, 1386)
+horizontal = false
+
+[node name="Door_north_corridor_north_cameras_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(3602.5, 1606)
+horizontal = false
+
+[node name="Door_north_corridor_north_turrets" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(3602.5, 1936)
+horizontal = false
+
+[node name="Door_north_corridor_north_lockers" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(3602.5, 2244)
+horizontal = false
+
+[node name="Door_north_corridor_spawn_north" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(3602.5, 2552)
+horizontal = false
+
+[node name="Door_north_corridor_entrance_garage" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2442, 962.5)
+
+[node name="Door_north_corridor_entrance_garage_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2662, 962.5)
+
+[node name="Door_north_corridor_entrance_north" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2992, 962.5)
+
+[node name="Door_north_corridor_entrance_north_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(3256, 962.5)
+
+[node name="Door_north_corridor_north_registry" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(3652, 962.5)
+
+[node name="Door_north_corridor_north_briefing" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(4092, 962.5)
+
+[node name="Door_north_corridor_north_annex" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(4488, 962.5)
+
+[node name="Door_north_armory_north_evidence" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2904, 1666.5)
+
+[node name="Door_north_armory_north_evidence_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(3168, 1666.5)
+
+[node name="Door_north_interview_doors_north" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2904, 2370.5)
+
+[node name="Door_north_interview_doors_north_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(3168, 2370.5)
+
+[node name="Door_north_cameras_north_turrets" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(3828, 1754.5)
+
+[node name="Door_north_lockers_spawn_north" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(3828, 2370.5)
+
+[node name="Door_entrance_garage_entrance_north" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2810.5, 748)
+horizontal = false
+
+[node name="Door_north_registry_north_briefing" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(3866.5, 748)
+horizontal = false
+
+[node name="Door_entrance_north_pad_north" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2992, 522.5)
+
+[node name="Door_entrance_north_pad_north_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(3256, 522.5)
+
+[node name="Door_entrance_garage_pad_north" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2640, 522.5)
+
+[node name="Door_spawn_north_atrium" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(3828, 2722.5)
+
+[node name="Door_doors_north_atrium" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2970, 2722.5)
+
+[node name="Door_doors_north_atrium_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(3190, 2722.5)
+
+[node name="Door_doors_north_west_server" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2722.5, 2552)
+horizontal = false
+
+[node name="Door_east_corridor_doors_east" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(4290, 3030.5)
+
+[node name="Door_east_corridor_doors_east_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(4510, 3030.5)
+
+[node name="Door_east_corridor_east_generator" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(4961, 3030.5)
+
+[node name="Door_east_corridor_east_generator_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5423, 3030.5)
+
+[node name="Door_east_corridor_east_breakers" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6154.5, 2497)
+horizontal = false
+
+[node name="Door_east_corridor_east_breakers_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6154.5, 2827)
+horizontal = false
+
+[node name="Door_east_corridor_spawn_east" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(4356, 3294.5)
+
+[node name="Door_east_corridor_east_workshop" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(4730, 3294.5)
+
+[node name="Door_east_corridor_east_workshop_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(4950, 3294.5)
+
+[node name="Door_east_corridor_east_stores" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5258, 3294.5)
+
+[node name="Door_east_corridor_east_stores_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5478, 3294.5)
+
+[node name="Door_east_corridor_east_pump_house" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5786, 3294.5)
+
+[node name="Door_east_corridor_east_pump_house_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6006, 3294.5)
+
+[node name="Door_east_corridor_east_plant_office" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6418.5, 2244)
+horizontal = false
+
+[node name="Door_east_corridor_extract_east" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6418.5, 2640)
+horizontal = false
+
+[node name="Door_east_corridor_extract_east_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6418.5, 2904)
+horizontal = false
+
+[node name="Door_east_corridor_east_cold_store" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6418.5, 3234)
+horizontal = false
+
+[node name="Door_east_corridor_east_cold_store_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6418.5, 3454)
+horizontal = false
+
+[node name="Door_east_corridor_extract_rail" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6418.5, 3751)
+horizontal = false
+
+[node name="Door_east_corridor_extract_rail_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6418.5, 3949)
+horizontal = false
+
+[node name="Door_doors_east_east_generator" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(4658.5, 2497)
+horizontal = false
+
+[node name="Door_doors_east_east_generator_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(4658.5, 2827)
+horizontal = false
+
+[node name="Door_east_generator_east_breakers" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5714.5, 2497)
+horizontal = false
+
+[node name="Door_east_generator_east_breakers_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5714.5, 2827)
+horizontal = false
+
+[node name="Door_spawn_east_east_workshop" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(4570.5, 3454)
+horizontal = false
+
+[node name="Door_spawn_east_east_workshop_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(4570.5, 3674)
+horizontal = false
+
+[node name="Door_east_workshop_east_stores" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5098.5, 3454)
+horizontal = false
+
+[node name="Door_east_workshop_east_stores_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5098.5, 3674)
+horizontal = false
+
+[node name="Door_east_stores_east_pump_house" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5626.5, 3454)
+horizontal = false
+
+[node name="Door_east_stores_east_pump_house_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5626.5, 3674)
+horizontal = false
+
+[node name="Door_extract_east_east_plant_office" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6578, 2458.5)
+
+[node name="Door_extract_east_east_plant_office_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6798, 2458.5)
+
+[node name="Door_east_cold_store_extract_rail" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6578, 3602.5)
+
+[node name="Door_east_cold_store_extract_rail_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6798, 3602.5)
+
+[node name="Door_extract_east_pad_east" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6946.5, 2640)
+horizontal = false
+
+[node name="Door_extract_east_pad_east_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6946.5, 2904)
+horizontal = false
+
+[node name="Door_extract_rail_pad_east" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6946.5, 3751)
+horizontal = false
+
+[node name="Door_extract_rail_pad_east_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6946.5, 3949)
+horizontal = false
+
+[node name="Door_extract_helipad_pad_helipad" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5698, -181.5)
+
+[node name="Door_extract_helipad_pad_helipad_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6358, -181.5)
+
+[node name="Door_spawn_east_atrium" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(4130.5, 3498)
+horizontal = false
+
+[node name="Door_doors_east_atrium" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(4130.5, 2882)
+horizontal = false
+
+[node name="Door_south_corridor_spawn_south" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(3074.5, 3872)
+horizontal = false
+
+[node name="Door_south_corridor_spawn_south_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(3074.5, 4136)
+horizontal = false
+
+[node name="Door_south_corridor_doors_south" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(3074.5, 4488)
+horizontal = false
+
+[node name="Door_south_corridor_south_dormitory" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(3074.5, 4840)
+horizontal = false
+
+[node name="Door_south_corridor_south_dormitory_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(3074.5, 5104)
+horizontal = false
+
+[node name="Door_south_corridor_south_break_room" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(3338.5, 3916)
+horizontal = false
+
+[node name="Door_south_corridor_south_cafeteria" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(3338.5, 4356)
+horizontal = false
+
+[node name="Door_south_corridor_south_cafeteria_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(3338.5, 4708)
+horizontal = false
+
+[node name="Door_south_corridor_south_infirmary" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(3520, 5274.5)
+
+[node name="Door_south_corridor_south_infirmary_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(3784, 5274.5)
+
+[node name="Door_south_corridor_entrance_service" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2090, 5538.5)
+
+[node name="Door_south_corridor_entrance_service_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2310, 5538.5)
+
+[node name="Door_south_corridor_entrance_south" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2640, 5538.5)
+
+[node name="Door_south_corridor_entrance_south_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2904, 5538.5)
+
+[node name="Door_south_corridor_south_fuel_depot" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(3300, 5538.5)
+
+[node name="Door_south_corridor_south_garage" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(3674, 5538.5)
+
+[node name="Door_south_corridor_south_garage_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(3894, 5538.5)
+
+[node name="Door_south_corridor_south_stores" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(4268, 5538.5)
+
+[node name="Door_south_dormitory_doors_south" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2640, 4658.5)
+
+[node name="Door_south_dormitory_doors_south_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2904, 4658.5)
+
+[node name="Door_south_break_room_south_cafeteria" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(3520, 4130.5)
+
+[node name="Door_south_break_room_south_cafeteria_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(3784, 4130.5)
+
+[node name="Door_south_cafeteria_south_infirmary" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(3520, 4922.5)
+
+[node name="Door_south_cafeteria_south_infirmary_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(3784, 4922.5)
+
+[node name="Door_entrance_service_entrance_south" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2458.5, 5764)
+horizontal = false
+
+[node name="Door_south_fuel_depot_south_garage" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(3514.5, 5764)
+horizontal = false
+
+[node name="Door_south_garage_south_stores" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(4042.5, 5764)
+horizontal = false
+
+[node name="Door_entrance_south_pad_south" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2640, 5978.5)
+
+[node name="Door_entrance_south_pad_south_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2904, 5978.5)
+
+[node name="Door_entrance_service_pad_south" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2288, 5978.5)
+
+[node name="Door_spawn_south_atrium" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2948, 3690.5)
+
+[node name="Door_south_break_room_atrium" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(3520, 3690.5)
+
+[node name="Door_south_break_room_atrium_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(3784, 3690.5)
+
+[node name="Door_west_corridor_west_vault" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1138.5, 2464)
+horizontal = false
+
+[node name="Door_west_corridor_west_vault_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1138.5, 2728)
+horizontal = false
+
+[node name="Door_west_corridor_doors_west" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1760, 2898.5)
+
+[node name="Door_west_corridor_west_records" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2156, 2898.5)
+
+[node name="Door_west_corridor_west_server" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2552, 2898.5)
+
+[node name="Door_west_corridor_west_lights" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1298, 3162.5)
+
+[node name="Door_west_corridor_west_lights_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1518, 3162.5)
+
+[node name="Door_west_corridor_west_lab_b" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1826, 3162.5)
+
+[node name="Door_west_corridor_west_lab_b_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2046, 3162.5)
+
+[node name="Door_west_corridor_spawn_west" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2376, 3162.5)
+
+[node name="Door_west_corridor_spawn_west_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2640, 3162.5)
+
+[node name="Door_west_corridor_west_lobby" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(874.5, 2255)
+horizontal = false
+
+[node name="Door_west_corridor_west_lobby_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(874.5, 2453)
+horizontal = false
+
+[node name="Door_west_corridor_entrance_west" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(874.5, 2750)
+horizontal = false
+
+[node name="Door_west_corridor_entrance_west_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(874.5, 2970)
+horizontal = false
+
+[node name="Door_west_corridor_west_lab_a" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(874.5, 3344)
+horizontal = false
+
+[node name="Door_west_corridor_west_boat_house" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(874.5, 3784)
+horizontal = false
+
+[node name="Door_west_vault_doors_west" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1578.5, 2464)
+horizontal = false
+
+[node name="Door_west_vault_doors_west_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1578.5, 2728)
+horizontal = false
+
+[node name="Door_west_records_west_server" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2370.5, 2464)
+horizontal = false
+
+[node name="Door_west_records_west_server_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2370.5, 2728)
+horizontal = false
+
+[node name="Door_west_lights_west_lab_b" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1666.5, 3322)
+horizontal = false
+
+[node name="Door_west_lights_west_lab_b_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1666.5, 3542)
+horizontal = false
+
+[node name="Door_west_lab_b_spawn_west" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2194.5, 3322)
+horizontal = false
+
+[node name="Door_west_lab_b_spawn_west_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2194.5, 3542)
+horizontal = false
+
+[node name="Door_entrance_west_west_lab_a" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(506, 3118.5)
+
+[node name="Door_entrance_west_west_lab_a_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(726, 3118.5)
+
+[node name="Door_west_lab_a_west_boat_house" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(506, 3558.5)
+
+[node name="Door_west_lab_a_west_boat_house_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(726, 3558.5)
+
+[node name="Door_entrance_west_pad_west" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(346.5, 2750)
+horizontal = false
+
+[node name="Door_entrance_west_pad_west_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(346.5, 2970)
+horizontal = false
+
+[node name="Door_spawn_west_atrium" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2810.5, 3322)
+horizontal = false
+
+[node name="Door_spawn_west_atrium_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2810.5, 3542)
+horizontal = false
+
+[node name="Door_nw_corridor_nw_archive" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1138.5, 396)
+horizontal = false
+
+[node name="Door_nw_corridor_nw_files" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1138.5, 792)
+horizontal = false
+
+[node name="Door_nw_corridor_nw_hr" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1138.5, 1188)
+horizontal = false
+
+[node name="Door_nw_corridor_nw_mail" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1138.5, 1584)
+horizontal = false
+
+[node name="Door_nw_corridor_nw_conference" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1314.5, 330)
+horizontal = false
+
+[node name="Door_nw_corridor_nw_conference_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1314.5, 550)
+horizontal = false
+
+[node name="Door_nw_corridor_nw_director" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1804, 698.5)
+
+[node name="Door_nw_corridor_nw_accounts" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1314.5, 1056)
+horizontal = false
+
+[node name="Door_nw_corridor_nw_kitchen" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1782, 874.5)
+
+[node name="Door_nw_corridor_nw_supply" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1314.5, 1584)
+horizontal = false
+
+[node name="Door_nw_corridor_nw_print" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1804, 1402.5)
+
+[node name="Door_nw_archive_nw_files" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(704, 610.5)
+
+[node name="Door_nw_archive_nw_files_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(968, 610.5)
+
+[node name="Door_nw_hr_nw_mail" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(704, 1402.5)
+
+[node name="Door_nw_hr_nw_mail_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(968, 1402.5)
+
+[node name="Door_nw_conference_nw_director" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1666.5, 330)
+horizontal = false
+
+[node name="Door_nw_conference_nw_director_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1666.5, 550)
+horizontal = false
+
+[node name="Door_nw_accounts_nw_kitchen" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1622.5, 1056)
+horizontal = false
+
+[node name="Door_nw_supply_nw_print" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1666.5, 1584)
+horizontal = false
+
+[node name="Door_nw_mail_link_nw_mail_west_corridor" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1012, 1754.5)
+
+[node name="Door_link_nw_mail_west_corridor_west_corridor" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1012, 2106.5)
+
+[node name="Door_nw_director_link_nw_director_entrance_garage" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1930.5, 616)
+horizontal = false
+
+[node name="Door_link_nw_director_entrance_garage_entrance_garage" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2282.5, 616)
+horizontal = false
+
+[node name="Door_sw_corridor_sw_receiving" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(698.5, 4510)
+horizontal = false
+
+[node name="Door_sw_corridor_sw_receiving_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(698.5, 4730)
+horizontal = false
+
+[node name="Door_sw_corridor_sw_cold_store" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(698.5, 5027)
+horizontal = false
+
+[node name="Door_sw_corridor_sw_cold_store_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(698.5, 5225)
+horizontal = false
+
+[node name="Door_sw_corridor_sw_parts" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(698.5, 5522)
+horizontal = false
+
+[node name="Door_sw_corridor_sw_parts_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(698.5, 5742)
+horizontal = false
+
+[node name="Door_sw_corridor_sw_tool_crib" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(698.5, 6116)
+horizontal = false
+
+[node name="Door_sw_corridor_sw_battery" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(874.5, 4543)
+horizontal = false
+
+[node name="Door_sw_corridor_sw_battery_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(874.5, 4829)
+horizontal = false
+
+[node name="Door_sw_corridor_sw_compressor" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1430, 5010.5)
+
+[node name="Door_sw_corridor_sw_paint" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(874.5, 5346)
+horizontal = false
+
+[node name="Door_sw_corridor_sw_paint_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(874.5, 5566)
+horizontal = false
+
+[node name="Door_sw_corridor_sw_welding" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1408, 5186.5)
+
+[node name="Door_sw_corridor_sw_dispatch" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(874.5, 6116)
+horizontal = false
+
+[node name="Door_sw_corridor_sw_lounge" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1408, 5890.5)
+
+[node name="Door_sw_receiving_sw_cold_store" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(198, 4878.5)
+
+[node name="Door_sw_receiving_sw_cold_store_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(506, 4878.5)
+
+[node name="Door_sw_parts_sw_tool_crib" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(198, 5890.5)
+
+[node name="Door_sw_parts_sw_tool_crib_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(506, 5890.5)
+
+[node name="Door_sw_battery_sw_compressor" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1270.5, 4543)
+horizontal = false
+
+[node name="Door_sw_battery_sw_compressor_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1270.5, 4829)
+horizontal = false
+
+[node name="Door_sw_paint_sw_welding" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1226.5, 5346)
+horizontal = false
+
+[node name="Door_sw_paint_sw_welding_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1226.5, 5566)
+horizontal = false
+
+[node name="Door_sw_dispatch_sw_lounge" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1226.5, 6116)
+horizontal = false
+
+[node name="Door_sw_receiving_link_sw_receiving_west_boat_house" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(528, 4350.5)
+
+[node name="Door_link_sw_receiving_west_boat_house_west_boat_house" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(528, 3998.5)
+
+[node name="Door_ne_corridor_extract_helipad" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5698, 610.5)
+
+[node name="Door_ne_corridor_extract_helipad_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6358, 610.5)
+
+[node name="Door_ne_corridor_ne_flight_ops" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5148, 610.5)
+
+[node name="Door_ne_corridor_ne_briefing" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6930, 610.5)
+
+[node name="Door_ne_corridor_ne_briefing_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(7150, 610.5)
+
+[node name="Door_ne_corridor_ne_stores_a" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5170, 786.5)
+
+[node name="Door_ne_corridor_ne_stores_a_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5390, 786.5)
+
+[node name="Door_ne_corridor_ne_stores_b" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5698, 786.5)
+
+[node name="Door_ne_corridor_ne_stores_b_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5918, 786.5)
+
+[node name="Door_ne_corridor_ne_tools" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6226, 786.5)
+
+[node name="Door_ne_corridor_ne_tools_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6446, 786.5)
+
+[node name="Door_ne_corridor_ne_crew_a" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5170, 1314.5)
+
+[node name="Door_ne_corridor_ne_crew_a_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5390, 1314.5)
+
+[node name="Door_ne_corridor_ne_crew_b" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5698, 1314.5)
+
+[node name="Door_ne_corridor_ne_crew_b_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5918, 1314.5)
+
+[node name="Door_ne_corridor_ne_lockers" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6226, 1314.5)
+
+[node name="Door_ne_corridor_ne_lockers_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6446, 1314.5)
+
+[node name="Door_ne_corridor_ne_ops" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6930, 786.5)
+
+[node name="Door_ne_corridor_ne_ops_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(7150, 786.5)
+
+[node name="Door_ne_corridor_ne_security" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6770.5, 1452)
+horizontal = false
+
+[node name="Door_ne_fuel_bunker_ne_flight_ops" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5148, 214.5)
+
+[node name="Door_ne_radio_ne_briefing" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6930, 214.5)
+
+[node name="Door_ne_radio_ne_briefing_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(7150, 214.5)
+
+[node name="Door_ne_stores_a_ne_stores_b" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5538.5, 968)
+horizontal = false
+
+[node name="Door_ne_stores_b_ne_tools" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6066.5, 968)
+horizontal = false
+
+[node name="Door_ne_crew_a_ne_crew_b" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5538.5, 1496)
+horizontal = false
+
+[node name="Door_ne_crew_b_ne_lockers" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6066.5, 1496)
+horizontal = false
+
+[node name="Door_ne_ops_ne_security" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6930, 1226.5)
+
+[node name="Door_ne_ops_ne_security_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(7150, 1226.5)
+
+[node name="Door_ne_security_link_ne_security_east_plant_office" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6864, 1666.5)
+
+[node name="Door_link_ne_security_east_plant_office_east_plant_office" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6864, 2018.5)
+
+[node name="Door_se_corridor_se_freight_office" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5038, 5098.5)
+
+[node name="Door_se_corridor_se_customs" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5626.5, 4631)
+horizontal = false
+
+[node name="Door_se_corridor_se_customs_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5626.5, 4917)
+horizontal = false
+
+[node name="Door_se_corridor_se_container_store" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5802.5, 4631)
+horizontal = false
+
+[node name="Door_se_corridor_se_container_store_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5802.5, 4917)
+horizontal = false
+
+[node name="Door_se_corridor_se_weigh_station" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6594.5, 4631)
+horizontal = false
+
+[node name="Door_se_corridor_se_weigh_station_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6594.5, 4917)
+horizontal = false
+
+[node name="Door_se_corridor_se_rail_office" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6770.5, 4631)
+horizontal = false
+
+[node name="Door_se_corridor_se_rail_office_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6770.5, 4917)
+horizontal = false
+
+[node name="Door_se_corridor_se_bay_1" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5060, 5274.5)
+
+[node name="Door_se_corridor_se_bay_1_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5412, 5274.5)
+
+[node name="Door_se_corridor_se_bay_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5626.5, 5962)
+horizontal = false
+
+[node name="Door_se_corridor_se_bay_2_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5626.5, 6182)
+horizontal = false
+
+[node name="Door_se_corridor_se_bay_3" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6028, 5274.5)
+
+[node name="Door_se_corridor_se_bay_3_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6380, 5274.5)
+
+[node name="Door_se_corridor_se_tank_room" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5802.5, 5962)
+horizontal = false
+
+[node name="Door_se_corridor_se_tank_room_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5802.5, 6182)
+horizontal = false
+
+[node name="Door_se_corridor_se_switch_room" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6930, 5274.5)
+
+[node name="Door_se_corridor_se_switch_room_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(7150, 5274.5)
+
+[node name="Door_se_corridor_se_loco_shed" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6770.5, 5962)
+horizontal = false
+
+[node name="Door_se_corridor_se_loco_shed_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6770.5, 6182)
+horizontal = false
+
+[node name="Door_se_freight_office_se_customs" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5230.5, 4631)
+horizontal = false
+
+[node name="Door_se_freight_office_se_customs_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5230.5, 4917)
+horizontal = false
+
+[node name="Door_se_container_store_se_weigh_station" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6198.5, 4631)
+horizontal = false
+
+[node name="Door_se_container_store_se_weigh_station_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6198.5, 4917)
+horizontal = false
+
+[node name="Door_se_bay_1_se_bay_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5060, 5802.5)
+
+[node name="Door_se_bay_1_se_bay_2_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5412, 5802.5)
+
+[node name="Door_se_bay_3_se_tank_room" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6028, 5802.5)
+
+[node name="Door_se_bay_3_se_tank_room_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6380, 5802.5)
+
+[node name="Door_se_switch_room_se_loco_shed" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6930, 5802.5)
+
+[node name="Door_se_switch_room_se_loco_shed_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(7150, 5802.5)
+
+[node name="Door_se_rail_office_link_se_rail_office_extract_rail" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6864, 4438.5)
+
+[node name="Door_link_se_rail_office_extract_rail_extract_rail" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6864, 4086.5)
+
+[node name="Door_nn_chase_north_corridor" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2508, 1226.5)
+
+[node name="Door_nn_chase_nn_janitor" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2508, 1578.5)
+
+[node name="Door_nn_janitor_nn_core" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2508, 1930.5)
+
+[node name="Door_nn_core_west_server" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2552, 2282.5)
+
+[node name="Door_link_corridor_link_link_corridor_nw_corridor" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1232, 2106.5)
+
+[node name="Door_link_link_corridor_nw_corridor_nw_corridor" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1232, 1754.5)
+
+[node name="Door_link_corridor_doors_west" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1760, 2282.5)
+
+[node name="Door_link_corridor_west_records" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2112, 2282.5)
+
+[node name="Door_link_corridor_nn_core" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2282.5, 2200)
+horizontal = false
+
+[node name="Door_sw_link_sl_boiler" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2106.5, 3850)
+horizontal = false
+
+[node name="Door_sw_link_sl_boiler_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2106.5, 4070)
+horizontal = false
+
+[node name="Door_sw_link_sl_linen" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2106.5, 4378)
+horizontal = false
+
+[node name="Door_sw_link_sl_linen_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2106.5, 4598)
+horizontal = false
+
+[node name="Door_sw_link_sl_workshop" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2106.5, 4906)
+horizontal = false
+
+[node name="Door_sw_link_sl_workshop_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2106.5, 5126)
+horizontal = false
+
+[node name="Door_sw_link_west_lab_b" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2024, 3690.5)
+
+[node name="Door_sw_link_south_corridor" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2024, 5274.5)
+
+[node name="Door_sw_link_link_sw_link_sw_corridor" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1930.5, 5104)
+horizontal = false
+
+[node name="Door_link_sw_link_sw_corridor_sw_corridor" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1578.5, 5104)
+horizontal = false
+
+[node name="Door_sl_boiler_sl_linen" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2288, 4218.5)
+
+[node name="Door_sl_linen_sl_workshop" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2288, 4746.5)
+
+[node name="Door_ss_link_ss_truck_bay" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(4130.5, 3971)
+horizontal = false
+
+[node name="Door_ss_link_ss_truck_bay_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(4130.5, 4169)
+horizontal = false
+
+[node name="Door_ss_link_ss_wash_bay" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(4130.5, 4455)
+horizontal = false
+
+[node name="Door_ss_link_ss_wash_bay_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(4130.5, 4653)
+horizontal = false
+
+[node name="Door_ss_link_ss_tyre_store" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(4130.5, 4939)
+horizontal = false
+
+[node name="Door_ss_link_ss_tyre_store_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(4130.5, 5137)
+horizontal = false
+
+[node name="Door_ss_link_south_corridor" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(4048, 5274.5)
+
+[node name="Door_ss_link_south_cafeteria" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(3954.5, 4356)
+horizontal = false
+
+[node name="Door_ss_link_south_cafeteria_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(3954.5, 4708)
+horizontal = false
+
+[node name="Door_ss_link_south_break_room" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(3954.5, 3982)
+horizontal = false
+
+[node name="Door_ss_truck_bay_ss_wash_bay" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(4312, 4306.5)
+
+[node name="Door_ss_wash_bay_ss_tyre_store" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(4312, 4790.5)
+
+[node name="Door_ss_tyre_store_south_corridor" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(4312, 5274.5)
+
+[node name="Door_east_service_east_workshop" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(4730, 3822.5)
+
+[node name="Door_east_service_east_workshop_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(4950, 3822.5)
+
+[node name="Door_east_service_east_stores" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5258, 3822.5)
+
+[node name="Door_east_service_east_stores_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5478, 3822.5)
+
+[node name="Door_east_service_east_pump_house" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5786, 3822.5)
+
+[node name="Door_east_service_east_pump_house_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6006, 3822.5)
+
+[node name="Door_east_service_link_east_service_se_corridor" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5720, 4086.5)
+
+[node name="Door_link_east_service_se_corridor_se_corridor" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5720, 4438.5)
+
+[node name="Door_na_offices_north_corridor" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(4224, 1226.5)
+
+[node name="Door_na_offices_north_corridor_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(4488, 1226.5)
+
+[node name="Door_na_offices_na_comms" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(4224, 1578.5)
+
+[node name="Door_na_offices_na_comms_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(4488, 1578.5)
+
+[node name="Door_na_comms_na_records" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(4224, 1930.5)
+
+[node name="Door_na_comms_na_records_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(4488, 1930.5)
+
+[node name="Door_na_comms_north_cameras" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(4042.5, 1672)
+horizontal = false
+
+[node name="Door_na_records_north_turrets" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(4042.5, 2024)
+horizontal = false
+
+[node name="Door_nw_press_nw_mail" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(704, 1754.5)
+
+[node name="Door_nw_press_west_lobby" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(506, 2106.5)
+
+[node name="Door_nw_press_west_lobby_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(726, 2106.5)
+
+[node name="Door_nw_reception_nw_supply" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1496, 1754.5)
+
+[node name="Door_nw_reception_nw_print" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1804, 1754.5)
+
+[node name="Door_nw_reception_link_corridor" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1496, 2106.5)
+
+[node name="Door_nw_reception_link_corridor_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1760, 2106.5)
+
+[node name="Door_nw_gate_post_nw_director" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1930.5, 352)
+horizontal = false
+
+[node name="Door_nw_valet_entrance_garage" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2282.5, 836)
+horizontal = false
+
+[node name="Door_nw_valet_nw_corridor" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1930.5, 792)
+horizontal = false
+
+[node name="Door_nw_depot_nn_chase" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2282.5, 1408)
+horizontal = false
+
+[node name="Door_nw_depot_nw_corridor" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1930.5, 1320)
+horizontal = false
+
+[node name="Door_nw_spares_nn_janitor" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2282.5, 1760)
+horizontal = false
+
+[node name="Door_nw_spares_nw_print" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1930.5, 1672)
+horizontal = false
+
+[node name="Door_ne_guard_shack_ne_fuel_bunker" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5010.5, 22)
+horizontal = false
+
+[node name="Door_ne_supply_shed_ne_flight_ops" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5010.5, 418)
+horizontal = false
+
+[node name="Door_ne_west_gate_ne_stores_a" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5010.5, 968)
+horizontal = false
+
+[node name="Door_ne_west_gate_ne_corridor" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5010.5, 1232)
+horizontal = false
+
+[node name="Door_ne_west_lockers_ne_crew_a" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5010.5, 1496)
+horizontal = false
+
+[node name="Door_ne_ground_support_ne_crew_a" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5170, 1666.5)
+
+[node name="Door_ne_ground_support_ne_crew_a_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5390, 1666.5)
+
+[node name="Door_ne_ground_support_east_generator" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5170, 2282.5)
+
+[node name="Door_ne_ground_support_east_generator_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5390, 2282.5)
+
+[node name="Door_ne_fuel_pumps_ne_crew_b" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5698, 1666.5)
+
+[node name="Door_ne_fuel_pumps_ne_crew_b_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5918, 1666.5)
+
+[node name="Door_ne_fuel_pumps_ne_lockers" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6116, 1666.5)
+
+[node name="Door_ne_fuel_pumps_east_generator" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5632, 2282.5)
+
+[node name="Door_ne_fuel_pumps_east_breakers" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5940, 2282.5)
+
+[node name="Door_ne_fuel_pumps_ne_checkpoint" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6154.5, 1848)
+horizontal = false
+
+[node name="Door_ne_checkpoint_ne_lockers" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6292, 1666.5)
+
+[node name="Door_ne_checkpoint_east_corridor" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6292, 2018.5)
+
+[node name="Door_ne_plant_gate_ne_corridor" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6688, 1666.5)
+
+[node name="Door_ne_plant_gate_east_plant_office" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6600, 2018.5)
+
+[node name="Door_se_gatehouse_east_service" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5060, 4086.5)
+
+[node name="Door_se_gatehouse_east_service_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5412, 4086.5)
+
+[node name="Door_se_gatehouse_se_freight_office" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5038, 4438.5)
+
+[node name="Door_se_gatehouse_se_customs" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5434, 4438.5)
+
+[node name="Door_se_scale_house_east_service" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5984, 4086.5)
+
+[node name="Door_se_scale_house_se_container_store" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6006, 4438.5)
+
+[node name="Door_se_scale_house_se_weigh_station" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6402, 4438.5)
+
+[node name="Door_sw_watch_post_west_boat_house" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(748, 3998.5)
+
+[node name="Door_sw_watch_post_sw_corridor" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(792, 4350.5)
+
+[node name="Door_sw_overlook_west_corridor" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1012, 3998.5)
+
+[node name="Door_sw_overlook_sw_battery" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1078, 4350.5)
+
+[node name="Door_sw_overlook_sw_compressor" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1430, 4350.5)
+
+[node name="Door_sw_east_store_sw_compressor" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1578.5, 4543)
+horizontal = false
+
+[node name="Door_sw_east_store_sw_compressor_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1578.5, 4829)
+horizontal = false
+
+[node name="Door_sw_east_store_sw_link" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1930.5, 4543)
+horizontal = false
+
+[node name="Door_sw_east_store_sw_link_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1930.5, 4829)
+horizontal = false
+
+[node name="Door_sw_east_bay_sw_welding" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1578.5, 5346)
+horizontal = false
+
+[node name="Door_sw_east_bay_sw_welding_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1578.5, 5566)
+horizontal = false
+
+[node name="Door_sw_east_bay_sw_link" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1930.5, 5236)
+horizontal = false
+
+[node name="Door_sw_east_garage_sw_lounge" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1578.5, 6116)
+horizontal = false
+
+[node name="Door_sw_east_garage_entrance_service" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1930.5, 5852)
+horizontal = false
+
+[node name="Door_east_road_ne_security" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(7298.5, 1540)
+horizontal = false
+
+[node name="Door_east_road_pad_east" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(7298.5, 2926)
+horizontal = false
+
+[node name="Door_east_road_pad_east_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(7298.5, 3630)
+horizontal = false
+
+[node name="Door_east_road_se_rail_office" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(7298.5, 4631)
+horizontal = false
+
+[node name="Door_east_road_se_rail_office_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(7298.5, 4917)
+horizontal = false
+
+[node name="Door_east_road_se_switch_room" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(7298.5, 5324)
+horizontal = false
+
+[node name="Door_south_road_sw_tool_crib" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(198, 6330.5)
+
+[node name="Door_south_road_sw_tool_crib_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(506, 6330.5)
+
+[node name="Door_south_road_sw_dispatch" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1056, 6330.5)
+
+[node name="Door_south_road_sw_lounge" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1408, 6330.5)
+
+[node name="Door_south_road_pad_south" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2728, 6330.5)
+
+[node name="Door_south_road_pad_south_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(3696, 6330.5)
+
+[node name="Door_south_road_se_bay_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5060, 6330.5)
+
+[node name="Door_south_road_se_bay_2_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(5412, 6330.5)
+
+[node name="Door_south_road_se_tank_room" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6028, 6330.5)
+
+[node name="Door_south_road_se_tank_room_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6380, 6330.5)
+
+[node name="Door_south_road_se_loco_shed" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6930, 6330.5)
+
+[node name="Door_south_road_se_loco_shed_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(7150, 6330.5)
+
+[node name="Door_north_corridor_atrium" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(3443, 2722.5)
+
+[node name="Door_north_corridor_atrium_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(3487, 2722.5)
+
+[node name="Door_east_corridor_atrium" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(4130.5, 3135)
+horizontal = false
+
+[node name="Door_east_corridor_atrium_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(4130.5, 3179)
+horizontal = false
+
+[node name="Door_south_corridor_atrium" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(3179, 3690.5)
+
+[node name="Door_south_corridor_atrium_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(3223, 3690.5)
+
+[node name="Door_west_corridor_atrium" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2810.5, 3003)
+horizontal = false
+
+[node name="Door_west_corridor_atrium_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(2810.5, 3047)
+horizontal = false
+
+[node name="Door_link_corridor_west_corridor" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1138.5, 2167)
+horizontal = false
+
+[node name="Door_link_corridor_west_corridor_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(1138.5, 2211)
+horizontal = false
+
+[node name="Door_east_service_east_corridor" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6154.5, 3927)
+horizontal = false
+
+[node name="Door_east_service_east_corridor_2" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(6154.5, 3971)
+horizontal = false
+
+[node name="Vents" type="Node2D" parent="."]
+
+[node name="ArtifactLocations" type="Node2D" parent="."]
+
+[node name="NorthArmoryArtifact" type="Marker2D" parent="ArtifactLocations"]
+position = Vector2(3030, 1446)
+script = ExtResource("7_loc")
+
+[node name="NorthEvidenceArtifact" type="Marker2D" parent="ArtifactLocations"]
+position = Vector2(3030, 1842)
+script = ExtResource("7_loc")
+
+[node name="EastGeneratorArtifact" type="Marker2D" parent="ArtifactLocations"]
+position = Vector2(5186, 2656)
+script = ExtResource("7_loc")
+
+[node name="SouthCafeteriaArtifact" type="Marker2D" parent="ArtifactLocations"]
+position = Vector2(3646, 4526)
+script = ExtResource("7_loc")
+
+[node name="WestVaultArtifact" type="Marker2D" parent="ArtifactLocations"]
+position = Vector2(1358, 2590)
+script = ExtResource("7_loc")
+
+[node name="WestRecordsArtifact" type="Marker2D" parent="ArtifactLocations"]
+position = Vector2(2150, 2590)
+script = ExtResource("7_loc")
+
+[node name="Props" type="Node2D" parent="."]
+y_sort_enabled = true
+
+[node name="DoorControlPanel_east" parent="Props" instance=ExtResource("6_panel")]
+position = Vector2(4394, 2312)
+
+[node name="DoorControlPanel_north" parent="Props" instance=ExtResource("6_panel")]
+position = Vector2(3030, 2400)
+
+[node name="DoorControlPanel_south" parent="Props" instance=ExtResource("6_panel")]
+position = Vector2(2766, 4336)
+
+[node name="DoorControlPanel_west" parent="Props" instance=ExtResource("6_panel")]
+position = Vector2(1754, 2312)
+
+[node name="Decor" type="Node2D" parent="."]
+y_sort_enabled = true
+
+[node name="Actors" type="Node2D" parent="."]
+y_sort_enabled = true

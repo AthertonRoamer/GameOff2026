@@ -7,15 +7,20 @@ extends Node2D
 ##  Rooms   FacilityRoom nodes: each one's FacilityRoomRect children are its floor (select one and drag its handles, they snap to the 11 px grid)
 ##  Doors   FacilityDoor scenes dragged into the walls between rooms
 ##  Vents   Marker2D nodes: the top left corner of a 2 x 2 cell (0.5 m) grille
-##  Props   anything that stands on the floor (control panels), y-sorted
+##  Props   anything that stands on the floor and matters to the game (control panels, things that block): always there, y-sorted
+##  Decor   (optional) furniture and clutter that is only looked at: sprites and lights, no collision. Streamed: only what is near the view is in the tree
 ##  Spawns  GuardSpawn / IntruderSpawn markers: each makes the room it stands on a spawn room of its kind (see SpawnRoomMarker, spawn_rooms)
 ##  Actors  where players and other moving things are added, y-sorted
 ##  A room of kind Exit is an exit zone: an area outside the walls with no floor or wall tiles of its own, reached through a door like a room and
 ##          ringed by invisible walls (see FacilityRoom.is_exit, exits, barrier_cells, is_in_exit)
 ##  Floors, Walls, Shadows   tile layers the map makes and fills in itself from the rooms and doors, in the editor as well as in the game: every cell of
 ##          a room is floor, every empty cell touching a floor cell is wall (so rooms need a one cell gap), and the floor beside a wall gets a soft
-##          shadow. They are not part of the scene file (they are made when it loads and rebuilt a moment after any room or door changes, and can
-##          not be selected in the editor), so resizing a room never touches the art. The Rebuild button below redoes them by hand.
+##          shadow. They are not part of the scene file, so resizing a room never touches the art. The Rebuild button below redoes them by hand.
+##
+##The map is big, so none of this is made all at once. What the game asks about (which room a point is in, where the walls are, where the doors are) is worked
+##out from the rooms' rectangles in a moment. What is expensive is the tiles (a hundred thousand cells), and they are painted a chunk (16 x 16 cells, 4 m) at a
+##time by the MapStreamer, only near the view, and erased again when the view leaves. Walls' collision and the doors are always there (they are cheap, and every
+##player needs them whether or not this peer's camera is near). The Streaming settings below tune it.
 ##
 ##Physics layers: walls are on layer 2 (FacilityTileSet.WORLD_LAYER), closed doors on layer 4 (DOOR_LAYER). A player body should have
 ##a collision mask of 2 | 8 = 10 so walls and doors stop it, and a projectile's world mask should be 2 so only walls stop a bullet.
@@ -23,6 +28,7 @@ extends Node2D
 signal built
 
 const TILE : int = FacilityTileSet.TILE
+const CHUNK_SHIFT : int = 4 #a chunk is 1 << 4 = 16 cells on a side (176 px, 4 m)
 const WALL_Z : int = 1 #z_index of the walls and gates: over the players, whose bodies can reach into the wall beside them
 const FLOOR_Z : int = -20 #z_index of the floor and shadow layers; a dead body is at Player.DEAD_Z, above them and below everything else
 const EDITOR_REBUILD_DELAY : float = 0.15 #seconds a room or door has to sit still in the editor before the tiles are rebuilt
@@ -31,16 +37,27 @@ const EDITOR_REBUILD_DELAY : float = 0.15 #seconds a room or door has to sit sti
 @export var apply_doors_start : bool = true #off: each door starts in the state it has in the scene
 @export var void_color : Color = Color("#07090c") #what shows outside the building. Palette A "void"
 @export_tool_button("Rebuild floors, walls and shadows") var rebuild_button : Callable = build
+@export_group("Streaming")
+@export var stream_tiles : bool = true ## paint the tiles only near the view (off: all of them at once, which takes seconds on a big map)
+@export_range(0, 96, 1, "suffix:cells") var view_margin_cells : int = 32 ## tiles stay painted this far past the edge of the view (and are painted ahead of the player)
+@export_range(0, 96, 1, "suffix:cells") var unload_extra_cells : int = 24 ## and are only erased once the view is this much further away, so a player at the edge does not flicker them
+@export_range(0.5, 16.0, 0.5, "suffix:ms") var chunk_budget_ms : float = 3.0 ## how long each frame may be spent painting and erasing tiles
+@export_range(0, 192, 1, "suffix:cells") var decor_margin_cells : int = 64 ## Decor within this far of the view is in the tree
+@export_range(0, 48, 1, "suffix:cells") var editor_margin_cells : int = 8 ## the same margin, in the editor (it follows the 2D view)
 
 var rooms : Dictionary = {} #room id -> {name, kind, function, rects: Array[Rect2i], exterior: bool, spawns: {SpawnRoomMarker.Kind: world point}}
-var floor_cells : Dictionary = {} #Vector2i -> room id
-var wall_cells : Dictionary = {} #Vector2i -> true
+var floor_rects : Array[Rect2i] = [] #every piece of floor, in cells: the rooms' rectangles, then the door cells
+var wall_cells : Dictionary = {} #Vector2i -> true: every empty cell touching a floor cell
 var exits : Dictionary = {} #exit id -> Array[Rect2i]: the rooms of kind Exit, which are zones rather than rooms (no floor, no walls), see FacilityRoom.is_exit. Not in `rooms`
 var exit_cells : Dictionary = {} #Vector2i -> exit id
 var barrier_cells : Dictionary = {} #Vector2i -> true: the invisible walls round the exit zones (collision, no tile), see _compute_walls
 var doors : Array[FacilityDoor] = []
 var vents : Array[Vector2i] = []
 
+var _floor_ids : PackedStringArray = [] #the room of each of floor_rects
+var _floor_index : Dictionary = {} #chunk (Vector2i) -> Array of indexes into floor_rects that reach into it
+var _wall_chunks : Dictionary = {} #chunk -> Array of the wall cells in it
+var _painted : Dictionary = {} #chunk -> true: the chunks whose tiles are on the layers now
 var _signature : int = 0 #editor: what the rooms and doors looked like when the tiles were last built
 var _changed_for : float = 0.0
 
@@ -48,6 +65,7 @@ var floors : TileMapLayer #made in _ready (see _make_layers), not part of the sc
 var shadows : TileMapLayer
 var walls : TileMapLayer
 var wall_body : StaticBody2D #the walls' collision and occluders (the tiles only draw), see _build_wall_body
+var streamer : MapStreamer #paints and erases the tiles near the view, and brings Decor in and out of the tree
 @onready var rooms_node : Node2D = $Rooms
 @onready var doors_node : Node2D = $Doors
 @onready var vents_node : Node2D = $Vents
@@ -99,33 +117,37 @@ func _make_layers() -> void:
 		move_child(layer, index)
 		index += 1
 		set(layer_name.to_lower(), layer)
-	var old_body : Node = get_node_or_null("WallBodies")
-	if old_body != null:
-		remove_child(old_body)
-		old_body.free()
+	for stale : String in ["WallBodies", "Streamer"]:
+		var old_node : Node = get_node_or_null(stale)
+		if old_node != null:
+			remove_child(old_node)
+			old_node.free()
 	wall_body = StaticBody2D.new() #the walls' collision and light occluders, see _build_wall_body
 	wall_body.name = "WallBodies"
 	wall_body.collision_layer = FacilityTileSet.WORLD_LAYER
 	wall_body.collision_mask = 0
 	add_child(wall_body)
 	move_child(wall_body, index)
+	streamer = MapStreamer.new()
+	streamer.name = "Streamer"
+	streamer.map = self
+	add_child(streamer)
 
 
-##Reads the rooms and doors, fills in the floor, wall and shadow layers, and works out which rooms each door joins.
+##Reads the rooms and doors, works out the walls and which rooms each door joins, and starts the tiles over (the streamer paints them as they come into view).
 func build() -> void:
 	_collect_rooms()
 	_collect_doors()
 	_compute_walls()
-	for layer : TileMapLayer in [floors, shadows, walls]:
-		layer.clear()
-	_paint_floors()
-	_paint_walls()
+	clear_tiles()
+	_build_wall_body()
 	_collect_vents()
 	_collect_spawns()
 	_signature = _layout_signature()
 	built.emit()
 
 
+# ------------------------------------------------------------------ asking about the map
 ##World position of the centre of a tile.
 func cell_to_world(cell : Vector2i) -> Vector2:
 	return Vector2(cell * TILE) + Vector2(TILE, TILE) / 2.0
@@ -137,7 +159,34 @@ func world_to_cell(world : Vector2) -> Vector2i:
 
 ##Id of the room a world position is in, or "" for walls and empty space.
 func room_at(world : Vector2) -> String:
-	return floor_cells.get(world_to_cell(world), "")
+	return room_of_cell(world_to_cell(world))
+
+
+##Id of the room a cell is floor of (a door's cells belong to the room on its north or west side), or "".
+func room_of_cell(cell : Vector2i) -> String:
+	var list : Array = _floor_index.get(Vector2i(cell.x >> CHUNK_SHIFT, cell.y >> CHUNK_SHIFT), [])
+	for i : int in list:
+		if floor_rects[i].has_point(cell):
+			return _floor_ids[i]
+	return ""
+
+
+func is_floor(cell : Vector2i) -> bool:
+	var list : Array = _floor_index.get(Vector2i(cell.x >> CHUNK_SHIFT, cell.y >> CHUNK_SHIFT), [])
+	for i : int in list:
+		if floor_rects[i].has_point(cell):
+			return true
+	return false
+
+
+##How many cells of floor there are (counted once each, so slowish on a big map: for tests and tools).
+func floor_cell_count() -> int:
+	var seen : Dictionary = {}
+	for rect : Rect2i in floor_rects:
+		for y in range(rect.position.y, rect.end.y):
+			for x in range(rect.position.x, rect.end.x):
+				seen[Vector2i(x, y)] = true
+	return seen.size()
 
 
 ##Id of the exit zone a world position is in, or "".
@@ -160,6 +209,27 @@ func room_rects_px(room_id : String) -> Array[Rect2]:
 func room_center_px(room_id : String) -> Vector2:
 	var rects : Array[Rect2] = room_rects_px(room_id)
 	return rects[0].get_center()
+
+
+##A random point on the floor of the facility, inside a room (not outdoors), in world pixels. Rooms count by their size, so every part of the floor is as likely as any other.
+func random_floor_point() -> Vector2:
+	var rects : Array[Rect2i] = []
+	var cells : int = 0
+	for id : String in rooms:
+		if rooms[id]["kind"] == "outdoor":
+			continue
+		for rect : Rect2i in rooms[id]["rects"]:
+			rects.append(rect)
+			cells += rect.size.x * rect.size.y
+	if cells == 0:
+		return Vector2.ZERO
+	var pick : int = randi() % cells
+	for rect : Rect2i in rects:
+		pick -= rect.size.x * rect.size.y
+		if pick < 0:
+			var inner : Rect2i = rect.grow(-1) if rect.size.x > 2 and rect.size.y > 2 else rect #(a cell in from the walls)
+			return cell_to_world(inner.position + Vector2i(randi() % inner.size.x, randi() % inner.size.y))
+	return Vector2.ZERO
 
 
 ##The rooms players of this kind may start in (SpawnRoomMarker.Kind), in scene order (the same on every peer).
@@ -192,13 +262,97 @@ func doors_of_room(room_id : String) -> Array[FacilityDoor]:
 	return result
 
 
-func map_bounds_px() -> Rect2:
-	var bounds : Rect2i
+##The whole map, walls included, in cells.
+func map_cell_bounds() -> Rect2i:
+	var bounds : Rect2i = Rect2i()
 	var first : bool = true
-	for cell : Vector2i in wall_cells:
-		bounds = Rect2i(cell, Vector2i.ONE) if first else bounds.expand(cell).expand(cell + Vector2i.ONE)
+	for rect : Rect2i in floor_rects:
+		bounds = rect.grow(1) if first else bounds.merge(rect.grow(1))
 		first = false
+	return bounds
+
+
+func map_bounds_px() -> Rect2:
+	var bounds : Rect2i = map_cell_bounds()
 	return Rect2(Vector2(bounds.position * TILE), Vector2(bounds.size * TILE))
+
+
+func chunk_of_cell(cell : Vector2i) -> Vector2i:
+	return Vector2i(cell.x >> CHUNK_SHIFT, cell.y >> CHUNK_SHIFT)
+
+
+func chunk_of_world(world : Vector2) -> Vector2i:
+	return chunk_of_cell(world_to_cell(world))
+
+
+##Whether there is anything in a chunk to paint (floor or wall).
+func chunk_has_tiles(chunk : Vector2i) -> bool:
+	return _floor_index.has(chunk) or _wall_chunks.has(chunk)
+
+
+# ------------------------------------------------------------------ the tiles, a chunk at a time
+##Paints one chunk: the floor, the soft shadow on the floor beside a wall, and the walls. The streamer calls this as a chunk comes into view.
+func paint_chunk(chunk : Vector2i) -> void:
+	if floors == null or _painted.has(chunk):
+		return
+	_painted[chunk] = true
+	var area : Rect2i = Rect2i(chunk * (1 << CHUNK_SHIFT), Vector2i.ONE * (1 << CHUNK_SHIFT))
+	for i : int in _floor_index.get(chunk, []):
+		var whole : Rect2i = floor_rects[i]
+		var part : Rect2i = whole.intersection(area)
+		for y in range(part.position.y, part.end.y):
+			var edge_row : bool = y == whole.position.y or y == whole.end.y - 1
+			for x in range(part.position.x, part.end.x):
+				var cell : Vector2i = Vector2i(x, y)
+				floors.set_cell(cell, FacilityTileSet.SOURCE_FLOORS, Vector2i.ZERO)
+				if edge_row or x == whole.position.x or x == whole.end.x - 1: #(only the floor along a room's edge has a wall next to it)
+					var mask : int = FacilityTileSet.neighbour_mask(cell, wall_cells)
+					if mask != 0:
+						shadows.set_cell(cell, FacilityTileSet.SOURCE_SHADOWS, FacilityTileSet.mask_to_atlas(mask))
+	for cell : Vector2i in _wall_chunks.get(chunk, []):
+		walls.set_cell(cell, FacilityTileSet.SOURCE_WALLS, FacilityTileSet.mask_to_atlas(FacilityTileSet.neighbour_mask(cell, wall_cells)))
+
+
+##Erases one chunk's tiles again.
+func clear_chunk(chunk : Vector2i) -> void:
+	if not _painted.erase(chunk):
+		return
+	for i : int in _floor_index.get(chunk, []):
+		var part : Rect2i = floor_rects[i].intersection(Rect2i(chunk * (1 << CHUNK_SHIFT), Vector2i.ONE * (1 << CHUNK_SHIFT)))
+		for y in range(part.position.y, part.end.y):
+			for x in range(part.position.x, part.end.x):
+				floors.erase_cell(Vector2i(x, y))
+				shadows.erase_cell(Vector2i(x, y))
+	for cell : Vector2i in _wall_chunks.get(chunk, []):
+		walls.erase_cell(cell)
+
+
+func is_chunk_painted(chunk : Vector2i) -> bool:
+	return _painted.has(chunk)
+
+
+func painted_chunks() -> Array:
+	return _painted.keys()
+
+
+##Paints the whole map now (tests and tools; the game never needs to).
+func paint_all() -> void:
+	var chunks : Dictionary = {}
+	for chunk : Vector2i in _floor_index:
+		chunks[chunk] = true
+	for chunk : Vector2i in _wall_chunks:
+		chunks[chunk] = true
+	for chunk : Vector2i in chunks:
+		paint_chunk(chunk)
+
+
+func clear_tiles() -> void:
+	_painted.clear()
+	for layer : TileMapLayer in [floors, shadows, walls]:
+		if layer != null:
+			layer.clear()
+	if streamer != null:
+		streamer.refresh()
 
 
 func _room_nodes() -> Array[FacilityRoom]:
@@ -219,10 +373,10 @@ func _door_nodes() -> Array[FacilityDoor]:
 
 func _collect_rooms() -> void:
 	rooms.clear()
-	floor_cells.clear()
+	floor_rects.clear()
+	_floor_ids.clear()
 	exits.clear()
 	exit_cells.clear()
-	var clashes : Dictionary = {} #room id -> another room whose floor it shares
 	for room : FacilityRoom in _room_nodes():
 		var rects : Array[Rect2i] = room.cell_rects(self)
 		if room.is_exit(): #a zone, not floor: no tiles of its own. It sits outside a room's wall, joined to the room by a door
@@ -233,20 +387,23 @@ func _collect_rooms() -> void:
 						exit_cells[Vector2i(x, y)] = room.room_id()
 			continue
 		for rect : Rect2i in rects:
-			for y in range(rect.position.y, rect.end.y):
-				for x in range(rect.position.x, rect.end.x):
-					var cell : Vector2i = Vector2i(x, y)
-					if floor_cells.has(cell) and floor_cells[cell] != room.room_id():
-						clashes[room.room_id()] = floor_cells[cell]
-						clashes[floor_cells[cell]] = room.room_id()
-					floor_cells[cell] = room.room_id()
+			floor_rects.append(rect)
+			_floor_ids.append(room.room_id())
 		var label : String = room.display_name if room.display_name != "" else room.room_id().capitalize()
 		rooms[room.room_id()] = {"name": label, "kind": room.kind_name(), "function": room.function_name(), "rects": rects, "exterior": false, "spawns": {}}
-	for cell : Vector2i in exit_cells: #an exit needs the same one cell wall between it and a room as two rooms do, or it would cut a gap in the wall
-		for offset in [Vector2i.ZERO] + FacilityTileSet.NEIGHBOURS:
-			if floor_cells.has(cell + offset):
-				clashes[exit_cells[cell]] = floor_cells[cell + offset]
+	_index_floor()
 	if Engine.is_editor_hint(): #the editor says so on a room that overlaps another
+		var clashes : Dictionary = {} #room id -> another room whose floor it shares
+		for cell : Vector2i in exit_cells: #an exit needs the same one cell wall between it and a room as two rooms do, or it would cut a gap in the wall
+			for offset in [Vector2i.ZERO] + FacilityTileSet.NEIGHBOURS:
+				if is_floor(cell + offset):
+					clashes[exit_cells[cell]] = room_of_cell(cell + offset)
+		for i in floor_rects.size():
+			for chunk : Vector2i in _chunks_of(floor_rects[i]):
+				for j : int in _floor_index[chunk]:
+					if j > i and _floor_ids[j] != _floor_ids[i] and floor_rects[i].intersects(floor_rects[j]):
+						clashes[_floor_ids[i]] = _floor_ids[j]
+						clashes[_floor_ids[j]] = _floor_ids[i]
 		for room : FacilityRoom in _room_nodes():
 			room.set_clash(clashes.get(room.room_id(), ""))
 
@@ -255,7 +412,8 @@ func _collect_rooms() -> void:
 func _collect_doors() -> void:
 	doors.clear()
 	var index : int = 0
-	var room_cells : Dictionary = floor_cells.duplicate() #the rooms' own cells, before any door cell is added
+	var door_floor : Array[Rect2i] = []
+	var door_floor_rooms : PackedStringArray = []
 	for door : FacilityDoor in _door_nodes():
 		var cells : Rect2i = door.cell_rect(self)
 		var first : Vector2i
@@ -266,8 +424,8 @@ func _collect_doors() -> void:
 		else:
 			first = Vector2i(cells.position.x - 1, cells.position.y + 1)
 			second = Vector2i(cells.end.x, cells.position.y + 1)
-		door.room_a = room_cells.get(first, exit_cells.get(first, "")) #a side can be an exit zone: the door out of the facility
-		door.room_b = room_cells.get(second, exit_cells.get(second, ""))
+		door.room_a = room_of_cell(first) if is_floor(first) else exit_cells.get(first, "") #(the rooms' own cells: no door cell has been added yet) a side can be an exit zone: the door out of the facility
+		door.room_b = room_of_cell(second) if is_floor(second) else exit_cells.get(second, "")
 		if Engine.is_editor_hint(): #the editor says so on a door that is not between two different rooms
 			door.set_problem("" if door.room_a != "" and door.room_b != "" and door.room_a != door.room_b else "This door is not in the wall between two different rooms. Drag it onto the one cell gap between them.")
 		door.door_index = index
@@ -280,44 +438,61 @@ func _collect_doors() -> void:
 			for side : String in [door.room_a, door.room_b]:
 				if rooms.has(side) and rooms[side]["kind"] != "outdoor":
 					rooms[side]["exterior"] = true
-		var floor_room : String = door.room_a if rooms.has(door.room_a) else door.room_b #the floor under the door belongs to a room, never to an exit
-		for y in range(cells.position.y, cells.end.y):
-			for x in range(cells.position.x, cells.end.x):
-				floor_cells[Vector2i(x, y)] = floor_room
+		door_floor.append(cells)
+		door_floor_rooms.append(door.room_a if rooms.has(door.room_a) else door.room_b) #the floor under the door belongs to a room, never to an exit
 		doors.append(door)
 		index += 1
+	floor_rects.append_array(door_floor)
+	_floor_ids.append_array(door_floor_rooms)
+	_index_floor()
 
 
-##Every empty cell touching floor is wall, except an exit zone's own cells (so the doorway out to an exit stays clear: an exit itself never touches a
-##room's floor, see _collect_rooms). Every empty cell touching an exit is a barrier: an invisible wall, so a player who goes through the door into
-##the exit stops at its edge instead of walking off into the void.
+func _index_floor() -> void:
+	_floor_index.clear()
+	for i in floor_rects.size():
+		for chunk : Vector2i in _chunks_of(floor_rects[i]):
+			if not _floor_index.has(chunk):
+				_floor_index[chunk] = []
+			(_floor_index[chunk] as Array).append(i)
+
+
+func _chunks_of(rect : Rect2i) -> Array[Vector2i]:
+	var result : Array[Vector2i] = []
+	for cy in range(rect.position.y >> CHUNK_SHIFT, ((rect.end.y - 1) >> CHUNK_SHIFT) + 1):
+		for cx in range(rect.position.x >> CHUNK_SHIFT, ((rect.end.x - 1) >> CHUNK_SHIFT) + 1):
+			result.append(Vector2i(cx, cy))
+	return result
+
+
+##Every empty cell touching a floor cell is a wall: the ring round each piece of floor, without the cells that are floor of another and without an exit zone's own cells (so the doorway out
+##to an exit stays clear). Every empty cell touching an exit is a barrier: an invisible wall, so a player who goes through the door into the exit stops at its edge instead of walking off into the void.
 func _compute_walls() -> void:
 	wall_cells.clear()
 	barrier_cells.clear()
-	for cell : Vector2i in floor_cells:
-		for offset in FacilityTileSet.NEIGHBOURS:
-			if not floor_cells.has(cell + offset) and not exit_cells.has(cell + offset):
-				wall_cells[cell + offset] = true
+	_wall_chunks.clear()
+	for rect : Rect2i in floor_rects:
+		var ring : Rect2i = rect.grow(1)
+		for x in range(ring.position.x, ring.end.x):
+			_add_wall(Vector2i(x, ring.position.y))
+			_add_wall(Vector2i(x, ring.end.y - 1))
+		for y in range(rect.position.y, rect.end.y):
+			_add_wall(Vector2i(ring.position.x, y))
+			_add_wall(Vector2i(ring.end.x - 1, y))
 	for cell : Vector2i in exit_cells:
 		for offset in FacilityTileSet.NEIGHBOURS:
 			var next : Vector2i = cell + offset
-			if not floor_cells.has(next) and not exit_cells.has(next) and not wall_cells.has(next):
+			if not is_floor(next) and not exit_cells.has(next) and not wall_cells.has(next):
 				barrier_cells[next] = true
 
 
-func _paint_floors() -> void:
-	#one plain floor everywhere; the shading comes from the soft shadows beside the walls
-	for cell : Vector2i in floor_cells:
-		floors.set_cell(cell, FacilityTileSet.SOURCE_FLOORS, Vector2i.ZERO)
-		var mask : int = FacilityTileSet.neighbour_mask(cell, wall_cells)
-		if mask != 0:
-			shadows.set_cell(cell, FacilityTileSet.SOURCE_SHADOWS, FacilityTileSet.mask_to_atlas(mask))
-
-
-func _paint_walls() -> void:
-	for cell : Vector2i in wall_cells:
-		walls.set_cell(cell, FacilityTileSet.SOURCE_WALLS, FacilityTileSet.mask_to_atlas(FacilityTileSet.neighbour_mask(cell, wall_cells)))
-	_build_wall_body()
+func _add_wall(cell : Vector2i) -> void:
+	if wall_cells.has(cell) or is_floor(cell) or exit_cells.has(cell):
+		return
+	wall_cells[cell] = true
+	var chunk : Vector2i = chunk_of_cell(cell)
+	if not _wall_chunks.has(chunk):
+		_wall_chunks[chunk] = []
+	(_wall_chunks[chunk] as Array).append(cell)
 
 
 ## The walls' collision and light occluders: the wall cells joined into as few rectangles as possible, one shape and one occluder each. A tile per cell made about

@@ -9,6 +9,7 @@
 [ext_resource type="Script" uid="uid://casnljl867aaq" path="res://multiplayer_template/menu/p2p_host_noray_menu/joined_client_menu.gd" id="6_s8mfa"]
 [ext_resource type="Script" uid="uid://ce3q43054tm51" path="res://multiplayer_template/menu/p2p_host_noray_menu/version_label.gd" id="8_mq6ic"]
 [ext_resource type="Script" uid="uid://ndu5ddy3rrl2" path="res://multiplayer_template/menu/p2p_host_noray_menu/version_warning.gd" id="9_igulj"]
+[ext_resource type="PackedScene" path="res://game/match_setup/match_setup_panel.tscn" id="10_setup"]
 
 [node name="P2PHostNorayMenu" type="Control" unique_id=2059643263]
 layout_mode = 3
@@ -36,9 +37,9 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -196.0
-offset_top = -173.0
+offset_top = -240.0
 offset_right = 196.0
-offset_bottom = 180.0
+offset_bottom = 240.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_chmv6")
@@ -131,6 +132,9 @@ text = "Game ID:"
 [node name="CopyGameID" type="Button" parent="SubMenuHolder/HostMenu/VBoxContainer/GameIDDisplay" unique_id=1361660732]
 layout_mode = 2
 text = "Copy Game ID"
+
+[node name="MatchSetup" parent="SubMenuHolder/HostMenu/VBoxContainer" instance=ExtResource("10_setup")]
+layout_mode = 2
 
 [node name="Start" type="Button" parent="SubMenuHolder/HostMenu/VBoxContainer" unique_id=453543070]
 layout_mode = 2

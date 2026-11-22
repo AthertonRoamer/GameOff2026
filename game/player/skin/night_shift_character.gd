@@ -45,9 +45,9 @@ extends Node2D
 
 @export_group("Gun")
 ## How far the torso kicks back when a shot is fired, in the sheets' pixels (the node is scaled 0.25, so a quarter of this in the world).
-@export var recoil_px := 8.0
-@export var recoil_out_time := 0.05
-@export var recoil_back_time := 0.18
+@export var recoil_px := 15.0
+@export var recoil_out_time := 0.03
+@export var recoil_back_time := 0.14
 ## Without a draw sheet the gun comes out (or goes away) by the old pose fading out over the new one while swelling slightly (draw) or shrinking (holster).
 @export var draw_time := 0.16
 ## The shoulder lamp follows the right shoulder through every animation (the sheets' sprites.json carry the shoulder positions per frame, measured from the
@@ -101,6 +101,21 @@ func _ready() -> void:
 	_play(legs, "legs_idle")
 	_play(torso, "torso_idle")
 	_ready_done = true
+
+
+## Dresses the skin as another role: its sheets and sprites.json (SkinFrames, loaded once and shared) in place of the scene's guard. `legs_tint` darkens the shared legs for a role in a
+## darker uniform. Call it before the skin first plays anything of the new look (Player does, in its own _ready and when its role changes).
+func use_skin(role_skin : String, legs_tint : Color = Color.WHITE) -> void:
+	var data : Dictionary = SkinFrames.load_role("res://game/player/skin", role_skin)
+	meta = data["meta"]
+	sprite_frames = data["frames"]
+	for s : AnimatedSprite2D in [legs, torso, full]:
+		s.sprite_frames = sprite_frames
+		_rest_scale.erase(s)
+	legs.modulate = legs_tint
+	if _ready_done and not dead:
+		_play(legs, "legs_idle")
+		_play(torso, "torso_idle")
 
 
 ## move_vel: current velocity. aim_dir: direction the player is aiming.
@@ -254,14 +269,14 @@ func _cancel_draw() -> void:
 ## Blender (sheets <layer>_tr_<from>_<to>_<frame>, and torso_flip_ for a strafe that changes sides) where the sheets exist: it plays first, then the new gait carries
 ## on from the frame after it. Anything else (the gun up, interacting, turning on the spot, two gaits without a sheet) starts at once, with a fade where it asked for one.
 func _request(s: AnimatedSprite2D, anim_name: String, flip := false, fade := false) -> void:
-	var full := anim_name
+	var target := anim_name
 	if _blending.has(s):
 		var t: Dictionary = _blending[s]
-		if t["anim"] == full and t["flip"] == flip:
+		if t["anim"] == target and t["flip"] == flip:
 			s.speed_scale = 1.0 #the transition plays at its own pace, not at the idle breathing's
 			return
 		_cancel_transition(s) #something else was asked for part way through
-	if not _begin_transition(s, full, flip):
+	if not _begin_transition(s, target, flip):
 		_play(s, anim_name, flip, fade)
 
 
@@ -274,13 +289,14 @@ func _gait_of(anim_name: String) -> String:
 ## Starts the transition from what the sprite shows to `full` drawn the way `flip` says, when there is one. Where in the stride it starts is the nearer of the
 ## sheets' two (or four, for a strafe changing sides) starting frames. A mirrored sheet shows the other foot at any frame, which is the half cycle in the sums:
 ## the upper body and legs of a sideways step to the left are the right step's sheets drawn flipped.
-func _begin_transition(s: AnimatedSprite2D, full: String, flip: bool) -> bool:
+func _begin_transition(s: AnimatedSprite2D, target: String, flip: bool) -> bool:
 	var from := _gait_of(String(s.animation))
-	var to := _gait_of(full)
+	var to := _gait_of(target)
 	if not blend_gaits or from == "" or to == "" or not s.is_playing() and from != "idle":
 		return false
 	var layer := "torso" if s == torso else "legs"
 	var count := s.sprite_frames.get_frame_count(s.animation)
+	@warning_ignore("integer_division")
 	var half := count / 2
 	var sheet := ""
 	var draw_flip := false
@@ -288,6 +304,7 @@ func _begin_transition(s: AnimatedSprite2D, full: String, flip: bool) -> bool:
 	if from == to:
 		if flip == s.flip_h or layer != "torso" or not to.begins_with("side_"):
 			return false
+		@warning_ignore("integer_division")
 		var quarter := count / 4
 		var q := roundi(float(s.frame) / quarter) % 4
 		sheet = "torso_flip_%s_%d" % ["run" if to == "side_run" else "walk", q]
@@ -309,12 +326,12 @@ func _begin_transition(s: AnimatedSprite2D, full: String, flip: bool) -> bool:
 	var n: int = meta[sheet]["frames"]
 	if from != to:
 		resume = (int(sheet.get_slice("_", sheet.get_slice_count("_") - 1)) + n + 1 + (half if (not to.begins_with("side_") and draw_flip) else 0)) % count
-	_start_blend(s, sheet, draw_flip, full, flip, resume)
+	_start_blend(s, sheet, draw_flip, target, flip, resume)
 	return true
 
 
-func _start_blend(s: AnimatedSprite2D, sheet: String, draw_flip: bool, full: String, flip: bool, resume: int) -> void:
-	_blending[s] = {"anim": full, "flip": flip, "resume": resume, "n": meta[sheet]["frames"]}
+func _start_blend(s: AnimatedSprite2D, sheet: String, draw_flip: bool, target: String, flip: bool, resume: int) -> void:
+	_blending[s] = {"anim": target, "flip": flip, "resume": resume, "n": meta[sheet]["frames"]}
 	s.flip_h = draw_flip
 	s.offset = sheet_offset(sheet, draw_flip)
 	_apply_scale(s, sheet)
@@ -462,6 +479,16 @@ func set_body_alpha(alpha : float, light : Color = Color.WHITE) -> void:
 		_ghost.self_modulate = Color(light.r, light.g, light.b, alpha)
 
 
+## From the middle of a fallen body to one end of it, in the world (zero while standing).
+func body_axis() -> Vector2:
+	return global_transform.basis_xform(_death.axis) if dead else Vector2.ZERO
+
+
+## Half the width of a fallen body, in the world.
+func body_half_width() -> float:
+	return _death.half_width * global_scale.x
+
+
 ## Where the middle of a fallen body lies, in the world (the skin's own position while it has not fallen).
 func body_position() -> Vector2:
 	return _death.landing_here() if dead else global_position
@@ -557,6 +584,7 @@ func _play(s: AnimatedSprite2D, anim_name: String, flip := false, fade := false)
 			s.frame = (clampi(int(phase * count), 0, count - 1) + _mirror_shift(anim_name, flip, count)) % count
 	else:
 		if flip != s.flip_h and _is_side_sheet(anim_name): #the same sideways sheet on the other side: a mirror lifts the other foot
+			@warning_ignore("integer_division")
 			s.frame = (s.frame + s.sprite_frames.get_frame_count(anim_name) / 2) % s.sprite_frames.get_frame_count(anim_name)
 		if flip != s.flip_h:
 			s.offset = sheet_offset(anim_name, flip)

@@ -5,7 +5,7 @@
 [ext_resource type="Script" uid="uid://d2ntnnmv76omq" path="res://game/player/skin/muzzle_flash.gd" id="3_muzzle"]
 [ext_resource type="Script" uid="uid://bsq04gq0t83fa" path="res://game/player/skin/shoulder_lamp.gd" id="4_lamp"]
 [ext_resource type="Texture2D" uid="uid://chpjkbvf4yw84" path="res://game/player/flashlight/flashlight_cone.png" id="5_cone"]
-[ext_resource type="SpriteFrames" uid="uid://b5x2dmfx4vik5" path="res://game/player/skin/guard/guard_frames.tres" id="6_frames"]
+[ext_resource type="SpriteFrames" uid="uid://djtxs3uqmbyow" path="res://game/player/skin/guard/guard_frames.tres" id="6_frames"]
 [ext_resource type="Script" uid="uid://df8ov28pynswa" path="res://game/player/skin/skin_hit_reaction.gd" id="7_hit"]
 [ext_resource type="Script" uid="uid://ckte55olqsrto" path="res://game/player/skin/skin_death.gd" id="8_death"]
 

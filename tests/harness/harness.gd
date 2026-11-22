@@ -385,6 +385,8 @@ func run_host() -> void:
 	for round_number in range(1, rounds + 1):
 		if round_number > 1:
 			await get_tree().create_timer(1.5).timeout
+		if OS.has_environment("HARNESS_MATCH"): #the match setup the host menu would send, as JSON: {"map": 1, "mode": 1, "debug": false}
+			mode.lobby.trigger_set_match_settings(JSON.parse_string(OS.get_environment("HARNESS_MATCH")))
 		mode.lobby.trigger_request_begin_game()
 		if not await wait_until(func(): return mode.lobby.game_manager.in_game):
 			return fail("game never started")

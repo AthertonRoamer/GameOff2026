@@ -25,4 +25,5 @@ func _on_copy_game_id_pressed() -> void:
 
 
 func _on_start_pressed() -> void:
+	(Main.mode.lobby as Lobby).trigger_set_match_settings(($VBoxContainer/MatchSetup as MatchSetupPanel).settings().to_dict()) #the lobby gets the options first, and sends them to everyone as the match begins
 	(Main.mode.lobby as Lobby).trigger_request_begin_game()

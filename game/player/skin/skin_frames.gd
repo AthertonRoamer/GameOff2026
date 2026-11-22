@@ -25,7 +25,8 @@ static func build_frames(folder : String, meta : Dictionary) -> SpriteFrames:
 	frames.remove_animation("default")
 	for anim_name : String in meta.keys():
 		var m : Dictionary = meta[anim_name]
-		var texture : Texture2D = load("%s/%s" % [folder, m["file"]])
+		var file : String = m["file"] #a sheet of this role's own, or (starting res://) one it shares with another role: the legs are the guard's, so they exist once in memory
+		var texture : Texture2D = load(file if file.begins_with("res://") else "%s/%s" % [folder, file])
 		var frame_w := int(m.get("frame_w", m["frame_size"])) #a trimmed sheet (tools/rig/pack) has frames that are not the rendered size
 		var frame_h := int(m.get("frame_h", m["frame_size"]))
 		var columns := int(m["hframes"])

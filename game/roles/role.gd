@@ -16,6 +16,9 @@ enum Kind { GUARD, INTRUDER }
 @export var run_multiplier : float = 1.6
 @export var starting_health : float = 50.0
 @export var starting_items : Array[Item] = []
+@export_group("Look")
+@export var skin : String = "guard" ## the folder in game/player/skin that holds this role's sprite sheets (tools/rig/build_roles.ps1 makes them)
+@export var legs_tint : Color = Color.WHITE ## the legs are every role's shared guard legs: a darker uniform (the intruder's) is this multiplied over them
 
 
 func is_intruder() -> bool:
