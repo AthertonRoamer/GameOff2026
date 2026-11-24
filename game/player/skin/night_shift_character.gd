@@ -120,7 +120,8 @@ func use_skin(role_skin : String, legs_tint : Color = Color.WHITE) -> void:
 
 ## move_vel: current velocity. aim_dir: direction the player is aiming.
 ## aiming: the gun is out. running: sprint held (forces holster).
-func update_visual(move_vel: Vector2, aim_dir: Vector2, aiming: bool, running: bool, interacting := false, held_item := -1) -> void:
+## reload_seconds: how long the reload in progress takes (0 when not reloading): the gun comes up to the reload sheet, which is played over exactly that time.
+func update_visual(move_vel: Vector2, aim_dir: Vector2, aiming: bool, running: bool, interacting := false, held_item := -1, reload_seconds := 0.0) -> void:
 	if dead:
 		return
 	var moving := move_vel.length() > 5.0
@@ -201,6 +202,8 @@ func update_visual(move_vel: Vector2, aim_dir: Vector2, aiming: bool, running: b
 		torso_anim = "torso_typing" #typing at the console
 	elif aiming:
 		torso_anim = "torso_idle_aim" #the gun stays up and steady whichever way the legs go: there is no walking-with-the-gun swing
+		if reload_seconds > 0.0 and meta.has("torso_reload") and torso.sprite_frames.has_animation(&"torso_reload"):
+			torso_anim = "torso_reload" #(the upper body only: the legs go on as they were)
 	elif moving:
 		if _direction == 1:
 			torso_anim = "torso_side_run" if running else "torso_side_walk"
@@ -214,6 +217,13 @@ func update_visual(move_vel: Vector2, aim_dir: Vector2, aiming: bool, running: b
 		_request(legs, legs_anim, legs_flip, true)
 	if _draw_mode != "":
 		torso.speed_scale = 1.0 #the draw plays at its own pace, whatever the torso was doing
+		return
+	if torso_anim == "torso_reload":
+		_cancel_transition(torso)
+		if torso.animation != &"torso_reload": #it starts once, and then holds its last frame (the aim) until the reload is over: asking again would play it again
+			_play(torso, torso_anim)
+		var frames := torso.sprite_frames
+		torso.speed_scale = frames.get_frame_count(&"torso_reload") / frames.get_animation_speed(&"torso_reload") / reload_seconds #so it takes as long as the reload does
 		return
 	_request(torso, torso_anim, torso_flip, not drew)
 
@@ -475,6 +485,8 @@ func set_body_alpha(alpha : float, light : Color = Color.WHITE) -> void:
 	var shadow : CanvasItem = get_node_or_null("Shadow")
 	if shadow != null:
 		shadow.self_modulate.a = alpha
+	if _lamp != null:
+		_lamp.self_modulate = Color(light.r, light.g, light.b, alpha) #the lamp is part of the body (its lens is drawn): a body that is not seen shows no lamp either
 	if is_instance_valid(_ghost):
 		_ghost.self_modulate = Color(light.r, light.g, light.b, alpha)
 

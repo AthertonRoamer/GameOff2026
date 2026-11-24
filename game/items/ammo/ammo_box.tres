@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="AmmoItem" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://game/items/ammo_item.gd" id="1_ammo"]
+[ext_resource type="Texture2D" path="res://game/items/ammo/ammo_box.svg" id="2_icon"]
+
+[resource]
+script = ExtResource("1_ammo")
+rounds = 6
+item_name = "Ammo"
+icon = ExtResource("2_icon")

@@ -67,7 +67,7 @@ func _decide(peer_id : int, id : int) -> void:
 	var player : Player = player_lookup.call(peer_id)
 	if player == null or not player.is_alive() or not pickup.is_in_reach(player.global_position, reach_slack) or not pickup.can_interact(player):
 		return
-	var slot : int = player.inventory.first_free_slot()
+	var slot : int = pickup.item.slot_for(player.inventory)
 	if slot < 0:
 		return
 	var tick : int = NetworkTime.tick + apply_delay_ticks
@@ -103,7 +103,7 @@ func _apply(change : Dictionary) -> void:
 	var pickup : Pickup = _pickups.get(change["id"])
 	if player == null or pickup == null: #the player left first: the item stays on the floor
 		return
-	player.inventory.put_in_slot(change["slot"], pickup.item)
+	pickup.item.put_into(player.inventory, change["slot"], change["tick"])
 	_pickups.erase(change["id"])
 	pickup.queue_free()
 

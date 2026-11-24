@@ -9,7 +9,7 @@ extends Node2D
 ##                         traced from its own flashlight (a fan of rays: it stops at walls) and cut to the view polygon, so you see any beam inside your view, whoever is
 ##                         holding it and wherever they are, and nothing outside it. Their scene lights are off (Flashlight.paint_instead).
 ##   other players' bodies are seen inside the view only while a flashlight is on them (yours or theirs, a beam or the glow round its holder), and a player very close to
-##                         the local player is seen without any light, in any direction (not through walls). A body lit by another player's beam is brightened by it
+##                         the local player is seen without any light, if they are in front of them (in the forward cone, never behind the player's back, and not through walls). A body lit by another player's beam is brightened by it
 ##                         (the way the scene's lights would), and the drawn beams leave a soft hole round every player, so nobody is seen through a haze.
 ## A dead local player sees everything. Only this peer's picture changes: nothing here is sent to anyone, and the game itself (hits, the simulation) does not look at it.
 
@@ -28,7 +28,7 @@ const MAX_LYING : int = 4 #and how many fallen bodies it leaves a body-shaped ho
 
 @export var view_half_angle_deg : float = 55.0 #how wide the view reaches forward, to either side of the way the mouse is
 @export var view_range : float = 900.0 #in world pixels: further than the screen
-@export var view_near : float = 110.0 #how far the view reaches to the sides and behind the player
+@export var view_near : float = 16.0 #how far the view reaches to the sides and behind the player: only what touches them (nothing outside the cone is seen). Keep above 0
 @export var view_rays : int = 120 #how finely the view is traced all the way round, so it follows walls
 @export_range(0.0, 1.0) var fade_start : float = 0.4 #the view is at full strength out to this share of its reach, then fades to nothing at the edge
 @export var beam_range : float = 484.0 #the flashlight's length, in world pixels (11 m)
@@ -38,6 +38,7 @@ const MAX_LYING : int = 4 #and how many fallen bodies it leaves a body-shaped ho
 @export_range(0.0, 1.5) var light_scale : float = 0.75 #how strong the drawn lights are, against the scene's own beam light (1)
 @export var halo_radius : float = 40.0 #the glow round a flashlight's holder: a player inside it is seen
 @export var near_radius : float = 48.0 #players this close see each other without any light (not through walls)
+@export var near_cone_fade_deg : float = 25.0 #a player that close is seen only inside the view's forward cone (view_half_angle_deg), fading out over this many degrees beyond it
 @export var fade_seconds : float = 0.12
 @export var body_radius : float = 16.0 #a player is lit when any of their body is in a beam, not just their middle
 @export var ambient : Color = Color(0.176, 0.186, 0.248) #the facility's darkness (the level's CanvasModulate): a light's brightening of a body is worked out against it. Set by the game
@@ -257,6 +258,16 @@ func _set_view_uniforms(shader_material : ShaderMaterial) -> void:
 	shader_material.set_shader_parameter("lying_radius", _lying_radius)
 
 
+## How much the way the local player faces lets them see a point that is close: 1 inside the view's forward cone, fading to 0 just outside it, so nobody close is seen
+## behind the player's back. Someone almost touching (inside body_radius) is always seen: they are in the way.
+func _cone(point : Vector2, distance : float) -> float:
+	if _view.is_empty() or distance <= body_radius:
+		return 1.0
+	var off_axis : float = absf(angle_difference(_facing, (point - _apex).angle()))
+	var half : float = deg_to_rad(view_half_angle_deg)
+	return 1.0 - smoothstep(half, half + deg_to_rad(near_cone_fade_deg), off_axis)
+
+
 ## How much of another player's body is seen: very close and unblocked, or inside the view and lit.
 func _body_seen(me : Player, other : Player, lit : bool) -> float:
 	var at : Vector2 = other.skin.body_position() #(a fallen body lies away from where its player stood)
@@ -264,7 +275,7 @@ func _body_seen(me : Player, other : Player, lit : bool) -> float:
 	var near : float = 0.0
 	var distance : float = me.global_position.distance_to(at)
 	if distance <= near_radius and space.intersect_ray(PhysicsRayQueryParameters2D.create(me.global_position, at, WALLS)).is_empty():
-		near = 1.0 - smoothstep(near_radius * 0.6, near_radius, distance)
+		near = (1.0 - smoothstep(near_radius * 0.6, near_radius, distance)) * _cone(at, distance)
 	var seen_lit : float = visibility(at) if lit else 0.0
 	return maxf(near, seen_lit)
 

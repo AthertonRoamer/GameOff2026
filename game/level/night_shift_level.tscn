@@ -18,6 +18,7 @@
 [ext_resource type="Resource" path="res://game/audio/definitions/kill.tres" id="16_kill"]
 [ext_resource type="Resource" path="res://game/audio/definitions/blood_splat.tres" id="17_blood_splat"]
 [ext_resource type="Resource" path="res://game/audio/definitions/blood_drip.tres" id="18_blood_drip"]
+[ext_resource type="Resource" path="res://game/audio/definitions/bullet_ricochet.tres" id="19_ricochet"]
 
 [node name="Level" type="Node2D"]
 script = ExtResource("1_level")
@@ -57,6 +58,7 @@ acoustics = ExtResource("9_acoustics")
 facility = NodePath("../FacilityMap")
 acoustic_map = NodePath("AcousticMap")
 bullet_wall = ExtResource("14_bullet_wall")
+bullet_ricochet = ExtResource("19_ricochet")
 bullet_flesh = ExtResource("15_bullet_flesh")
 kill = ExtResource("16_kill")
 blood_splat = ExtResource("17_blood_splat")

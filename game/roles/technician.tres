@@ -2,12 +2,13 @@
 
 [ext_resource type="Script" uid="uid://v21eutcpbg5f" path="res://game/roles/role.gd" id="1_role"]
 [ext_resource type="Script" uid="uid://bko7sp24yavq3" path="res://game/items/item.gd" id="2_item"]
-[ext_resource type="Resource" path="res://game/items/guns/pistol.tres" id="3_pistol"]
-[ext_resource type="Resource" path="res://game/items/guns/rifle.tres" id="4_rifle"]
+[ext_resource type="Resource" path="res://game/items/guns/pistol.tres" id="3_gun"]
 
 [resource]
 script = ExtResource("1_role")
-role_name = "Engineer"
+role_name = "Technician"
 color = Color(1, 0.9, 0.2, 1)
+description = "Carries three batteries to power things in a room (not working yet: the power system is being built)."
 skin = "electrician"
-starting_items = Array[ExtResource("2_item")]([ExtResource("3_pistol"), ExtResource("4_rifle")])
+starting_items = Array[ExtResource("2_item")]([ExtResource("3_gun")])
+battery_count = 3

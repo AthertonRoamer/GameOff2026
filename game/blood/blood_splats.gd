@@ -18,6 +18,10 @@ const THROW_DISTANCE : float = 15.0 #how far behind the player a hit's splash is
 
 ## () -> Array of the players. Set by whoever owns them (the game): it is how the lobby finds who is bleeding.
 var players : Callable = Callable()
+## (point) -> float, how well the local player sees that point, 0 to 1 (PlayerSight.visibility). Set by the game: blood is only drawn where it can be seen. Unset: everywhere
+var sight : Callable = Callable()
+
+const SEEN_FADE_PER_SECOND : float = 8.0 #how quickly a splat comes into view and goes out of it
 
 var _splats : Array[BloodSplat] = []
 var _bleed_timers : Dictionary = {} #player -> seconds until their next drop
@@ -54,6 +58,7 @@ func on_player_died(player : Player) -> void:
 func _process(delta : float) -> void:
 	if not _active:
 		return
+	_update_seen(delta)
 	for player : Player in _puddles.keys(): #a body that got up leaves its puddle to fade
 		if not is_instance_valid(player) or player.is_alive():
 			if is_instance_valid(_puddles[player]):
@@ -73,6 +78,15 @@ func _process(delta : float) -> void:
 		_bleed_timers[player] = left
 
 
+## Every splat is drawn as well as the local player sees where it lies (the same view that decides what shots and bodies are seen).
+func _update_seen(delta : float) -> void:
+	if not sight.is_valid():
+		return
+	for splat : BloodSplat in _splats:
+		if is_instance_valid(splat):
+			splat.seen = move_toward(splat.seen, sight.call(splat.global_position), SEEN_FADE_PER_SECOND * delta)
+
+
 ## Lobby: makes a splat here and on every other peer.
 func _make(kind : int, at : Vector2, direction : Vector2, splat_seed : int) -> void:
 	_add(kind, at, direction, splat_seed)
@@ -84,6 +98,8 @@ func _add(kind : int, at : Vector2, direction : Vector2, splat_seed : int) -> Bl
 	var splat : BloodSplat = BloodSplat.new()
 	add_child(splat)
 	splat.global_position = at
+	if sight.is_valid():
+		splat.seen = sight.call(at) #(a splat out of sight does not flash in for a moment)
 	splat.start(kind, direction, splat_seed)
 	splat_made.emit(kind, at)
 	_splats.append(splat)

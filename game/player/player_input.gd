@@ -11,6 +11,7 @@ const RUN : int = 1 << 1 #shift held
 const HOLSTER : int = 1 << 2 #the holster key (H) went down: draw or holster the active item (see Inventory)
 const FLASHLIGHT : int = 1 << 3 #a state, not a press: the flashlight action flips it. Sent with the input, so every peer sees the beam
 const INTERACTING : int = 1 << 4 #at a console with its screen up (set by PlayerInteractor, not gathered)
+const RELOAD : int = 1 << 16 #the reload key (R) went down
 const SLOT_SHIFT : int = 5 #3 bits: the slot chosen this tick plus one (so 0 is none)
 const DELTA_SHIFT : int = 8 #2 bits: the wheel's turn this tick plus one (so 1 is none)
 const LAG_SHIFT : int = 10 #6 bits: how many ticks behind the lobby this player sees the others (0 to 63), for lag compensated shots
@@ -31,6 +32,9 @@ var run : bool:
 var holster : bool:
 	get: return buttons & HOLSTER != 0
 	set(value): _set_flag(HOLSTER, value)
+var reload : bool:
+	get: return buttons & RELOAD != 0
+	set(value): _set_flag(RELOAD, value)
 var flashlight_on : bool:
 	get: return buttons & FLASHLIGHT != 0
 	set(value): _set_flag(FLASHLIGHT, value)
@@ -56,6 +60,7 @@ func _gather() -> void:
 	use_item = active and Input.is_action_pressed("player_use_active_item")
 	run = active and Input.is_action_pressed("player_run")
 	holster = active and Input.is_action_just_pressed("player_holster")
+	reload = active and Input.is_action_just_pressed("player_reload")
 	slot_select = _gather_slot_select() if active else -1
 	slot_delta = _gather_slot_delta() if active else 0
 	interacting = at_console

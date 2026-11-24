@@ -2,7 +2,7 @@
 
 # the sheets that are not transitions: rendered state (= the name in the game) -> (frames per second, loops)
 SHEETS = {
-    "legs_idle": (8, True), "torso_idle": (8, True), "torso_idle_aim": (8, True), "torso_typing": (10, True), "torso_draw": (20, False), "legs_turn": (16, False),
+    "legs_idle": (8, True), "torso_idle": (8, True), "torso_idle_aim": (8, True), "torso_typing": (10, True), "torso_draw": (20, False), "torso_reload": (15, False), "legs_turn": (16, False),
     "legs_walk": (10, True), "legs_run": (15, True), "legs_side_walk": (10, True), "legs_side_run": (15, True), "legs_back": (10, True), "legs_back_run": (15, True),
     "torso_walk": (10, True), "torso_run": (15, True), "torso_side_walk": (10, True), "torso_side_run": (15, True), "torso_back": (10, True), "torso_back_run": (15, True),
     "death_front": (15, False), "death_front_right": (15, False), "death_right": (15, False), "death_back_right": (15, False), "death_back": (15, False),

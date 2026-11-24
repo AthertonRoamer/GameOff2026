@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SoundDef" format=3]
+
+[ext_resource type="Script" path="res://game/audio/sound_def.gd" id="1_def"]
+
+[resource]
+script = ExtResource("1_def")
+folder = "res://game/audio/sounds/footsteps"
+volume_db = -14.0
+volume_jitter_db = 1
+pitch_min = 0.97
+pitch_max = 1.06
+range_m = 6
+falloff = 1.6
+echo = 0.3
+cue_strength = 0.15

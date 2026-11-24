@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="Role" format=3]
+
+[ext_resource type="Script" uid="uid://v21eutcpbg5f" path="res://game/roles/role.gd" id="1_role"]
+[ext_resource type="Script" uid="uid://bko7sp24yavq3" path="res://game/items/item.gd" id="2_item"]
+[ext_resource type="Resource" path="res://game/items/guns/pistol_suppressed.tres" id="3_gun"]
+[ext_resource type="Resource" path="res://game/audio/definitions/footstep_run_quiet.tres" id="4_quiet"]
+
+[resource]
+script = ExtResource("1_role")
+role_name = "Shade"
+color = Color(0.55, 0.35, 0.8, 1)
+description = "Walks without a sound and runs quietly. Carries a suppressed pistol."
+skin = "shade"
+starting_items = Array[ExtResource("2_item")]([ExtResource("3_gun")])
+silent_walk = true
+run_sound = ExtResource("4_quiet")

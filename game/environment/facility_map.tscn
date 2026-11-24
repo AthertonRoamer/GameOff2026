@@ -5,6 +5,7 @@
 [ext_resource type="PackedScene" path="res://game/environment/facility_door.tscn" id="4_yd85k"]
 [ext_resource type="PackedScene" path="res://game/utility/door_control_panel.tscn" id="6_ieksj"]
 [ext_resource type="Script" uid="uid://b7r08rbd5msb8" path="res://game/pickups/artifact_location.gd" id="7_artifact_location"]
+[ext_resource type="Script" path="res://game/pickups/ammo_location.gd" id="99_ammo_location"]
 [ext_resource type="Script" uid="uid://bj3o6xoh76qn0" path="res://game/environment/guard_spawn.gd" id="9_guard_spawn"]
 [ext_resource type="Script" uid="uid://ck27vjswqmbtn" path="res://game/environment/intruder_spawn.gd" id="10_intruder_spawn"]
 [ext_resource type="Script" uid="uid://cwn71j7krn0x6" path="res://game/environment/facility_room_rect.gd" id="rect_script"]
@@ -621,6 +622,24 @@ script = ExtResource("7_artifact_location")
 [node name="RecordsArtifact" type="Marker2D" parent="ArtifactLocations" unique_id=1904601438]
 position = Vector2(1424, 1050)
 script = ExtResource("7_artifact_location")
+
+[node name="AmmoLocations" type="Node2D" parent="."]
+
+[node name="BreakRoomAmmo" type="Marker2D" parent="AmmoLocations"]
+position = Vector2(400, 240)
+script = ExtResource("99_ammo_location")
+
+[node name="LockerRoomAmmo" type="Marker2D" parent="AmmoLocations"]
+position = Vector2(1560, 250)
+script = ExtResource("99_ammo_location")
+
+[node name="MaintenanceBayAmmo" type="Marker2D" parent="AmmoLocations"]
+position = Vector2(115, 740)
+script = ExtResource("99_ammo_location")
+
+[node name="OfficeAmmo" type="Marker2D" parent="AmmoLocations"]
+position = Vector2(500, 1100)
+script = ExtResource("99_ammo_location")
 
 [node name="Spawns" type="Node2D" parent="." unique_id=964347742]
 
