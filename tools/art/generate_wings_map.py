@@ -153,6 +153,8 @@ room("sw_east_garage", "Equipment Garage", OFFICE, NONE, (36, 130, 8, 14))
 room("east_road", "East Perimeter Road", CORRIDOR, NONE, (166, 32, 4, 90))
 room("south_road", "South Perimeter Road", CORRIDOR, NONE, (0, 144, 166, 4))
 
+VENT_ROOMS = ["atrium", "north_corridor", "east_corridor", "south_corridor", "west_corridor", "nw_corridor", "north_armory", "east_generator", "south_cafeteria", "west_server"]  # a vent in each (a ventrat crawls between them)
+AMMO_ROOMS = ["north_armory", "north_lockers", "spawn_north", "spawn_east", "east_workshop", "south_garage", "spawn_south", "west_lab_b"]  # a box of ammo in each: where guards would keep it
 ARTIFACTS = ["north_armory", "north_evidence", "east_generator", "south_cafeteria", "west_vault", "west_records"]  # one marker in each (there are six artifacts)
 
 # ------------------------------------------------------------------ doors: pairs of rooms that get a door where they share a wall (two if the wall is long)
@@ -409,6 +411,7 @@ lines = ["[gd_scene format=3]", "",
          '[ext_resource type="PackedScene" path="res://game/environment/facility_door.tscn" id="4_door"]',
          '[ext_resource type="PackedScene" path="res://game/utility/door_control_panel.tscn" id="6_panel"]',
          '[ext_resource type="Script" path="res://game/pickups/artifact_location.gd" id="7_loc"]',
+        '[ext_resource type="Script" path="res://game/pickups/ammo_location.gd" id="7_ammo"]',
          '[ext_resource type="Script" path="res://game/environment/facility_room_rect.gd" id="rect_script"]', "",
          '[node name="FacilityMap" type="Node2D"]', "texture_filter = 4", 'script = ExtResource("1_map")', "",
          '[node name="Rooms" type="Node2D" parent="."]', ""]
@@ -445,12 +448,21 @@ for d in doors:
     if d["kind"] == "v":
         lines.append("horizontal = false")
     lines.append("")
-lines += ['[node name="Vents" type="Node2D" parent="."]', "",
-          '[node name="ArtifactLocations" type="Node2D" parent="."]', ""]
+lines += ['[node name="Vents" type="Node2D" parent="."]', ""]
+for rid in VENT_ROOMS:
+    cx, cy = centre(rid)
+    lines += ['[node name="%sVent" type="Marker2D" parent="Vents"]' % "".join(p.capitalize() for p in rid.split("_")),
+              "position = Vector2(%d, %d)" % ((cx - 0.5) / 0.25 * TILE, (cy - 0.5) / 0.25 * TILE), ""]
+lines += ['[node name="ArtifactLocations" type="Node2D" parent="."]', ""]
 for rid in ARTIFACTS:
     cx, cy = centre(rid)
     lines += ['[node name="%sArtifact" type="Marker2D" parent="ArtifactLocations"]' % "".join(p.capitalize() for p in rid.split("_")),
               "position = Vector2(%d, %d)" % (cx / 0.25 * TILE, cy / 0.25 * TILE), 'script = ExtResource("7_loc")', ""]
+lines += ['[node name="AmmoLocations" type="Node2D" parent="."]', ""]
+for rid in AMMO_ROOMS:
+    cx, cy = centre(rid)
+    lines += ['[node name="%sAmmo" type="Marker2D" parent="AmmoLocations"]' % "".join(p.capitalize() for p in rid.split("_")),
+              "position = Vector2(%d, %d)" % ((cx + 0.5) / 0.25 * TILE, (cy + 0.5) / 0.25 * TILE), 'script = ExtResource("7_ammo")', ""]  # half a metre off the middle, clear of the artifact
 lines += ['[node name="Props" type="Node2D" parent="."]', "y_sort_enabled = true", ""]
 for rid in sorted(r for r in ROOMS if r.startswith("doors_")):  # each wing's door panel, against the room's north wall
     x, y, w, h = cell_rect(ROOMS[rid]["rects"][0])

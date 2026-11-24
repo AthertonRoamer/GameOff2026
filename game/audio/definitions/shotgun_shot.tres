@@ -4,12 +4,12 @@
 
 [resource]
 script = ExtResource("1_def")
-folder = "res://game/audio/sounds/weapons/pistol"
-volume_db = 2.0
+folder = "res://game/audio/sounds/weapons/shotgun"
+volume_db = 1
 volume_jitter_db = 0.8
-pitch_min = 0.8
-pitch_max = 0.88
-range_m = 70.0
+pitch_min = 0.96
+pitch_max = 1.02
+range_m = 75
 falloff = 0.7
-echo = 1.0
-cue_strength = 1.0
+echo = 1
+cue_strength = 1

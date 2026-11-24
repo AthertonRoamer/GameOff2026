@@ -7,6 +7,8 @@ extends Node
 ##everyone is told about, a door that changed state), and each peer hears them from where its own player is.
 ##Tweak the numbers in acoustics.tres, a sound's loudness and reach in its SoundDef, the filters and reverb in audio_bus_layout.tres, then the clips in game/audio/sounds.
 
+const OWN_RADIUS_PX : float = 24.0 ## a sound this close to the listener comes from their own player: it is heard, but gives no cue
+
 signal heard(direction : Vector2, strength : float) ## a sound reached the listener from this direction (SoundCue shows it)
 
 @export var acoustics : Acoustics
@@ -14,6 +16,7 @@ signal heard(direction : Vector2, strength : float) ## a sound reached the liste
 @export var acoustic_map : AcousticMap
 @export_group("Combat")
 @export var bullet_wall : SoundDef ## a bullet hits a wall
+@export var bullet_ricochet : SoundDef ## a bullet hits a wall close to a player
 @export var bullet_flesh : SoundDef ## a bullet hits a player
 @export var kill : SoundDef ## a player dies
 @export_group("Blood")
@@ -49,8 +52,8 @@ func _make_voice() -> AudioStreamPlayer2D:
 	return voice
 
 
-##A sound made at a world position. own: made by the listener, so a little quieter and from right where they stand.
-func play(def : SoundDef, at : Vector2, own : bool = false) -> void:
+##A sound made at a world position. own: made by the listener, so a little quieter and from right where they stand. cue: false for a sound that must not show a marker (the impact of the listener's own shot).
+func play(def : SoundDef, at : Vector2, own : bool = false, cue : bool = true) -> void:
 	if def == null or not listener.is_valid():
 		return
 	var origin : Variant = listener.call()
@@ -75,7 +78,8 @@ func play(def : SoundDef, at : Vector2, own : bool = false) -> void:
 	var echo : float = acoustics.echo_of(hearing.room_kind) * def.echo
 	if echo > 0.02:
 		_start(_voice(_echo), stream, seems_at, volume + acoustics.echo_gain_db + linear_to_db(echo), pitch, def.falloff * acoustics.echo_carry, range_px, acoustics.echo_bus)
-	if def.show_cue and not own and not hearing.direction.is_zero_approx():
+	var from_listener : bool = own or at.distance_to(origin) < OWN_RADIUS_PX #(a hit, a bleed or a death of the listener's own player is not a cue to look somewhere else)
+	if def.show_cue and cue and not from_listener and not hearing.direction.is_zero_approx():
 		heard.emit(hearing.direction, def.cue_strength * loudness)
 
 

@@ -78,7 +78,7 @@ func _find_target() -> void:
 		for node : Node in get_tree().get_nodes_in_group(GROUP):
 			if not node.is_in_reach(player.global_position) or (node.has_method("can_interact") and not node.can_interact(player)):
 				continue
-			if node is Pickup and player.inventory.first_free_slot() < 0:
+			if node is Pickup and (node as Pickup).item.slot_for(player.inventory) < 0:
 				full_pickup_in_reach = true
 				continue
 			var distance : float = (node as Node2D).global_position.distance_to(player.global_position)

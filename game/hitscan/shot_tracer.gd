@@ -10,6 +10,7 @@ const TAIL : float = 44.0 #how long the streak behind it is
 const TAIL_SECONDS : float = 0.07 #how long the tail takes to catch up after the bullet has arrived
 const SPARK_SECONDS : float = 0.2
 const SPARKS : int = 6
+const WALL_INSET : float = 3.0 #how far in front of a wall an impact is looked at, for the view
 
 var _from : Vector2
 var _to : Vector2
@@ -47,11 +48,21 @@ func _process(delta : float) -> void:
 	queue_redraw()
 
 
+## How well the local player sees a point of the shot. A shot ends ON a wall's surface, which the view's own wall test counts as blocked, so a point at the end is
+## looked at from just in front of the wall: the impact (the sparks) is seen whenever the wall is.
+func _seen(point : Vector2) -> float:
+	if not visibility.is_valid():
+		return 1.0
+	if point.is_equal_approx(_to):
+		point -= _dir * WALL_INSET
+	return visibility.call(point)
+
+
 func _draw() -> void:
 	var arrived : float = clampf((_age - _travel_seconds) / TAIL_SECONDS, 0.0, 1.0) #0 while it flies, then 0 to 1 as the tail catches up
 	var travelled : float = minf(SPEED * _age, _length)
 	var head : Vector2 = _from + _dir * travelled
-	var seen : float = visibility.call(head) if visibility.is_valid() else 1.0 #a bullet is only drawn as well as the local player can see where it is
+	var seen : float = _seen(head) #a bullet is only drawn as well as the local player can see where it is
 	var in_sight : bool = seen > 0.02
 	var tail_length : float = minf(maxf(TAIL, _step * 1.3), travelled) * (1.0 - arrived)
 	if in_sight and tail_length > 0.5:
@@ -64,7 +75,7 @@ func _draw() -> void:
 			draw_circle(head - _dir * minf(_step, travelled) * (i / 3.0), 4.5, Color(_color, 0.09 * (1.0 - arrived) * seen))
 		draw_circle(head, 3.0, Color(_color, 0.3 * (1.0 - arrived) * seen))
 		draw_circle(head, 1.5, Color(_color.lightened(0.8), (1.0 - arrived) * seen))
-	if _spark and _age >= _travel_seconds and visibility.is_valid() and visibility.call(_to) > 0.02 or _spark and _age >= _travel_seconds and not visibility.is_valid():
+	if _spark and _age >= _travel_seconds and _seen(_to) > 0.02:
 		var t : float = (_age - _travel_seconds) / SPARK_SECONDS
 		for angle in _spark_angles:
 			var dir : Vector2 = Vector2.from_angle(angle)

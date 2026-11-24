@@ -12,11 +12,19 @@ extends CanvasLayer
 @onready var clock_label : Label = $ClockLabel #hidden until bind_clock(): the playground has no clock
 @onready var score_label : Label = $ScoreLabel #hidden until bind_deathmatch()
 
+@onready var stamina_bar : ProgressBar = $StaminaBar
+@onready var ammo_label : Label = $AmmoLabel #the gun in the hands: rounds in the magazine / the supply
+@onready var minimap : Minimap = $Minimap
+@onready var map_screen : MapScreen = $MapScreen #the full map, on the map key
+
+var _player : Player
 var _slot_panels : Array[PanelContainer] = []
+var _slot_counts : Array[Label] = [] #the supply on the ammo's slot
 var _slot_icons : Array[TextureRect] = []
 var _normal_style : StyleBoxFlat
 var _active_style : StyleBoxFlat
 var _fill_style : StyleBoxFlat #the health bar's fill: the accent, alarm red when low
+var _stamina_fill : StyleBoxFlat #the stamina bar's: pale, alarm red while winded
 var _inventory : Inventory
 
 
@@ -37,6 +45,9 @@ func _ready() -> void:
 		panel.add_theme_stylebox_override("panel", _normal_style)
 		_slot_panels.append(panel)
 		_slot_icons.append(panel.get_node("Icon"))
+		_slot_counts.append(panel.get_node("Count"))
+	_stamina_fill = stamina_bar.get_theme_stylebox("fill").duplicate()
+	stamina_bar.add_theme_stylebox_override("fill", _stamina_fill)
 
 
 ## A hit marker over the mouse whenever one of this player's instant shots hits (the lobby says so).
@@ -46,7 +57,17 @@ func bind_hitscan(hitscan : HitscanManager) -> void:
 	hitscan.hit_confirmed.connect(func(_damage : float) -> void: marker.flash())
 
 
+## The maps show this facility (the minimap and the full map on the map key).
+func bind_map(facility : FacilityMap) -> void:
+	minimap.facility = facility
+	map_screen.facility = facility
+
+
 func bind_player(player : Player) -> void:
+	_player = player
+	minimap.track(player)
+	map_screen.player = player
+	stamina_bar.max_value = player.stamina_max
 	health_bar.max_value = player.starting_health
 	_show_health(player.health)
 	player.health_changed.connect(_show_health)
@@ -54,6 +75,20 @@ func bind_player(player : Player) -> void:
 	interactor.prompt_changed.connect(_show_prompt)
 	interactor.inventory_full_changed.connect(inventory_full_label.set_visible)
 	call_deferred("_bind_inventory", player) #player hasn't entered the tree yet, so Inventory._ready() hasn't populated slots
+
+
+func _process(_delta : float) -> void:
+	if not is_instance_valid(_player) or _inventory == null:
+		return
+	stamina_bar.value = _player.stamina
+	_stamina_fill.bg_color = Palette.ALARM if _player.winded else Palette.MUTED
+	var gun : Gun = _inventory.active_item as Gun
+	ammo_label.visible = gun != null
+	if gun != null:
+		ammo_label.text = "RELOADING" if _inventory.is_reloading() else "%d / %d" % [_inventory.magazine, _inventory.reserve_now()]
+		ammo_label.add_theme_color_override("font_color", Palette.ALARM if _inventory.magazine <= 0 else Palette.BACKUP)
+	for i in _slot_counts.size():
+		_slot_counts[i].text = str(_inventory.reserve_now()) if i < _inventory.slots.size() and _inventory.slots[i] is AmmoItem else ""
 
 
 func _show_health(health : float) -> void:

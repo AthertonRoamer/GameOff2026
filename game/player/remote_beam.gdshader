@@ -19,7 +19,7 @@ uniform vec2 view_apex;
 uniform float view_facing = 0.0;
 uniform float view_half = 0.96;
 uniform float view_range = 900.0;
-uniform float view_near = 110.0;
+uniform float view_near = 16.0;
 uniform float fade_start = 0.4;
 uniform bool use_view = true;
 uniform vec2 bodies[8];

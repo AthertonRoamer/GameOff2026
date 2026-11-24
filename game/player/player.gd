@@ -16,6 +16,11 @@ const DEAD_Z : int = -10 #z_index of a dead player: above the floor (FacilityMap
 @export var muzzle_distance : float = 28.0 #from the player's middle to the end of the barrel, in pixels: where bullets start and the flash is
 @export var arm_extra : float = 14.0 #how far the hands reach past the barrel end, in pixels: a wall closer than muzzle_distance + this lowers the gun
 @export var starting_items : Array[Item] = []
+@export var starting_spare_rounds : int = 24 #ammunition besides the gun's magazine (the role sets it)
+@export var stamina_max : float = 100.0 #running uses it up, and it comes back while the player does not run
+@export var stamina_drain : float = 28.0 #per second of running
+@export var stamina_regen : float = 16.0 #per second of not running
+@export var stamina_recover_at : float = 25.0 #a player who ran out (winded) cannot run again until they have this much back
 
 @onready var input : PlayerInput = $Input
 @onready var inventory : Inventory = $Inventory
@@ -36,6 +41,9 @@ var hit_direction : Vector2 = Vector2.ZERO #the way the last shot that hit this 
 var _shown_health : float = starting_health #the health the skin last reacted to: a drop below it is a hit
 @onready var _alive_layer : int = collision_layer #the body's collision while alive, which a dead player gives up
 @onready var _alive_mask : int = collision_mask
+var stamina : float = stamina_max #rollback state, with winded
+var winded : bool = false
+var died_at_msec : int = 0 #when this peer saw the player fall (the lobby's is the one that decides how long a medic has to bring them back)
 var debug_killed : bool = false #killed by a debug command (set where the kill runs, the lobby): the match counts a player like this as still in play, so it does not end over a test
 var _teleport_to : Variant = null #a position the next tick moves the player to, see teleport()
 
@@ -48,6 +56,7 @@ var player_name : String = "":
 signal health_changed(h : float)
 signal died
 signal shot_fired #a gun fired: plays the skin's recoil and muzzle flash
+signal reload_started(gun : Gun) #a reload began (on every peer: the reload is part of the synced state)
 signal damaged(direction : Vector2) #health went down from a shot going this way (on every peer: the health and the direction are synced together). BloodSplats listens
 
 @export var starting_health : float = 50.0
@@ -67,6 +76,7 @@ func _ready() -> void:
 	_derive_movement()
 	if role != null:
 		skin.use_skin(role.skin, role.legs_tint)
+	footsteps.use_role(role)
 	_shown_health = health #(its initial value came before starting_health was set: the first hit was not noticed)
 	camera.enabled = input.is_multiplayer_authority()
 	if name_display != null:
@@ -84,17 +94,20 @@ func _derive_movement() -> void:
 
 
 ##Gives the player another role after they have spawned (debug): the new stats and items, at full health. Run it on every peer, roles are public.
-func change_role(new_role : Role) -> void:
+##reset_tick: the tick the new role's ammunition starts on, the same on every peer (see Inventory.set_items).
+func change_role(new_role : Role, reset_tick : int = -1) -> void:
 	role = new_role
 	if new_role == null:
 		return
 	new_role.apply(self)
 	skin.use_skin(new_role.skin, new_role.legs_tint)
+	footsteps.use_role(new_role)
 	_derive_movement()
-	inventory.set_items(starting_items)
+	inventory.set_items(starting_items, reset_tick)
 
 ##The skin falls according to where the killing shot came from, measured against the way the player faces (0 is from the front, positive from the right).
 func _on_died() -> void:
+	died_at_msec = Time.get_ticks_msec()
 	_set_collidable(false)
 	z_index = DEAD_Z #a body on the floor is under everything that stands on it
 	skin.die(_hit_angle())
@@ -142,12 +155,25 @@ func debug_revive() -> void:
 	health = starting_health
 
 
+var _was_reloading : bool = false
+
+
 func _process(_delta : float) -> void:
 	#The body no longer turns to face the mouse: the skin turns its own legs (to the way it moves) and torso (to the aim). The gun stays out.
 	var aim_direction : Vector2 = (input.aim - global_position).normalized() if input.aim != Vector2.ZERO and not input.interacting else Vector2.ZERO #(at a console the player does not turn: the skin keeps its facing)
-	skin.update_visual(velocity, aim_direction, is_aiming() and not is_barrel_blocked(aim_direction), is_running(), input.interacting, inventory.active_slot)
+	skin.update_visual(velocity, aim_direction, is_aiming() and not is_barrel_blocked(aim_direction), is_running(), input.interacting, inventory.active_slot, _reload_seconds())
+	var reloading : bool = inventory.is_reloading()
+	if reloading and not _was_reloading and inventory.active_item is Gun:
+		reload_started.emit(inventory.active_item)
+	_was_reloading = reloading
 	if flashlight.on != input.flashlight_on: #the flashlight is part of the synced input, so this shows every player's beam as they set it
 		flashlight.on = input.flashlight_on
+
+
+## How long the reload in progress takes (the skin plays its reload over that time), 0 when the gun is not being reloaded.
+func _reload_seconds() -> float:
+	var gun : Gun = inventory.active_item as Gun
+	return gun.reload_seconds if gun != null and inventory.is_reloading() else 0.0
 
 
 ##Moves the player to a point. Setting position directly does not stick: the next tick restores it from the rollback history. This applies it
@@ -162,6 +188,7 @@ func _rollback_tick(delta : float, _tick : int, _is_fresh : bool) -> void:
 		velocity = Vector2.ZERO
 		_teleport_to = null
 		interpolator.teleport()
+	_update_stamina(delta)
 	var speed_now : float = velocity.length()
 	if speed_now > 0.0:
 		speed_now = max(speed_now - friction * delta, 0.0)
@@ -179,9 +206,21 @@ func _rollback_tick(delta : float, _tick : int, _is_fresh : bool) -> void:
 	velocity /= NetworkTime.physics_factor
 
 
-##Shift held while moving. Running holsters the gun (Inventory), and it comes back out when the run stops.
+##Running costs stamina; out of it the player is winded and walks until some of it is back.
+func _update_stamina(delta : float) -> void:
+	if is_running():
+		stamina = maxf(stamina - stamina_drain * delta, 0.0)
+		if stamina <= 0.0:
+			winded = true
+	else:
+		stamina = minf(stamina + stamina_regen * delta, stamina_max)
+		if winded and stamina >= stamina_recover_at:
+			winded = false
+
+
+##Shift held while moving, with stamina to do it on. Running holsters the gun (Inventory), and it comes back out when the run stops.
 func is_running() -> bool:
-	return input.run and input.movement != Vector2.ZERO
+	return input.run and input.movement != Vector2.ZERO and not winded
 
 
 ##The active item (the gun) is out in the hands: chosen in the inventory, H holsters or draws it. A holstered gun cannot fire.
@@ -235,6 +274,11 @@ func set_body_seen(alpha : float, light : Color = Color.WHITE) -> void:
 	skin.set_body_alpha(alpha, light)
 	if name_display != null:
 		name_display.modulate.a = alpha
+
+
+## The lobby member this player belongs to: the spawner names every player after their member's id.
+func member_id() -> int:
+	return String(name).to_int()
 
 
 func is_alive() -> bool:

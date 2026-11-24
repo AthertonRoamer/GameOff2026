@@ -1,0 +1,32 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://game/debug/debug_role_picker.gd" id="1_picker"]
+
+[node name="DebugRolePicker" type="CanvasLayer"]
+layer = 70
+visible = false
+script = ExtResource("1_picker")
+
+[node name="Panel" type="PanelContainer" parent="."]
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 16.0
+offset_top = -140.0
+offset_right = 200.0
+offset_bottom = 140.0
+grow_vertical = 2
+
+[node name="Box" type="VBoxContainer" parent="Panel"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="Panel/Box"]
+layout_mode = 2
+text = "Debug: choose your role"
+
+[node name="Roles" type="VBoxContainer" parent="Panel/Box"]
+layout_mode = 2
+
+[node name="Status" type="Label" parent="Panel/Box"]
+layout_mode = 2
+autowrap_mode = 3

@@ -20,6 +20,7 @@ const POINTS : int = 16 #of the outline
 var kind : int = Kind.HIT
 var _life : float = 10.0 #seconds until it has faded away
 var _grow : float = 0.3 #seconds it takes to form
+var seen : float = 1.0 ## how well the local player sees it, 0 to 1 (BloodSplats sets it from the player's view): the splat is drawn that strongly
 var _age : float = 0.0
 var _outline : PackedVector2Array = PackedVector2Array()
 var _inner : PackedVector2Array = PackedVector2Array()
@@ -81,7 +82,7 @@ func _process(delta : float) -> void:
 		return
 	var t : float = clampf(_age / _grow, 0.0, 1.0)
 	scale = Vector2.ONE * lerpf(0.35, 1.0, 1.0 - pow(1.0 - t, 3.0)) #forms, quickly at first
-	modulate.a = clampf((_life - _age) / FADE_SECONDS, 0.0, 1.0)
+	modulate.a = clampf((_life - _age) / FADE_SECONDS, 0.0, 1.0) * seen
 
 
 func _draw() -> void:

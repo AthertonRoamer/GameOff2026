@@ -5,6 +5,7 @@
 [ext_resource type="PackedScene" path="res://game/environment/facility_door.tscn" id="4_door"]
 [ext_resource type="PackedScene" path="res://game/utility/door_control_panel.tscn" id="6_panel"]
 [ext_resource type="Script" path="res://game/pickups/artifact_location.gd" id="7_loc"]
+[ext_resource type="Script" path="res://game/pickups/ammo_location.gd" id="7_ammo"]
 [ext_resource type="Script" path="res://game/environment/facility_room_rect.gd" id="rect_script"]
 
 [node name="FacilityMap" type="Node2D"]
@@ -4023,6 +4024,36 @@ horizontal = false
 
 [node name="Vents" type="Node2D" parent="."]
 
+[node name="AtriumVent" type="Marker2D" parent="Vents"]
+position = Vector2(3448, 3184)
+
+[node name="NorthCorridorVent" type="Marker2D" parent="Vents"]
+position = Vector2(3448, 1411)
+
+[node name="EastCorridorVent" type="Marker2D" parent="Vents"]
+position = Vector2(5698, 3084)
+
+[node name="SouthCorridorVent" type="Marker2D" parent="Vents"]
+position = Vector2(3184, 5031)
+
+[node name="WestCorridorVent" type="Marker2D" parent="Vents"]
+position = Vector2(1438, 3020)
+
+[node name="NwCorridorVent" type="Marker2D" parent="Vents"]
+position = Vector2(1376, 978)
+
+[node name="NorthArmoryVent" type="Marker2D" parent="Vents"]
+position = Vector2(3008, 1424)
+
+[node name="EastGeneratorVent" type="Marker2D" parent="Vents"]
+position = Vector2(5164, 2634)
+
+[node name="SouthCafeteriaVent" type="Marker2D" parent="Vents"]
+position = Vector2(3624, 4504)
+
+[node name="WestServerVent" type="Marker2D" parent="Vents"]
+position = Vector2(2524, 2568)
+
 [node name="ArtifactLocations" type="Node2D" parent="."]
 
 [node name="NorthArmoryArtifact" type="Marker2D" parent="ArtifactLocations"]
@@ -4048,6 +4079,40 @@ script = ExtResource("7_loc")
 [node name="WestRecordsArtifact" type="Marker2D" parent="ArtifactLocations"]
 position = Vector2(2150, 2590)
 script = ExtResource("7_loc")
+
+[node name="AmmoLocations" type="Node2D" parent="."]
+
+[node name="NorthArmoryAmmo" type="Marker2D" parent="AmmoLocations"]
+position = Vector2(3052, 1468)
+script = ExtResource("7_ammo")
+
+[node name="NorthLockersAmmo" type="Marker2D" parent="AmmoLocations"]
+position = Vector2(3844, 2260)
+script = ExtResource("7_ammo")
+
+[node name="SpawnNorthAmmo" type="Marker2D" parent="AmmoLocations"]
+position = Vector2(3844, 2568)
+script = ExtResource("7_ammo")
+
+[node name="SpawnEastAmmo" type="Marker2D" parent="AmmoLocations"]
+position = Vector2(4372, 3580)
+script = ExtResource("7_ammo")
+
+[node name="EastWorkshopAmmo" type="Marker2D" parent="AmmoLocations"]
+position = Vector2(4856, 3580)
+script = ExtResource("7_ammo")
+
+[node name="SouthGarageAmmo" type="Marker2D" parent="AmmoLocations"]
+position = Vector2(3800, 5780)
+script = ExtResource("7_ammo")
+
+[node name="SpawnSouthAmmo" type="Marker2D" parent="AmmoLocations"]
+position = Vector2(2788, 4020)
+script = ExtResource("7_ammo")
+
+[node name="WestLabBAmmo" type="Marker2D" parent="AmmoLocations"]
+position = Vector2(1952, 3448)
+script = ExtResource("7_ammo")
 
 [node name="Props" type="Node2D" parent="."]
 y_sort_enabled = true

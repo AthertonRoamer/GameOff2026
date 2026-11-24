@@ -95,7 +95,14 @@ CLIPSPEC = {
     # down), so the legs stay as they stand. window: the cycle is this stretch of the clip (start, length, as fractions of it), its last part fading into the stretch
     # before the start (xfade, as a fraction of the cycle) so the loop joins up
     'typing': dict(clip='Typing.fbx', lift=0.90, yaw_legs=0, yaw_torso=0, upper=True, window=(0.30, 0.09), xfade=0.35),
+    # reloading a rifle (3.3 s, standing): the left hand goes to the hip for a magazine and brings it up to the rifle. upper: the legs stay as they stand. once: played from the
+    # start to `end` of the clip (its last part is only the aim again). 'aim' is the aimed pose itself (the gun up, see build): the reload starts and ends on it
+    'reload': dict(clip='Reloading.fbx', lift=0.0, yaw_legs=0, yaw_torso=0, upper=True, once=True),
+    'aim': dict(aim=True),
 }
+RELOAD_END = 0.80  #how much of the clip the reload uses
+RELOAD_FRAMES = 20
+RELOAD_LEAD = 3     #frames at either end that blend between the aimed pose and the clip, so the sheet starts and ends exactly on the aim
 
 UPPER_BONES = ('Spine', 'Neck', 'Head', 'LeftShoulder', 'LeftArm', 'LeftForeArm', 'LeftHand', 'RightShoulder', 'RightArm', 'RightForeArm', 'RightHand')  # (by prefix: Spine1, the fingers)
 
@@ -558,8 +565,20 @@ def _typing():
         _transition('torso', 'typing', 'idle', 6)]
 
 
+def _reload():
+    """Reloading with the gun up, the upper body only: it starts and ends on the aimed pose (torso_idle_aim) and plays the clip between. The game plays the sheet at
+    the speed that makes it last as long as the reload does. The rifle follows the right hand as the clip moves it; for a pistol the hands are worked out again in build()
+    from the clip's (see reload_arms)."""
+    def sample(i, n):
+        u = i / (n - 1.0) * RELOAD_END
+        edge = min(i, n - 1 - i)
+        aim = smooth(1.0 - edge / float(RELOAD_LEAD)) if edge < RELOAD_LEAD else 0.0
+        return [('aim', 0.0, aim), ('reload', u, 1.0 - aim)] if aim > 0.0 else [('reload', u, 1.0)]
+    return [dict(name='torso_reload', layer='torso', action='mix', n=RELOAD_FRAMES, mode='reload', loop=False, mix=sample)]
+
+
 STATES += _transitions()
-STATES += _gaits() + _deaths() + _typing() #(after smooth, which the transition states use when they are rendered)
+STATES += _gaits() + _deaths() + _typing() + _reload() #(after smooth, which the transition states use when they are rendered)
 
 
 # ------------------------------------------------------------------ role gear
@@ -826,6 +845,10 @@ def build(role):
         aim_dir = lambda s: (-s * 0.03, -0.1, 0.0)
     aim_pole = lambda s: (s * 1.0, 0.3, -0.45)
     pose_arms(arm, aim_t, aim_pole, aim_dir)
+    aim_rot = {pb.name: pb.rotation_quaternion.copy() for pb in arm.pose.bones}  #the aimed pose itself, for the reload to start and end on
+    aim_loc = {pb.name: pb.location.copy() for pb in arm.pose.bones}
+    bpy.context.view_layer.update()
+    aim_hand = (arm.matrix_world @ arm.pose.bones['mixamorig:RightHand'].matrix).copy() #where the gun is held: what the gun in the hands follows in the reload
 
     head, top = wpos(arm, 'Head'), wpos(arm, 'HeadTop_End')
     hk = (top - head).length / 0.177  # gear was sized for the mannequin head
@@ -850,6 +873,8 @@ def build(role):
         prim('cube', (-0.06, -0.45, shz - 0.03), (0.055, 0.85, 0.08), gun, 'hand')
         prim('cube', (-0.06, -0.62, shz - 0.03), (0.07, 0.25, 0.1), mat('hg', PAL['i2']), 'hand')
     hand_items = [(o, o.location.copy()) for o, t in PROPS if t == 'hand']
+    bpy.context.view_layer.update()
+    hand_rel = [(o, aim_hand.inverted() @ o.matrix_world, o.matrix_world.copy()) for o, t in PROPS if t == 'hand'] #(prop, its place against the right hand, its place at the aim)
 
     # ---- holstered weapon ----
     n0 = len(PROPS)
@@ -920,9 +945,9 @@ def build(role):
         for o, tag in PROPS:
             show = layer != 'legs'
             if tag == 'hand':
-                show = show and mode == 'aim'
+                show = show and mode in ('aim', 'reload')
             elif tag == 'holster':
-                show = show and mode != 'aim'
+                show = show and mode not in ('aim', 'reload')
             o.hide_render = not show
 
     foot_rest = {}
@@ -977,6 +1002,8 @@ def build(role):
                 continue
             if comp == 'idle':
                 rot, loc, y = idle_rot, idle_loc, 0.0
+            elif comp == 'aim':
+                rot, loc, y = aim_rot, aim_loc, 0.0
             elif 'shuffle' in CLIPSPEC[comp]:
                 rot, loc = shuffle_pose(u, CLIPSPEC[comp]['shuffle'])
                 y = 0.0
@@ -1014,12 +1041,39 @@ def build(role):
         bpy.context.view_layer.update()
         return yaw / total
 
+    # ---- the reload ----
+    # The clip is a rifle reload and a rifle's hands are where the clip has them. A pistol is held further in, one hand wrapped round the other: its hands are the clip's own movement
+    # (measured against the chest, from where they start) added to the pistol's aimed positions, each axis by RELOAD_HANDS' gain, with the arms worked out again by IK. The magazine hand
+    # (the left) keeps most of the movement, to the hip and back up to the grip; the gun hand keeps a little (the pistol tips towards the chest as the magazine goes in).
+    reload_ref = {}
+    RELOAD_HANDS = {'Left': (1.0, 0.8, 0.8), 'Right': (0.3, 0.3, 0.4)}
+
+    def reload_arms(st, i, n, dl):
+        bpy.context.view_layer.update()
+        if w != 'rifle':
+            aim_weight = sum(wt for c, _, wt in st['mix'](i, n) if c == 'aim')
+            chest = wpos(arm, 'Spine2')
+            goals = {}
+            for s in ('Left', 'Right'):
+                off = (wpos(arm, f'{s}Hand') - chest) - reload_ref[s]
+                g = RELOAD_HANDS[s]
+                goals[s] = aim_t[s] + dl + Vector((off.x * g[0], off.y * g[1], off.z * g[2])) * (1.0 - aim_weight)
+            pose_arms(arm, goals, aim_pole, aim_dir)
+            bpy.context.view_layer.update()
+        hand = arm.matrix_world @ arm.pose.bones['mixamorig:RightHand'].matrix
+        for o, rel, _ in hand_rel: #the gun goes where the right hand goes
+            o.matrix_world = hand @ rel
+
     os.makedirs(os.path.join(OUT, role), exist_ok=True)
     meta = {}
     for st in STATES:
         if ONLY and not any(st['name'] == o or (o.endswith('*') and st['name'].startswith(o[:-1])) for o in ONLY):
             continue
         set_layer(st['layer'], st['mode'])
+        if st['mode'] == 'reload' and w != 'rifle':  # where the clip has the hands as it starts
+            arm.rotation_euler, arm.location, arm.scale = (0, 0, 0), (0, 0, 0), (ROLE_K,) * 3
+            mix_pose([('reload', 0.0, 1.0)], 'torso')
+            reload_ref.update({s: wpos(arm, f'{s}Hand') - wpos(arm, 'Spine2') for s in ('Left', 'Right')})
         clip = st.get('clip')
         sx, rx = (clip_src[clip][0], clip_src[clip][2]) if clip else (src, REF)
         act = clip_src[clip][1] if clip else (None if st.get('mix') else acts[st['action']])
@@ -1101,6 +1155,8 @@ def build(role):
                     o.hide_render = not p2 > 0.0
                     o.location = grip.lerp(loc + dl, p2)
                 holster_gun.hide_render = p2 > 0.0
+            elif mode == 'reload':
+                reload_arms(st, i, n, dl)
             bpy.context.view_layer.update()
             if SHOULDERS:  # offsets from the sprite's pivot, in sprite pixels (x right, y down), for the left and right shoulder joints
                 k = sc.render.resolution_x / cam.ortho_scale
@@ -1111,6 +1167,9 @@ def build(role):
                 continue
             sc.render.filepath = os.path.join(OUT, role, f"{st['name']}_{i:02d}.png")
             bpy.ops.render.render(write_still=True)
+        if st['mode'] == 'reload':
+            for o, _, home in hand_rel: #the gun is back where it was held, for the states after this one
+                o.matrix_world = home
         # where the character's position sits inside this sprite (pixels from top-left)
         res = sc.render.resolution_x
         ppu = res / cam.ortho_scale

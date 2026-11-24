@@ -22,8 +22,18 @@ var _last_step : float = -1.0
 var _last_frame : int = -1 #the frame the stride was on before this one, -1 when the legs were not in a gait
 
 
+var _silent_walk : bool = false #the role's: walking makes no sound
+var _run_override : SoundDef #the role's own run sound (a quiet runner)
+
+
 func _ready() -> void:
 	legs.frame_changed.connect(_on_frame_changed)
+
+
+## The player's role decides how it sounds (a role is public, so every peer hears the same): see Role.silent_walk and Role.run_sound.
+func use_role(role : Role) -> void:
+	_silent_walk = role != null and role.silent_walk
+	_run_override = role.run_sound if role != null else null
 
 
 ##A step is made when the stride runs on to a foot-down frame, or when a gait starts on one. A sheet that hands over to another mid-stride (or is set to a frame) does not
@@ -40,5 +50,8 @@ func _on_frame_changed() -> void:
 	var now : float = Time.get_ticks_msec() / 1000.0
 	if now - _last_step < min_gap:
 		return
+	var walking : bool = legs.animation in WALKS
+	if walking and _silent_walk:
+		return
 	_last_step = now
-	stepped.emit(walk if legs.animation in WALKS else run, (get_parent() as Node2D).global_position)
+	stepped.emit(walk if walking else (_run_override if _run_override != null else run), (get_parent() as Node2D).global_position)

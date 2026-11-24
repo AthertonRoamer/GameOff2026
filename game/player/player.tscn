@@ -6,13 +6,13 @@
 [ext_resource type="Resource" path="res://game/items/guns/pistol.tres" id="3_gb4gm"]
 [ext_resource type="PackedScene" uid="uid://c1exm4vthb4w3" path="res://game/player/skin/player_skin.tscn" id="3_skin"]
 [ext_resource type="Script" uid="uid://d350u8evihs1u" path="res://addons/netfox/rollback/rollback-synchronizer.gd" id="4_rollback"]
-[ext_resource type="Resource" path="res://game/items/guns/rifle.tres" id="4_uv2nh"]
 [ext_resource type="Script" uid="uid://dour8fehaaugp" path="res://addons/netfox/tick-interpolator.gd" id="5_interp"]
 [ext_resource type="Script" uid="uid://cthih2m0x736l" path="res://game/player/inventory.gd" id="6_inventory"]
 [ext_resource type="Script" uid="uid://chr4omg2hy3yu" path="res://addons/netfox/rewindable-action.gd" id="7_action"]
 [ext_resource type="Script" uid="uid://3lbngqcexe0l" path="res://addons/netfox/state-synchronizer.gd" id="8_state"]
 [ext_resource type="Script" uid="uid://dsac5hy6upn17" path="res://game/player/player_interactor.gd" id="9_interactor"]
 [ext_resource type="Script" path="res://game/audio/footsteps.gd" id="10_footsteps"]
+[ext_resource type="Script" path="res://game/abilities/revivable.gd" id="13_revivable"]
 [ext_resource type="Resource" path="res://game/audio/definitions/footstep_walk.tres" id="11_walk"]
 [ext_resource type="Resource" path="res://game/audio/definitions/footstep_run.tres" id="12_run"]
 
@@ -25,7 +25,7 @@ motion_mode = 1
 script = ExtResource("1_player")
 speed = 200.0
 name_display = NodePath("NameDisplay")
-starting_items = Array[ExtResource("2_j0mij")]([ExtResource("3_gb4gm"), ExtResource("4_uv2nh")])
+starting_items = Array[ExtResource("2_j0mij")]([ExtResource("3_gb4gm")])
 
 [node name="Skin" parent="." unique_id=669583553 instance=ExtResource("3_skin")]
 
@@ -48,7 +48,7 @@ script = ExtResource("2_input")
 [node name="RollbackSynchronizer" type="Node" parent="." unique_id=1751885658 node_paths=PackedStringArray("root")]
 script = ExtResource("4_rollback")
 root = NodePath("..")
-state_properties = Array[String]([":position", ":velocity", "Inventory:last_use_tick", "Inventory:active_slot", "Inventory:drawn", "Inventory:redraw_after_run"])
+state_properties = Array[String]([":position", ":velocity", ":stamina", ":winded", "Inventory:last_use_tick", "Inventory:active_slot", "Inventory:drawn", "Inventory:redraw_after_run", "Inventory:magazine", "Inventory:reload_end_tick", "Inventory:loaded_total"])
 input_properties = Array[String](["Input:movement", "Input:aim", "Input:buttons"])
 
 [node name="TickInterpolator" type="Node" parent="." unique_id=1495510548 node_paths=PackedStringArray("root")]
@@ -79,3 +79,6 @@ script = ExtResource("10_footsteps")
 legs = NodePath("../Skin/Legs")
 walk = ExtResource("11_walk")
 run = ExtResource("12_run")
+
+[node name="Revivable" type="Node2D" parent="."]
+script = ExtResource("13_revivable")

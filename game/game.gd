@@ -41,6 +41,8 @@ signal play_started #every peer: the phases are over and the players can move (t
 @onready var end_screen : EndScreen = $EndScreen
 @onready var pickups : PickupControl = $PickupControl
 @onready var artifact_placer : ArtifactPlacer = $ArtifactPlacer
+@onready var ammo_placer : AmmoPlacer = $AmmoPlacer
+@onready var abilities : AbilityControl = $AbilityControl #what the roles can do: revive, vents
 @onready var target_chooser : TargetArtifactChooser = $TargetArtifactChooser
 @onready var exit_chooser : DesignatedExitChooser = $DesignatedExitChooser
 @onready var artifact_escape : ArtifactEscape = $ArtifactEscape
@@ -93,6 +95,8 @@ func _ready() -> void:
 	level.player_lookup = func(peer_id : int) -> Player: return spawner.players.get(peer_id)
 	pickups.spawn_parent = level.actors
 	pickups.player_lookup = level.player_lookup
+	abilities.player_lookup = level.player_lookup
+	abilities.build(level.facility)
 	artifact_escape.facility = level.facility
 	artifact_escape.players = func() -> Array: return spawner.players.values()
 	level.projectiles.lag_compensator = lag_compensator
@@ -107,15 +111,19 @@ func _ready() -> void:
 	level.hitscan.player_of = func(peer_id : int) -> Player: return spawner.players.get(peer_id)
 	level.hitscan.sight = $PlayerSight.visibility #shots and bullets are only seen as well as the local player can see where they are
 	level.projectiles.sight = $PlayerSight.visibility
+	level.blood.sight = $PlayerSight.visibility #and so is blood on the floor
 	$PlayerSight.ambient = level.darkness.color
 	$PlayerSight.players = func() -> Array: return spawner.players.values()
 	$PlayerSight.local_player = func() -> Player: return spawner.local_player
 	level.hitscan.shot_hit.connect(_on_projectile_hit) #(the same hit as a bullet makes: damage and the way it was going)
 	player_hud.bind_hitscan(level.hitscan)
+	player_hud.bind_map(level.facility)
 	level.sound.listener = func() -> Variant: return spawner.local_player.global_position if is_instance_valid(spawner.local_player) else null #sounds are heard from where this peer's own player is
 	level.sound.heard.connect(player_hud.sound_cue.ping)
 	level.blood.splat_made.connect(func(kind : int, at : Vector2) -> void: level.sound.play(level.sound.blood_drip if kind == BloodSplat.Kind.BLEED else level.sound.blood_splat, at))
-	level.hitscan.wall_hit.connect(func(at : Vector2) -> void: level.sound.play(level.sound.bullet_wall, at))
+	level.hitscan.wall_hit.connect(func(at : Vector2, own_shot : bool) -> void:
+		await get_tree().create_timer(IMPACT_SOUND_DELAY).timeout #(after the bang, so a loud shot does not hide it)
+		level.sound.play(level.sound.bullet_ricochet if _player_near(at) else level.sound.bullet_wall, at, false, not own_shot)) #(a shot that strikes the wall by a player whines off it; the impact of your own shot is heard, but gives no cue)
 	player_setup.spawn_point = level.spawn_position()
 	if settings.is_deathmatch():
 		_setup_deathmatch()
@@ -160,6 +168,8 @@ func _begin_play(tick : int) -> void:
 	player_hud.visible = true
 	if settings.is_deathmatch():
 		deathmatch.begin(tick, spawner.lobby != null and spawner.lobby.is_master) #(no shift clock, no teams, no artifacts: kills and the five minutes)
+		if spawner.lobby != null and spawner.lobby.is_master:
+			ammo_placer.start_trickle() #(everyone dies and returns with what they had: the lobby brings new boxes over time)
 		play_started.emit()
 		return
 	game_clock.start(tick)
@@ -230,6 +240,7 @@ func _request_assignment() -> void:
 func _receive_assignment(roles : Dictionary, known_teams : Dictionary, artifact_picks : PackedInt32Array, target_artifact : int, designated_exit : String) -> void:
 	if not _setup_complete:
 		artifact_placer.place(artifact_picks)
+		ammo_placer.place()
 		target_chooser.set_target(target_artifact)
 		exit_chooser.set_designated(designated_exit)
 		_spawn_players(roles, known_teams)
@@ -252,6 +263,7 @@ func _spawn_on_lobby_when_ready() -> void:
 		if not _spawned_members.has(member.id):
 			return
 	artifact_placer.place(_artifact_picks)
+	ammo_placer.place()
 	target_chooser.set_target(_target_artifact)
 	exit_chooser.set_designated(_designated_exit)
 	_spawn_players(assignment["roles"], assignment["teams"]) #the lobby knows every team
@@ -279,12 +291,14 @@ func can_change_roles() -> bool:
 	return spawner.lobby.is_master and _setup_complete and not assignment.is_empty()
 
 
+const ROLE_CHANGE_DELAY_TICKS : int = 8 ## how far ahead a role change's ammunition reset is scheduled: it should cover the lobby -> client delay
+
 ##Lobby only, debug: gives a member another role. Roles are public, so every peer is told. An intruder role makes the member an attacker, and leaving one
 ## makes them a defender. A role changes who may know whose team (an intruder's team is public), so the teams are sent out again.
 func debug_set_role(member_id : int, role_index : int) -> void:
 	var was_intruder : bool = is_intruder(member_id)
 	assignment["roles"][member_id] = role_index
-	_apply_role.rpc(member_id, role_index)
+	_apply_role.rpc(member_id, role_index, NetworkTime.tick + ROLE_CHANGE_DELAY_TICKS)
 	if is_intruder(member_id):
 		assignment["teams"][member_id] = Team.ATTACKERS
 	elif was_intruder:
@@ -314,11 +328,11 @@ func _send_teams(changed_member_id : int) -> void:
 
 
 @rpc("authority", "call_local", "reliable")
-func _apply_role(member_id : int, role_index : int) -> void:
+func _apply_role(member_id : int, role_index : int, reset_tick : int) -> void:
 	_roles[member_id] = role_index
 	var player : Player = spawner.players.get(member_id)
 	if is_instance_valid(player):
-		player.change_role(role_assigner.role_at(role_index))
+		player.change_role(role_assigner.role_at(role_index), reset_tick) #(the ammunition starts again on one tick everywhere, so a rollback keeps it)
 
 
 @rpc("authority", "call_remote", "reliable")
@@ -356,8 +370,10 @@ func _on_player_spawned(player : Node, member : LobbyMember, index : int) -> voi
 		if player.team == Team.ATTACKERS:
 			player_hud.show_target(target_chooser.target)
 	var is_local : bool = player == spawner.local_player
+	(player as Player).get_node("Revivable").control = abilities
 	player.footsteps.stepped.connect(func(def : SoundDef, at : Vector2) -> void: level.sound.play(def, at, is_local)) #every peer sees every player's feet, so every peer hears them
 	player.shot_fired.connect(_on_shot_fired.bind(player, is_local))
+	player.reload_started.connect(func(gun : Gun) -> void: level.sound.play(gun.reload_sound, player.global_position, is_local))
 	player.damaged.connect(func(_direction : Vector2) -> void: #the health sync tells every peer, so every peer hears the hit (a killing shot has the kill sound instead)
 		if player.health > 0.0:
 			level.sound.play(level.sound.bullet_flesh, player.global_position))
@@ -370,6 +386,18 @@ func _on_player_spawned(player : Node, member : LobbyMember, index : int) -> voi
 	if debug_respawn_dead_players or settings.is_deathmatch():
 		player.died.connect(_on_player_died.bind(player))
 		player.health_changed.connect(_on_player_health_changed.bind(player))
+
+
+const IMPACT_SOUND_DELAY : float = 0.14 ## seconds after the bang that a bullet's strike on the wall is heard
+const RICOCHET_NEAR_METRES : float = 5.0 ## a wall impact this close to a living player is a ricochet
+
+##Whether a living player is close to a point (as this peer sees the players).
+func _player_near(point : Vector2) -> bool:
+	var near_px : float = RICOCHET_NEAR_METRES * Acoustics.PX_PER_METRE
+	for player : Player in spawner.players.values():
+		if is_instance_valid(player) and player.is_alive() and player.global_position.distance_to(point) < near_px:
+			return true
+	return false
 
 
 ##A shot, on every peer (the shooter's own, and the lobby's word for everyone else's): the gun's bang, heard through the map from the shooter.
@@ -506,6 +534,8 @@ func _on_network_unloader_cease_rpcs_request_received() -> void:
 	level.blood.quiesce()
 	level.hitscan.quiesce()
 	pickups.quiesce()
+	abilities.quiesce()
+	ammo_placer.quiesce()
 	artifact_escape.quiesce()
 	phases.quiesce()
 	spawner.quiesce()

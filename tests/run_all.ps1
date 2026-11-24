@@ -76,6 +76,20 @@ if (-not $p.WaitForExit(90000)) { Stop-Process -Id $p.Id -Force }
 $unit = (Select-String -Path "$env:TEMP\pickuptest.out" -Pattern "RESULT: PASS" -Quiet)
 $results["pickups unit test"] = $unit
 "{0,-62} {1}" -f "pickups unit test", $(if ($unit) { "PASS" } else { "FAIL" })
+# ammunition, reloading, stamina, the minimap and the map screen
+$p = Start-Process $Godot -ArgumentList "--headless", "--path", "`"$project`"", "res://tests/unit/test_ammo.tscn" -NoNewWindow -PassThru `
+	-RedirectStandardOutput "$env:TEMP\ammotest.out" -RedirectStandardError "$env:TEMP\ammotest.err"
+if (-not $p.WaitForExit(90000)) { Stop-Process -Id $p.Id -Force }
+$unit = (Select-String -Path "$env:TEMP\ammotest.out" -Pattern "RESULT: PASS" -Quiet)
+$results["ammo, stamina and map unit test"] = $unit
+"{0,-62} {1}" -f "ammo, stamina and map unit test", $(if ($unit) { "PASS" } else { "FAIL" })
+# the roles' abilities: the shade's quiet, the gunner's shotgun, the medic's revive, the ventrat's vents
+$p = Start-Process $Godot -ArgumentList "--headless", "--path", "`"$project`"", "res://tests/unit/test_abilities.tscn" -NoNewWindow -PassThru `
+	-RedirectStandardOutput "$env:TEMP\abilitytest.out" -RedirectStandardError "$env:TEMP\abilitytest.err"
+if (-not $p.WaitForExit(90000)) { Stop-Process -Id $p.Id -Force }
+$unit = (Select-String -Path "$env:TEMP\abilitytest.out" -Pattern "RESULT: PASS" -Quiet)
+$results["role abilities unit test"] = $unit
+"{0,-62} {1}" -f "role abilities unit test", $(if ($unit) { "PASS" } else { "FAIL" })
 # the attackers' win: the target artifact carried into an exit zone
 $p = Start-Process $Godot -ArgumentList "--headless", "--path", "`"$project`"", "res://tests/unit/test_artifact_escape.tscn" -NoNewWindow -PassThru `
 	-RedirectStandardOutput "$env:TEMP\escapetest.out" -RedirectStandardError "$env:TEMP\escapetest.err"

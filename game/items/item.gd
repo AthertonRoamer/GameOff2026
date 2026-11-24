@@ -12,3 +12,13 @@ extends Resource
 
 func use(_user : Player, _tick : int) -> void:
 	pass #override per item type
+
+
+## The slot taking this item would use, or -1 when there is no room for it (the pickups ask: see PickupControl and PlayerInteractor).
+func slot_for(inventory : Inventory) -> int:
+	return inventory.first_free_slot()
+
+
+## Takes it into the inventory, in the slot slot_for() gave, on the tick the pickup is applied (the same tick on every peer).
+func put_into(inventory : Inventory, slot : int, _tick : int) -> void:
+	inventory.put_in_slot(slot, self)

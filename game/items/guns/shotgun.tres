@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="Gun" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://game/items/gun.gd" id="1_gun"]
+[ext_resource type="Texture2D" uid="uid://ckxs3fsktcc1o" path="res://icon.svg" id="2_icon"]
+[ext_resource type="Resource" path="res://game/audio/definitions/shotgun_shot.tres" id="3_shot"]
+[ext_resource type="Resource" path="res://game/audio/definitions/shotgun_reload.tres" id="4_reload"]
+
+[resource]
+script = ExtResource("1_gun")
+damage = 7.0
+bullet_color = Color(1, 0.55, 0.2, 1)
+hitscan = true
+range_px = 380.0
+shot_sound = ExtResource("3_shot")
+reload_sound = ExtResource("4_reload")
+magazine_size = 2
+reload_seconds = 2.4
+pellets = 8
+spread_degrees = 9.0
+item_name = "Shotgun"
+icon = ExtResource("2_icon")
+cooldown_ticks = 48
