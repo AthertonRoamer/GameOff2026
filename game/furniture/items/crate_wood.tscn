@@ -1,0 +1,11 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://game/furniture/furniture.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://game/furniture/art/crate_wood.png" id="2_art"]
+
+[node name="CrateWood" type="StaticBody2D"]
+script = ExtResource("1_script")
+display_name = "Wooden crate"
+texture = ExtResource("2_art")
+footprint_size = Vector2(42.25, 42.25)
+height = 1.0

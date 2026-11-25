@@ -7,7 +7,7 @@ extends Node2D
 ##The beam points along the node's local +X, so the node is turned -90 degrees under the torso, whose "forward" is up in the sprite sheet.
 ##
 ##The lights are real nodes, so everything about how it looks is set in the editor on the two PointLight2D children: Cone and Halo (colour,
-##energy, shadows, size). This script only switches them on and off. Two numbers are worked out for the scene as it is built, not by the script:
+##energy, shadows, size). This script only switches them on and off (and, when it is built, copies the Cone once for each height of furniture, see LightLayers). Two numbers are worked out for the scene as it is built, not by the script:
 ##  Cone  texture_scale = range in metres * 44 px per metre / CONE_WIDTH / the Skin's scale (0.25)   -> 11 m gives 3.78125
 ##        offset        = CONE_WIDTH / 2 * texture_scale (the cone texture's left edge has to sit on the light's origin; Light2D's offset is
 ##                        not scaled with the texture)                                              -> (968, 0)
@@ -24,10 +24,13 @@ const CONE_PATH : String = "res://game/player/flashlight/flashlight_cone.png"
 
 static var _cone_texture : Texture2D
 
-@onready var cone : PointLight2D = $Cone
+@onready var cone : PointLight2D = $Cone ## the beam for the floor and everything on it; the beams for the heights of furniture are made from it in _ready (LightLayers.add_height_cones)
 @onready var halo : PointLight2D = $Halo
+var cones : Array[PointLight2D] = [] ## the beam for every height, floor first
 
 func _ready() -> void:
+	cones = LightLayers.add_height_cones(cone) #a shadow falls on furniture only from something taller (see LightLayers)
+	LightLayers.make_heightless(halo)
 	set_on(on)
 
 
@@ -50,7 +53,8 @@ func set_painted(value : bool) -> void:
 func set_on(value : bool) -> void:
 	on = value
 	if is_node_ready():
-		cone.enabled = value and not painted
+		for each : PointLight2D in cones:
+			each.enabled = value and not painted
 		halo.enabled = value and not painted
 
 

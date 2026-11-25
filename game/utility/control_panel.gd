@@ -48,6 +48,7 @@ var _time : float = 0.0
 
 
 func _ready() -> void:
+	LightLayers.make_heightless(_light) #the screen's glow lights furniture of every height (see LightLayers)
 	if Engine.is_editor_hint():
 		return
 	add_to_group(PlayerInteractor.GROUP)

@@ -1,0 +1,11 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://game/furniture/furniture.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://game/furniture/art/counter_w.png" id="2_art"]
+
+[node name="CounterW" type="StaticBody2D"]
+script = ExtResource("1_script")
+display_name = "Counter (faces W)"
+texture = ExtResource("2_art")
+footprint_size = Vector2(26.50, 79.25)
+height = 0.9

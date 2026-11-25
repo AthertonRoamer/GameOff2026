@@ -38,6 +38,7 @@ var _tilt : float = 0.0
 
 
 func _ready() -> void:
+	LightLayers.make_heightless(_light) #lights furniture of every height and takes every shadow (see LightLayers)
 	set_process(false)
 
 

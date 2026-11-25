@@ -1,0 +1,11 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://game/furniture/furniture.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://game/furniture/art/box_stack.png" id="2_art"]
+
+[node name="BoxStack" type="StaticBody2D"]
+script = ExtResource("1_script")
+display_name = "Stacked boxes"
+texture = ExtResource("2_art")
+footprint_size = Vector2(38.00, 29.25)
+height = 0.8
