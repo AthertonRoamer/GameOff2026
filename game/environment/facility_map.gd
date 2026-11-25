@@ -11,6 +11,8 @@ extends Node2D
 ##  Decor   (optional) furniture and clutter that is only looked at: sprites and lights, no collision. Streamed: only what is near the view is in the tree
 ##  Spawns  GuardSpawn / IntruderSpawn markers: each makes the room it stands on a spawn room of its kind (see SpawnRoomMarker, spawn_rooms)
 ##  Actors  where players and other moving things are added, y-sorted
+##  Regions (optional) FacilityRegion nodes: the power regions. A room joins one by its `region` (see FacilityRegion for the editor tools), and the
+##          generators and everything that uses power belong to the region of the room they are in (see PowerGrid, regions, region_at, region_of_door)
 ##  A room of kind Exit is an exit zone: an area outside the walls with no floor or wall tiles of its own, reached through a door like a room and
 ##          ringed by invisible walls (see FacilityRoom.is_exit, exits, barrier_cells, is_in_exit)
 ##  Floors, Walls, Shadows   tile layers the map makes and fills in itself from the rooms and doors, in the editor as well as in the game: every cell of
@@ -45,7 +47,8 @@ const EDITOR_REBUILD_DELAY : float = 0.15 #seconds a room or door has to sit sti
 @export_range(0, 192, 1, "suffix:cells") var decor_margin_cells : int = 64 ## Decor within this far of the view is in the tree
 @export_range(0, 48, 1, "suffix:cells") var editor_margin_cells : int = 8 ## the same margin, in the editor (it follows the 2D view)
 
-var rooms : Dictionary = {} #room id -> {name, kind, function, rects: Array[Rect2i], exterior: bool, spawns: {SpawnRoomMarker.Kind: world point}}
+var rooms : Dictionary = {} #room id -> {name, kind, function, region: String, rects: Array[Rect2i], exterior: bool, spawns: {SpawnRoomMarker.Kind: world point}}
+var regions : Dictionary = {} #region id -> {name, colour, rooms: Array[String], centre: world point (the middle of its biggest room)}, in the order of the Regions node
 var floor_rects : Array[Rect2i] = [] #every piece of floor, in cells: the rooms' rectangles, then the door cells
 var wall_cells : Dictionary = {} #Vector2i -> true: every empty cell touching a floor cell
 var exits : Dictionary = {} #exit id -> Array[Rect2i]: the rooms of kind Exit, which are zones rather than rooms (no floor, no walls), see FacilityRoom.is_exit. Not in `rooms`
@@ -53,6 +56,9 @@ var exit_cells : Dictionary = {} #Vector2i -> exit id
 var barrier_cells : Dictionary = {} #Vector2i -> true: the invisible walls round the exit zones (collision, no tile), see _compute_walls
 var doors : Array[FacilityDoor] = []
 var vents : Array[Vector2i] = []
+var light_rooms : Array[String] = [] #the rooms with a ceiling light (every room but outdoor ones), in scene order: a light's index names it on every peer, like door_index
+var light_sources : Array[Dictionary] = [] #{light: int, room: String, rect: Rect2i}: one per rectangle of a lit room (an L-shaped room has two, sharing one switch)
+var _light_of_room : Dictionary = {} #room id -> light index
 
 var _floor_ids : PackedStringArray = [] #the room of each of floor_rects
 var _floor_index : Dictionary = {} #chunk (Vector2i) -> Array of indexes into floor_rects that reach into it
@@ -60,6 +66,7 @@ var _wall_chunks : Dictionary = {} #chunk -> Array of the wall cells in it
 var _painted : Dictionary = {} #chunk -> true: the chunks whose tiles are on the layers now
 var _signature : int = 0 #editor: what the rooms and doors looked like when the tiles were last built
 var _changed_for : float = 0.0
+var _region_outlines : Dictionary = {} #region id -> PackedVector2Array (line pairs), worked out the first time it is asked for after a build
 
 var floors : TileMapLayer #made in _ready (see _make_layers), not part of the scene file
 var shadows : TileMapLayer
@@ -71,6 +78,8 @@ var streamer : MapStreamer #paints and erases the tiles near the view, and bring
 @onready var vents_node : Node2D = $Vents
 @onready var props_node : Node2D = $Props
 @onready var actors : Node2D = $Actors
+var regions_node : Node2D: #optional: a map without it has no regions (everything runs on whole-map power)
+	get: return get_node_or_null("Regions") as Node2D
 
 
 func _ready() -> void:
@@ -137,6 +146,7 @@ func _make_layers() -> void:
 ##Reads the rooms and doors, works out the walls and which rooms each door joins, and starts the tiles over (the streamer paints them as they come into view).
 func build() -> void:
 	_collect_rooms()
+	_collect_regions()
 	_collect_doors()
 	_compute_walls()
 	clear_tiles()
@@ -285,6 +295,47 @@ func doors_of_room(room_id : String) -> Array[FacilityDoor]:
 	return result
 
 
+# ------------------------------------------------------------------ power regions
+##The region a room is in, or "" (none, or not a room).
+func region_of_room(room_id : String) -> String:
+	return rooms[room_id]["region"] if rooms.has(room_id) else ""
+
+
+##The region a world position is in, or "" (walls, empty space, exit zones and rooms in no region).
+func region_at(world : Vector2) -> String:
+	return region_of_room(room_at(world))
+
+
+##The region that pays to keep a door shut: its region_override if set; otherwise the region of the room it leads into, not the corridor or the
+##outdoor pad it leads out of (a door from the corridor into the vault is the vault's); between two rooms of the same sort, the north or west one.
+func region_of_door(door : FacilityDoor) -> String:
+	if door.region_override != &"":
+		return String(door.region_override)
+	var a_open : bool = rooms.has(door.room_a) and rooms[door.room_a]["kind"] in ["corridor", "outdoor"]
+	var b_open : bool = rooms.has(door.room_b) and rooms[door.room_b]["kind"] in ["corridor", "outdoor"]
+	if a_open and not b_open and rooms.has(door.room_b):
+		return region_of_room(door.room_b)
+	if rooms.has(door.room_a):
+		return region_of_room(door.room_a)
+	return region_of_room(door.room_b)
+
+
+func region_name(region_id : String) -> String:
+	return regions[region_id]["name"] if regions.has(region_id) else "No region"
+
+
+func region_colour(region_id : String) -> Color:
+	return regions[region_id]["colour"] if regions.has(region_id) else Palette.MUTED
+
+
+##The outline of a region, in world pixels, as pairs of points for draw_multiline: round its rooms and the walls between them, so two regions that
+##meet at a wall each have a line on their own side of it. Worked out once per build, when first asked for.
+func region_outline(region_id : String) -> PackedVector2Array:
+	if not _region_outlines.has(region_id):
+		_region_outlines[region_id] = _compute_outline(region_id)
+	return _region_outlines[region_id]
+
+
 ##The whole map, walls included, in cells.
 func map_cell_bounds() -> Rect2i:
 	var bounds : Rect2i = Rect2i()
@@ -378,9 +429,12 @@ func clear_tiles() -> void:
 		streamer.refresh()
 
 
-func _room_nodes() -> Array[FacilityRoom]:
+func room_nodes() -> Array[FacilityRoom]:
 	var result : Array[FacilityRoom] = []
-	for child : Node in rooms_node.get_children():
+	var holder : Node = rooms_node if rooms_node != null else get_node_or_null("Rooms") #(a region asks before the map is ready)
+	if holder == null:
+		return result
+	for child : Node in holder.get_children():
 		if child is FacilityRoom:
 			result.append(child)
 	return result
@@ -400,7 +454,7 @@ func _collect_rooms() -> void:
 	_floor_ids.clear()
 	exits.clear()
 	exit_cells.clear()
-	for room : FacilityRoom in _room_nodes():
+	for room : FacilityRoom in room_nodes():
 		var rects : Array[Rect2i] = room.cell_rects(self)
 		if room.is_exit(): #a zone, not floor: no tiles of its own. It sits outside a room's wall, joined to the room by a door
 			exits[room.room_id()] = rects
@@ -413,7 +467,8 @@ func _collect_rooms() -> void:
 			floor_rects.append(rect)
 			_floor_ids.append(room.room_id())
 		var label : String = room.display_name if room.display_name != "" else room.room_id().capitalize()
-		rooms[room.room_id()] = {"name": label, "kind": room.kind_name(), "function": room.function_name(), "rects": rects, "exterior": false, "spawns": {}}
+		rooms[room.room_id()] = {"name": label, "kind": room.kind_name(), "function": room.function_name(), "region": String(room.region), "rects": rects, "exterior": false, "spawns": {}}
+	_collect_lights()
 	_index_floor()
 	if Engine.is_editor_hint(): #the editor says so on a room that overlaps another
 		var clashes : Dictionary = {} #room id -> another room whose floor it shares
@@ -427,8 +482,118 @@ func _collect_rooms() -> void:
 					if j > i and _floor_ids[j] != _floor_ids[i] and floor_rects[i].intersects(floor_rects[j]):
 						clashes[_floor_ids[i]] = _floor_ids[j]
 						clashes[_floor_ids[j]] = _floor_ids[i]
-		for room : FacilityRoom in _room_nodes():
+		for room : FacilityRoom in room_nodes():
 			room.set_clash(clashes.get(room.room_id(), ""))
+
+
+##Every room but an outdoor one has a ceiling light, sized from its rectangles: one light source per rectangle (see RoomLightShapes, PlayerSight).
+##Worked out on every build, so resizing a room in the editor resizes its light.
+func _collect_lights() -> void:
+	light_rooms.clear()
+	light_sources.clear()
+	_light_of_room.clear()
+	for id : String in rooms:
+		if rooms[id]["kind"] == "outdoor":
+			continue
+		var index : int = light_rooms.size()
+		light_rooms.append(id)
+		_light_of_room[id] = index
+		for rect : Rect2i in rooms[id]["rects"]:
+			light_sources.append({"light": index, "room": id, "rect": rect})
+
+
+##The index of a room's light, or -1 (no such room, or an outdoor room).
+func light_of_room(room_id : String) -> int:
+	return _light_of_room.get(room_id, -1)
+
+
+##A light source's rectangle in world pixels.
+func light_source_rect_px(source : int) -> Rect2:
+	var rect : Rect2i = light_sources[source]["rect"]
+	return Rect2(Vector2(rect.position * TILE), Vector2(rect.size * TILE))
+
+
+##The regions under the Regions node, with the rooms that say they are in each. The editor's region badges are put in the middle of their biggest room.
+func _collect_regions() -> void:
+	regions.clear()
+	_region_outlines.clear()
+	if regions_node == null:
+		return
+	for child : Node in regions_node.get_children():
+		if child is FacilityRegion:
+			var region : FacilityRegion = child
+			regions[String(region.name)] = {"name": region.label(), "colour": region.colour, "rooms": [] as Array[String], "centre": Vector2.ZERO}
+	var biggest : Dictionary = {} #region id -> the area of its biggest room so far
+	for id : String in rooms:
+		var region_id : String = rooms[id]["region"]
+		if not regions.has(region_id):
+			continue
+		(regions[region_id]["rooms"] as Array[String]).append(id)
+		var rect : Rect2 = room_rects_px(id)[0]
+		if rect.get_area() > biggest.get(region_id, -1.0):
+			biggest[region_id] = rect.get_area()
+			regions[region_id]["centre"] = rect.get_center()
+	if Engine.is_editor_hint():
+		for child : Node in regions_node.get_children():
+			if child is FacilityRegion:
+				(child as FacilityRegion).set_badge_point(regions[String(child.name)]["centre"])
+				child.update_configuration_warnings()
+
+
+##A region's cells are its rooms' cells and the ring of wall round each (which fills the one cell walls between its rooms); the outline is every cell edge
+##of that with no region cell on the other side, joined into long straight lines.
+func _compute_outline(region_id : String) -> PackedVector2Array:
+	var cells : Dictionary = {}
+	if regions.has(region_id):
+		for id : String in regions[region_id]["rooms"]:
+			for rect : Rect2i in rooms[id]["rects"]:
+				var ring : Rect2i = rect.grow(1)
+				for y in range(ring.position.y, ring.end.y):
+					for x in range(ring.position.x, ring.end.x):
+						cells[Vector2i(x, y)] = true
+	var across : Dictionary = {} #y of a horizontal edge -> the x of each cell it runs along
+	var down : Dictionary = {} #x of a vertical edge -> the y of each cell it runs along
+	for cell : Vector2i in cells:
+		if not cells.has(cell + Vector2i.UP):
+			_add_edge(across, cell.y, cell.x)
+		if not cells.has(cell + Vector2i.DOWN):
+			_add_edge(across, cell.y + 1, cell.x)
+		if not cells.has(cell + Vector2i.LEFT):
+			_add_edge(down, cell.x, cell.y)
+		if not cells.has(cell + Vector2i.RIGHT):
+			_add_edge(down, cell.x + 1, cell.y)
+	var lines : PackedVector2Array = []
+	for y : int in across:
+		for run : Vector2i in _runs(across[y]):
+			lines.append(Vector2(run.x * TILE, y * TILE))
+			lines.append(Vector2((run.y + 1) * TILE, y * TILE))
+	for x : int in down:
+		for run : Vector2i in _runs(down[x]):
+			lines.append(Vector2(x * TILE, run.x * TILE))
+			lines.append(Vector2(x * TILE, (run.y + 1) * TILE))
+	return lines
+
+
+func _add_edge(lines : Dictionary, at : int, along : int) -> void:
+	if not lines.has(at):
+		lines[at] = []
+	(lines[at] as Array).append(along)
+
+
+##Sorted runs of consecutive numbers, as (first, last).
+func _runs(values : Array) -> Array[Vector2i]:
+	values.sort()
+	var result : Array[Vector2i] = []
+	var i : int = 0
+	while i < values.size():
+		var first : int = values[i]
+		var last : int = first
+		while i + 1 < values.size() and values[i + 1] <= last + 1:
+			i += 1
+			last = maxi(last, values[i])
+		result.append(Vector2i(first, last))
+		i += 1
+	return result
 
 
 ##Each door's cells join the room on its north or west side (so the floor under the door matches), and the door learns both its rooms.
@@ -612,7 +777,7 @@ func _collect_spawns() -> void:
 		if problem != "":
 			marker.room_id = ""
 	if Engine.is_editor_hint():
-		for node : FacilityRoom in _room_nodes():
+		for node : FacilityRoom in room_nodes():
 			node.set_spawn_kinds(kinds_of.get(node.room_id(), []))
 
 
@@ -633,7 +798,7 @@ func _collect_vents() -> void:
 
 
 func _snap_to_grid() -> void:
-	for room : FacilityRoom in _room_nodes():
+	for room : FacilityRoom in room_nodes():
 		room.snap_to_grid()
 	for door : FacilityDoor in _door_nodes():
 		door.snap_to_grid()
@@ -645,8 +810,8 @@ func _snap_to_grid() -> void:
 ##A number that changes when a room, door or vent is edited (editor only: tells _process when the tiles need rebuilding).
 func _layout_signature() -> int:
 	var parts : PackedStringArray = []
-	for room : FacilityRoom in _room_nodes():
-		parts.append("%s %s %d %d" % [room.name, room.position, room.kind, room.function])
+	for room : FacilityRoom in room_nodes():
+		parts.append("%s %s %d %d %s" % [room.name, room.position, room.kind, room.function, room.region])
 		for rect : FacilityRoomRect in room.rects():
 			parts.append("%s %s" % [rect.position, rect.size])
 	for door : FacilityDoor in _door_nodes():
@@ -655,4 +820,7 @@ func _layout_signature() -> int:
 		parts.append("%s" % (child as Node2D).position)
 	for marker : SpawnRoomMarker in spawn_markers():
 		parts.append("%s %d %s" % [marker.name, marker.kind, marker.global_position])
+	if regions_node != null:
+		for region : Node in regions_node.get_children():
+			parts.append("region %s" % region.name)
 	return "|".join(parts).hash()

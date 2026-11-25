@@ -17,6 +17,7 @@ const LENGTH_PX : float = 44.0 #a gate is one metre long and one wall (a quarter
 
 @export var horizontal : bool = true : set = set_horizontal #true: the gate sits in a horizontal wall and is 4 cells wide, false: vertical wall, 4 cells tall
 @export var state : State = State.CLOSED : set = set_state
+@export var region_override : StringName = &"" ## the power region that pays to keep it shut. Empty: worked out by the map (FacilityMap.region_of_door)
 var exterior : bool = false : set = set_exterior #heavier door with hazard stripes, leads outside. The map works it out from the rooms, so it is not saved
 
 var door_index : int = -1 #its place among the Doors children, set by the map. Every peer loads the same scene, so the index names the same door everywhere

@@ -177,5 +177,20 @@ func _ready() -> void:
 	hud.show_target(placer.artifacts[picks[0]])
 	check(hud.target_label.visible and hud.target_label.text == "Target: %s" % placer.artifacts[picks[0]].item_name, "the label names the target")
 
+	#items on the floor are only drawn where the local player can see them (PlayerSight.visibility), lit or not, like blood and players
+	var sight_line : Array = [0.0] #a stand-in view: everything left of this x is seen (in an array: a lambda keeps its own copy of a plain local)
+	var in_view : Pickup = pickups.spawn(PISTOL, Vector2(-200.0, 0.0))
+	var out_of_view : Pickup = pickups.spawn(PISTOL, Vector2(200.0, 0.0))
+	check(in_view.modulate.a == 1.0 and out_of_view.modulate.a == 1.0, "with no view set, every item is shown")
+	pickups.sight = func(point : Vector2) -> float: return 1.0 if point.x < sight_line[0] else 0.0
+	await get_tree().create_timer(0.4).timeout #(longer than a fade)
+	check(in_view.modulate.a == 1.0 and out_of_view.modulate.a == 0.0, "an item out of view is hidden, one in view is shown (%.2f, %.2f)" % [in_view.modulate.a, out_of_view.modulate.a])
+	sight_line[0] = 1000.0
+	await get_tree().create_timer(0.4).timeout #(longer than a fade)
+	check(out_of_view.modulate.a == 1.0, "and it fades in when it comes into view (%.2f)" % out_of_view.modulate.a)
+	var fresh : Pickup = pickups.spawn(PISTOL, Vector2(1500.0, 0.0))
+	check(fresh.modulate.a == 0.0, "an item put down out of view does not flash in")
+	pickups.sight = Callable()
+
 	print("RESULT: %s" % ("PASS" if failures == 0 else "FAIL (%d)" % failures))
 	get_tree().quit(0 if failures == 0 else 1)

@@ -123,11 +123,14 @@ func _check_hits(projectile : Dictionary, tick : int) -> void:
 		var from : Vector2 = position_at(projectile, step - 1)
 		var to : Vector2 = position_at(projectile, step)
 		var world_hit : Vector2 = Vector2.INF
+		var struck : Node = null #a solid thing in the "shootable" group (a generator) that takes the damage when the bullet stops on it
 		if world_collision_mask != 0:
 			var query : PhysicsRayQueryParameters2D = PhysicsRayQueryParameters2D.create(from, to, world_collision_mask)
 			var result : Dictionary = get_world_2d().direct_space_state.intersect_ray(query)
 			if not result.is_empty():
 				world_hit = result["position"]
+				if result["collider"] is Node and (result["collider"] as Node).is_in_group(&"shootable"):
+					struck = result["collider"]
 		var hit : Dictionary = {}
 		if lag_compensator != null:
 			hit = lag_compensator.sweep(from, to, radius, step, projectile["owner"], can_hit)
@@ -138,6 +141,8 @@ func _check_hits(projectile : Dictionary, tick : int) -> void:
 			projectile_hit.emit(projectile, hit["node"])
 		else:
 			projectile["position"] = world_hit
+			if struck != null:
+				projectile_hit.emit(projectile, struck)
 		_projectiles.erase(projectile)
 		for peer in multiplayer.get_peers():
 			_client_remove.rpc_id(peer, projectile["owner_id"], projectile["fire_tick"])

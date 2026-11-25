@@ -87,6 +87,10 @@ func _draw() -> void:
 		if control != null and control.is_pending(door): #switching: blink while the change is on its way
 			colour = colour.lerp(Palette.TEXT, 0.5 + 0.5 * sin(Time.get_ticks_msec() / 60.0))
 		if door == _hover:
-			draw_rect(rect.grow(px(4.0)), Color(colour, 0.35))
+			var no_power : bool = door.state == FacilityDoor.State.OPEN and control != null and control.power != null \
+				and not control.power.can_afford(map.region_of_door(door), control.power.door_cost())
+			draw_rect(rect.grow(px(4.0)), Color(Palette.ALARM if no_power else colour, 0.35))
+			if no_power: #closing it would be refused: say so before the click
+				draw_label(rect.get_center() + Vector2(0.0, -px(16.0)), "NO POWER", 11, Palette.ALARM, 90.0)
 		draw_rect(rect.grow(px(1.5)), Palette.VOID)
 		draw_rect(rect, colour)

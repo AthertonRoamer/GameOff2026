@@ -19,6 +19,9 @@
 [ext_resource type="Resource" path="res://game/audio/definitions/blood_splat.tres" id="17_blood_splat"]
 [ext_resource type="Resource" path="res://game/audio/definitions/blood_drip.tres" id="18_blood_drip"]
 [ext_resource type="Resource" path="res://game/audio/definitions/bullet_ricochet.tres" id="19_ricochet"]
+[ext_resource type="Script" path="res://game/power/power_grid.gd" id="20_power"]
+[ext_resource type="Resource" path="res://game/power/power_settings.tres" id="21_power_settings"]
+[ext_resource type="Script" path="res://game/lights/room_light_shapes.gd" id="22_lights"]
 
 [node name="Level" type="Node2D"]
 script = ExtResource("1_level")
@@ -43,9 +46,21 @@ world_collision_mask = 10
 [node name="HitscanManager" type="Node2D" parent="ProjectileLayer"]
 script = ExtResource("7_hitscan")
 
-[node name="FacilityControl" type="Node" parent="." node_paths=PackedStringArray("facility")]
+[node name="FacilityControl" type="Node" parent="." node_paths=PackedStringArray("facility", "power")]
 script = ExtResource("4_control")
 facility = NodePath("../FacilityMap")
+power = NodePath("../PowerGrid")
+
+[node name="PowerGrid" type="Node" parent="." node_paths=PackedStringArray("facility", "control")]
+script = ExtResource("20_power")
+facility = NodePath("../FacilityMap")
+control = NodePath("../FacilityControl")
+settings = ExtResource("21_power_settings")
+
+[node name="RoomLights" type="Node2D" parent="." node_paths=PackedStringArray("facility", "control")]
+script = ExtResource("22_lights")
+facility = NodePath("../FacilityMap")
+control = NodePath("../FacilityControl")
 
 [node name="UtilityConsoles" type="Node" parent="." node_paths=PackedStringArray("facility", "control")]
 script = ExtResource("5_consoles")

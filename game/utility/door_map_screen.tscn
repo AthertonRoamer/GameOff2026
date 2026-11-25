@@ -5,6 +5,8 @@
 [ext_resource type="Script" path="res://game/ui/map_view/layers/rooms_layer.gd" id="3_rooms"]
 [ext_resource type="Script" path="res://game/ui/map_view/layers/doors_layer.gd" id="4_doors"]
 [ext_resource type="Script" path="res://game/ui/map_view/layers/player_dot_layer.gd" id="5_player"]
+[ext_resource type="Script" path="res://game/ui/map_view/layers/regions_layer.gd" id="6_regions"]
+[ext_resource type="Script" path="res://game/ui/map_view/layers/lights_layer.gd" id="7_lights"]
 
 [node name="DoorMapScreen" type="Control"]
 visible = false
@@ -27,6 +29,13 @@ script = ExtResource("2_view")
 [node name="Rooms" type="Node2D" parent="Map"]
 script = ExtResource("3_rooms")
 highlight_function = "doors"
+
+[node name="Lights" type="Node2D" parent="Map"]
+script = ExtResource("7_lights")
+
+[node name="Regions" type="Node2D" parent="Map"]
+script = ExtResource("6_regions")
+tint = 0.0
 
 [node name="Doors" type="Node2D" parent="Map"]
 script = ExtResource("4_doors")

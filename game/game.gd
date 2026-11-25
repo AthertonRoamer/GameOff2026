@@ -112,12 +112,17 @@ func _ready() -> void:
 	level.hitscan.sight = $PlayerSight.visibility #shots and bullets are only seen as well as the local player can see where they are
 	level.projectiles.sight = $PlayerSight.visibility
 	level.blood.sight = $PlayerSight.visibility #and so is blood on the floor
+	pickups.sight = $PlayerSight.visibility #and items on the floor: ammo and relics
 	$PlayerSight.ambient = level.darkness.color
 	$PlayerSight.players = func() -> Array: return spawner.players.values()
 	$PlayerSight.local_player = func() -> Player: return spawner.local_player
+	$PlayerSight.room_lights = level.lights #rooms' ceiling lights are drawn where the local player has a line of sight to them
 	level.hitscan.shot_hit.connect(_on_projectile_hit) #(the same hit as a bullet makes: damage and the way it was going)
 	player_hud.bind_hitscan(level.hitscan)
 	player_hud.bind_map(level.facility)
+	player_hud.bind_exit(exit_chooser) #the target exit on the full map, for intruders only
+	player_hud.bind_relics(artifact_placer) #the treasure rooms the relics start in, on the full map
+	player_hud.bind_power(level.power)
 	level.sound.listener = func() -> Variant: return spawner.local_player.global_position if is_instance_valid(spawner.local_player) else null #sounds are heard from where this peer's own player is
 	level.sound.heard.connect(player_hud.sound_cue.ping)
 	level.blood.splat_made.connect(func(kind : int, at : Vector2) -> void: level.sound.play(level.sound.blood_drip if kind == BloodSplat.Kind.BLEED else level.sound.blood_splat, at))
@@ -151,6 +156,7 @@ func _ready() -> void:
 ##Every peer, on the start tick the lobby picked. The phases (MatchPhases' children: the role reveal...) run first, and play begins when they end.
 func start() -> void:
 	level.control.broadcast_snapshot() #lobby only: every peer starts from the lobby's doors
+	level.power.broadcast_snapshot() #and from its generators
 	var start_tick : int = (get_parent() as RollbackGameManager).start_tick
 	if debug_skip_phases or settings.is_deathmatch(): #(a deathmatch has no roles to reveal and nowhere to choose: everyone is dropped in)
 		Main.output("Phases skipped (%s)" % ("deathmatch" if settings.is_deathmatch() else "debug_skip_phases"))
@@ -530,6 +536,7 @@ func _on_network_unloader_cease_rpcs_request_received() -> void:
 	set_players_active(false)
 	level.projectiles.quiesce()
 	level.control.quiesce()
+	level.power.quiesce()
 	level.consoles.quiesce()
 	level.blood.quiesce()
 	level.hitscan.quiesce()

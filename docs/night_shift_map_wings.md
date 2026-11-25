@@ -55,7 +55,10 @@ A map this size cannot be built whole every time, so it is streamed (`game/envir
 - **A door panel per wing**: the four panels are placed (one in each `doors_*` room) and all have `function = "doors"`. Today `UtilityConsoles.panel_for("doors")` expects one, and the
   door screen lists every door, so each panel opening only its own wing's doors needs code. The corner blocks' gates belong to the wing they attach to (NW and the link corridors to north
   and west, SW to west and south, NE and SE to east).
-- **Vents** is empty. **Consoles** for cameras, turrets, lights, generator and power are not placed (their rooms are marked with the right `function`).
+- **Vents** is empty. **Consoles** for cameras, turrets, lights and power are not placed (their rooms are marked with the right `function`).
+- **Power regions** are set: Central Atrium, North, East, South and West, following the wings. NW and the link corridors are in North, SW is in West,
+  and NE and SE are in East. Each wing has a region generator (`north_annex`, `east_breakers`, `south_stores`, `west_server`), and a whole-map one stands
+  in the generator hall. The atrium has none of its own and runs on the pool. See "Regions and power" in `editing_the_map.md`.
 - Every room is empty floor: the furnishing is yours.
 - The editor side of the streaming (following the 2D view) was written but only the game side was run here: if tiles do not appear in the editor, turn `stream_tiles` off on the
   `FacilityMap` (everything is painted at once, slowly) and tell me.

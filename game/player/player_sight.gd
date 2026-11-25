@@ -11,12 +11,12 @@ extends Node2D
 ##   other players' bodies are seen inside the view only while a flashlight is on them (yours or theirs, a beam or the glow round its holder), and a player very close to
 ##                         the local player is seen without any light, if they are in front of them (in the forward cone, never behind the player's back, and not through walls). A body lit by another player's beam is brightened by it
 ##                         (the way the scene's lights would), and the drawn beams leave a soft hole round every player, so nobody is seen through a haze.
+##   rooms' ceiling lights are drawn by this node too (room_light.gdshader), wherever the local player has a clear line of sight to them in any direction (a ring of
+##                         rays round them, `sight_range` long: not the forward view), on the shapes RoomLightShapes works out (the room, and out through its open
+##                         doorways). A body in a lit room counts as lit, so it is seen if it is in the forward view, like a body in a flashlight.
 ## A dead local player sees everything. Only this peer's picture changes: nothing here is sent to anyone, and the game itself (hits, the simulation) does not look at it.
 
-const WALLS : int = FacilityTileSet.WORLD_LAYER | FacilityTileSet.DOOR_LAYER
-const REFINE_GAP : float = 14.0 #two neighbouring rays that land this much further apart than that get a ray between them (a corner, a doorway)
-const REFINE_DEPTH : int = 8 #how many times a gap is halved at most
-const MAX_FAN_POINTS : int = 420 #however many corners there are, a fan stays this small
+const WALLS : int = SightFan.WALLS
 const BEAM_STRENGTH : float = 0.28 #how strongly a beam is laid over the picture at its lamp at light_scale 1: measured against the scene's own beam light (energy 1.7) on the floor
 const HALO_STRENGTH : float = 0.14 #the same for the glow round the holder (the scene's halo light has energy 0.55)
 const BEAM_ENERGY : float = 1.7 #the scene's beam light's energy, and the halo's: what the light on a body is worked out with
@@ -42,10 +42,23 @@ const MAX_LYING : int = 4 #and how many fallen bodies it leaves a body-shaped ho
 @export var fade_seconds : float = 0.12
 @export var body_radius : float = 16.0 #a player is lit when any of their body is in a beam, not just their middle
 @export var ambient : Color = Color(0.176, 0.186, 0.248) #the facility's darkness (the level's CanvasModulate): a light's brightening of a body is worked out against it. Set by the game
+@export_group("Room lights")
+@export var sight_range : float = 1100.0 #how far the local player sees a lit room, in any direction (about the screen's half diagonal and a bit)
+@export var sight_rays : int = 120 #how finely that line of sight is traced
 
 ## () -> Array of every Player. () -> the local Player, or null. Set by the game.
 var players : Callable = Callable()
 var local_player : Callable = Callable()
+## The rooms' lamps, where their light falls, and which are on. Set by the game; unset, lit rooms are seen from anywhere.
+var room_lights : RoomLightShapes
+
+const ROOM_LIGHT_SHADER : Shader = preload("res://game/lights/room_light.gdshader")
+
+var _sight : PackedVector2Array = PackedVector2Array() #the local player's line of sight all the way round (empty: everything is seen)
+var _unlights : Array[RemoteBeam] = [] #pooled: one per lit lamp on screen, taking its light back off where the local player cannot see (room_light.gdshader)
+var _unlight_layer : CanvasLayer #under _layer, so the drawn beams are not darkened
+var _sight_mask : SubViewport #a picture of the screen, white where the local player can see (_sight), for room_light.gdshader
+var _sight_shape : Polygon2D
 
 var _view : PackedVector2Array = PackedVector2Array() #the view polygon, in the world (empty: no limit)
 var _apex : Vector2
@@ -56,13 +69,31 @@ var _bodies : PackedVector2Array = PackedVector2Array() #where the players are, 
 var _lying_a : PackedVector2Array = PackedVector2Array() #the fallen bodies' ends and half widths, for the shader's body-shaped holes
 var _lying_b : PackedVector2Array = PackedVector2Array()
 var _lying_radius : PackedFloat32Array = PackedFloat32Array()
+var _body_holes : PackedFloat32Array = PackedFloat32Array() #how seen each of _bodies is (0 to 1), and so how deep its hole is, so nobody unseen leaves a hole
+var _lying_holes : PackedFloat32Array = PackedFloat32Array()
 var _layer : CanvasLayer
 
 
 func _ready() -> void:
+	#the rooms' lamps are real scene lights (RoomLightShapes), so they light the facility the way the flashlight does. Where the local player has no line of
+	#sight to a lamp's light, it is taken back off by a multiply pass on this layer, which is under the drawn beams' layer and over the facility
+	_unlight_layer = CanvasLayer.new()
+	_unlight_layer.name = "RoomLightSight"
+	_unlight_layer.follow_viewport_enabled = true
+	add_child(_unlight_layer)
 	_layer = CanvasLayer.new() #its own layer: the facility's darkness (a CanvasModulate) does not touch it
 	_layer.follow_viewport_enabled = true
 	add_child(_layer)
+	#the line of sight as a picture of the screen, which the multiply pass reads. It has a canvas of its own, so nothing drawn there shows anywhere else
+	_sight_mask = SubViewport.new()
+	_sight_mask.name = "SightMask"
+	_sight_mask.transparent_bg = true
+	_sight_mask.disable_3d = true
+	_sight_mask.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	add_child(_sight_mask)
+	_sight_shape = Polygon2D.new()
+	_sight_shape.color = Color.WHITE
+	_sight_mask.add_child(_sight_shape)
 
 
 func _process(delta : float) -> void:
@@ -74,6 +105,7 @@ func _process(delta : float) -> void:
 	var sees_all : bool = not me.is_alive()
 	_update_view(me, sees_all)
 	_update_bodies()
+	_update_room_lights(me, sees_all)
 	for player : Player in players.call():
 		if player == me or not is_instance_valid(player):
 			continue
@@ -139,42 +171,9 @@ func _update_view(me : Player, sees_all : bool) -> void:
 	_view = ring.slice(1) #(the player stands inside it)
 
 
-## The points a fan of rays from `origin` reaches between two angles, each out to reach_at(angle) or the first wall: origin first, then the hits in order. Where two
-## neighbouring rays land far apart (a corner, a doorway) rays are added between them by halving the gap, so the fan's edge follows the corner and does not cut across it.
-func _fan(origin : Vector2, angle_from : float, angle_to : float, rays : int, reach_at : Callable) -> PackedVector2Array:
-	var space : PhysicsDirectSpaceState2D = get_world_2d().direct_space_state
-	var full_circle : bool = angle_to - angle_from >= TAU - 0.001 #(the last ray would be the first again)
-	var fan : PackedVector2Array = PackedVector2Array([origin])
-	var angle : float = angle_from
-	var previous : Vector2 = _cast(space, origin, angle, reach_at)
-	var first : Vector2 = previous
-	fan.append(previous)
-	for i in range(1, rays + 1):
-		var next_angle : float = angle_from + (angle_to - angle_from) * i / rays
-		var last_again : bool = full_circle and i == rays
-		var next : Vector2 = first if last_again else _cast(space, origin, next_angle, reach_at)
-		_refine(space, origin, angle, previous, next_angle, next, REFINE_DEPTH, reach_at, fan)
-		if not last_again:
-			fan.append(next)
-		angle = next_angle
-		previous = next
-	return fan
-
-
-func _cast(space : PhysicsDirectSpaceState2D, origin : Vector2, angle : float, reach_at : Callable) -> Vector2:
-	var far : Vector2 = origin + Vector2.from_angle(angle) * reach_at.call(angle)
-	var hit : Dictionary = space.intersect_ray(PhysicsRayQueryParameters2D.create(origin, far, WALLS))
-	return hit["position"] if not hit.is_empty() else far
-
-
-func _refine(space : PhysicsDirectSpaceState2D, origin : Vector2, angle_a : float, point_a : Vector2, angle_b : float, point_b : Vector2, depth : int, reach_at : Callable, out : PackedVector2Array) -> void:
-	if depth <= 0 or out.size() > MAX_FAN_POINTS or absf(origin.distance_to(point_a) - origin.distance_to(point_b)) < REFINE_GAP:
-		return
-	var angle_mid : float = (angle_a + angle_b) / 2.0
-	var point_mid : Vector2 = _cast(space, origin, angle_mid, reach_at)
-	_refine(space, origin, angle_a, point_a, angle_mid, point_mid, depth - 1, reach_at, out)
-	out.append(point_mid)
-	_refine(space, origin, angle_mid, point_mid, angle_b, point_b, depth - 1, reach_at, out)
+## A fan of rays stopped by walls and shut doors (see SightFan.fan).
+func _fan(origin : Vector2, angle_from : float, angle_to : float, rays : int, reach_at : Callable, mask : int = WALLS) -> PackedVector2Array:
+	return SightFan.fan(get_world_2d().direct_space_state, origin, angle_from, angle_to, rays, reach_at, mask)
 
 
 ## Where the players are (the nearest few, to the local player): the shader leaves a soft hole round each in the drawn lights, so the body is lit by its own brightening only.
@@ -184,25 +183,37 @@ func _update_bodies() -> void:
 	all = all.filter(func(p) -> bool: return is_instance_valid(p))
 	all.sort_custom(func(a : Player, b : Player) -> bool: return a.skin.body_position().distance_squared_to(_apex) < b.skin.body_position().distance_squared_to(_apex))
 	_bodies = PackedVector2Array()
+	_body_holes = PackedFloat32Array()
 	_lying_a = PackedVector2Array()
 	_lying_b = PackedVector2Array()
 	_lying_radius = PackedFloat32Array()
+	_lying_holes = PackedFloat32Array()
+	var me : Player = local_player.call()
 	for player : Player in all:
+		#a hole only as deep as the body is seen: a hole round someone the local player cannot see (out of the view, behind a wall) would give them away
+		#and none round the local player's own body
+		var seen : float = 0.0 if player == me else _alpha.get(player, 0.0)
+		if seen <= 0.001:
+			continue
 		var at : Vector2 = player.skin.body_position()
 		var axis : Vector2 = player.skin.body_axis()
 		if axis.is_zero_approx():
 			if _bodies.size() < MAX_BODIES:
 				_bodies.append(at)
+				_body_holes.append(seen)
 		elif _lying_a.size() < MAX_LYING:
 			_lying_a.append(at - axis)
 			_lying_b.append(at + axis)
 			_lying_radius.append(player.skin.body_half_width())
+			_lying_holes.append(seen)
 	while _bodies.size() < MAX_BODIES:
 		_bodies.append(Vector2(1.0e7, 1.0e7))
+		_body_holes.append(0.0)
 	while _lying_a.size() < MAX_LYING:
 		_lying_a.append(Vector2(1.0e7, 1.0e7))
 		_lying_b.append(Vector2(1.0e7, 1.0e7))
 		_lying_radius.append(1.0)
+		_lying_holes.append(0.0)
 
 ## Sets up the drawn beam and glow of another player's flashlight for this frame: their shapes (where the light reaches, cut to the view) and the shader's numbers.
 func _update_lights(player : Player, sees_all : bool) -> void:
@@ -217,7 +228,7 @@ func _update_lights(player : Player, sees_all : bool) -> void:
 	var direction : float = player.flashlight.global_rotation
 	var half : float = deg_to_rad(beam_half_angle_deg)
 	var beam_reach : Callable = func(_angle : float) -> float: return beam_range
-	beam.polygons = _in_view(_fan(origin, direction - half, direction + half, beam_rays, beam_reach))
+	beam.polygons = _in_view(_fan(origin, direction - half, direction + half, beam_rays, beam_reach, SightFan.BEAMS)) #(furniture casts a shadow in a beam, like the scene's own beam light)
 	_set_view_uniforms(beam.shader_material)
 	beam.shader_material.set_shader_parameter("origin", origin)
 	beam.shader_material.set_shader_parameter("direction", direction)
@@ -236,6 +247,58 @@ func _update_lights(player : Player, sees_all : bool) -> void:
 	glow.shader_material.set_shader_parameter("strength", HALO_STRENGTH * light_scale)
 
 
+## The rooms' lamps light the facility for everyone (RoomLightShapes). The local player should see a lamp's light only where they have a line of sight to it,
+## all the way round (not only forward): walls and shut doors hide a lit room behind them. So over each lit lamp on screen, a multiply pass takes its light back
+## off wherever the sight mask (a picture of the screen, white where the local player can see) is dark. A dead local player sees everything: no pass.
+func _update_room_lights(me : Player, sees_all : bool) -> void:
+	var used : int = 0
+	var view_size : Vector2 = get_viewport().get_visible_rect().size
+	var to_screen : Transform2D = get_viewport().get_canvas_transform()
+	if room_lights != null and room_lights.facility != null and not sees_all:
+		var any_on : bool = false
+		for source in room_lights.source_count():
+			if room_lights.is_source_on(source):
+				any_on = true
+				break
+		_sight = PackedVector2Array()
+		if any_on:
+			var reach : Callable = func(_angle : float) -> float: return sight_range
+			#over furniture: the floor behind a generator is drawn, so a light missing there would look like a shadow, and a ceiling light casts none
+			_sight = SightFan.ring(get_world_2d().direct_space_state, me.global_position, sight_rays, reach, WALLS, room_lights.furniture())
+			if _sight_mask.size != Vector2i(view_size.ceil()):
+				_sight_mask.size = Vector2i(view_size.ceil())
+			_sight_mask.canvas_transform = to_screen #(the mask is the screen: world -> screen pixels)
+			_sight_shape.polygon = _sight
+		var screen : Rect2 = to_screen.affine_inverse() * get_viewport().get_visible_rect()
+		var map : FacilityMap = room_lights.facility
+		var count : int = room_lights.source_count() if any_on else 0
+		for source in count:
+			if not room_lights.is_source_on(source):
+				continue
+			var reach_rect : Rect2 = map.get_global_transform() * room_lights.reach_rect(source)
+			if not reach_rect.intersects(screen):
+				continue
+			if used >= _unlights.size():
+				var fresh : RemoteBeam = RemoteBeam.new()
+				fresh.shader_material.shader = ROOM_LIGHT_SHADER
+				_unlight_layer.add_child(fresh)
+				fresh.shader_material.set_shader_parameter("sight_mask", _sight_mask.get_texture())
+				_unlights.append(fresh)
+			var unlight : RemoteBeam = _unlights[used]
+			used += 1
+			unlight.polygons.assign(room_lights.polygons(source)) #(where its light falls: the light is taken off only there, never darkening what it does not light)
+			var rect : Rect2 = map.get_global_transform() * map.light_source_rect_px(source)
+			var paint : ShaderMaterial = unlight.shader_material
+			paint.set_shader_parameter("rect_pos", rect.position)
+			paint.set_shader_parameter("rect_size", rect.size)
+			paint.set_shader_parameter("spill", room_lights.spill_px())
+			paint.set_shader_parameter("light_color", room_lights.color)
+			paint.set_shader_parameter("energy", room_lights.energy)
+			paint.set_shader_parameter("ambient", ambient)
+	for i in range(used, _unlights.size()):
+		_unlights[i].polygons = []
+
+
 ## A light's shape cut to the view polygon (the view's walls); the shader fades it with the view's edge.
 func _in_view(shape : PackedVector2Array) -> Array[PackedVector2Array]:
 	if _view.is_empty():
@@ -251,11 +314,18 @@ func _set_view_uniforms(shader_material : ShaderMaterial) -> void:
 	shader_material.set_shader_parameter("view_range", view_range)
 	shader_material.set_shader_parameter("view_near", view_near)
 	shader_material.set_shader_parameter("fade_start", fade_start)
+	_set_body_uniforms(shader_material)
+
+
+## The players for the shader's holes (see _update_bodies).
+func _set_body_uniforms(shader_material : ShaderMaterial) -> void:
 	shader_material.set_shader_parameter("bodies", _bodies)
 	shader_material.set_shader_parameter("body_count", MAX_BODIES)
 	shader_material.set_shader_parameter("lying_a", _lying_a)
 	shader_material.set_shader_parameter("lying_b", _lying_b)
 	shader_material.set_shader_parameter("lying_radius", _lying_radius)
+	shader_material.set_shader_parameter("body_seen", _body_holes)
+	shader_material.set_shader_parameter("lying_seen", _lying_holes)
 
 
 ## How much the way the local player faces lets them see a point that is close: 1 inside the view's forward cone, fading to 0 just outside it, so nobody close is seen
@@ -308,13 +378,16 @@ func _lighting_of(me : Player, other : Player) -> Dictionary:
 				beam = 1.0 if distance <= body_radius else along * side
 		if not (in_glow or in_beam):
 			continue
-		if holder != other and not get_world_2d().direct_space_state.intersect_ray(PhysicsRayQueryParameters2D.create(origin, at, WALLS)).is_empty():
+		var blockers : int = WALLS if in_glow else SightFan.BEAMS #(furniture shadows a beam, not the glow round its holder)
+		if holder != other and not get_world_2d().direct_space_state.intersect_ray(PhysicsRayQueryParameters2D.create(origin, at, blockers)).is_empty():
 			continue
 		lit = true
 		if holder != me:
 			var own_beam : bool = holder == other #(a flashlight does not light its holder from the lamp: only its glow does)
 			var energy : float = (0.0 if own_beam else BEAM_ENERGY * beam) + HALO_ENERGY * glow
 			added += Color(beam_color.r * energy, beam_color.g * energy, beam_color.b * energy, 0.0) * light_scale
+	if room_lights != null and room_lights.light_at(at) > 0.02: #a lit room lights everyone in it (its shape already stops at walls and shut doors). Seen, not tinted:
+		lit = true #the room light's shader brightens the body itself, as it does the floor
 	#a brightening, not a recolouring: every colour channel is multiplied by the SAME gain, so the body keeps its colours (a different gain per channel, from a light much
 	#stronger than the dark, pushed them all to white). The gain rises with the light and levels off (it never goes past MAX_BODY_GAIN), so a body in several beams does not burn out.
 	var dark : float = maxf((ambient.r + ambient.g + ambient.b) / 3.0, 0.02)

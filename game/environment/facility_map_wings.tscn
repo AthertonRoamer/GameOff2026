@@ -83,6 +83,8 @@
 [ext_resource type="Script" path="res://game/pickups/artifact_location.gd" id="7_loc"]
 [ext_resource type="Script" path="res://game/pickups/ammo_location.gd" id="7_ammo"]
 [ext_resource type="Script" path="res://game/environment/facility_room_rect.gd" id="rect_script"]
+[ext_resource type="Script" path="res://game/environment/facility_region.gd" id="11_region"]
+[ext_resource type="PackedScene" path="res://game/power/generator.tscn" id="12_generator"]
 
 [node name="FacilityMap" type="Node2D"]
 texture_filter = 4
@@ -94,6 +96,7 @@ script = ExtResource("1_map")
 script = ExtResource("3_room")
 display_name = "Central Atrium"
 kind = 0
+region = &"atrium"
 
 [node name="Rect1" type="Control" parent="Rooms/atrium"]
 custom_minimum_size = Vector2(11, 11)
@@ -110,6 +113,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "North Corridor"
 kind = 0
+region = &"north"
 
 [node name="Rect1" type="Control" parent="Rooms/north_corridor"]
 custom_minimum_size = Vector2(11, 11)
@@ -148,6 +152,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Armory"
 kind = 2
+region = &"north"
 
 [node name="Rect1" type="Control" parent="Rooms/north_armory"]
 custom_minimum_size = Vector2(11, 11)
@@ -164,6 +169,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Evidence Room"
 kind = 2
+region = &"north"
 
 [node name="Rect1" type="Control" parent="Rooms/north_evidence"]
 custom_minimum_size = Vector2(11, 11)
@@ -180,6 +186,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Interview Rooms"
 kind = 3
+region = &"north"
 
 [node name="Rect1" type="Control" parent="Rooms/north_interview"]
 custom_minimum_size = Vector2(11, 11)
@@ -197,6 +204,7 @@ script = ExtResource("3_room")
 display_name = "North Door Control"
 kind = 1
 function = 2
+region = &"north"
 
 [node name="Rect1" type="Control" parent="Rooms/doors_north"]
 custom_minimum_size = Vector2(11, 11)
@@ -214,6 +222,7 @@ script = ExtResource("3_room")
 display_name = "Camera Room"
 kind = 1
 function = 1
+region = &"north"
 
 [node name="Rect1" type="Control" parent="Rooms/north_cameras"]
 custom_minimum_size = Vector2(11, 11)
@@ -231,6 +240,7 @@ script = ExtResource("3_room")
 display_name = "Turret Control"
 kind = 1
 function = 5
+region = &"north"
 
 [node name="Rect1" type="Control" parent="Rooms/north_turrets"]
 custom_minimum_size = Vector2(11, 11)
@@ -247,6 +257,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Locker Room"
 kind = 3
+region = &"north"
 
 [node name="Rect1" type="Control" parent="Rooms/north_lockers"]
 custom_minimum_size = Vector2(11, 11)
@@ -263,6 +274,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Guard Post"
 kind = 3
+region = &"north"
 
 [node name="Rect1" type="Control" parent="Rooms/spawn_north"]
 custom_minimum_size = Vector2(11, 11)
@@ -279,6 +291,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Parking Garage"
 kind = 4
+region = &"north"
 
 [node name="Rect1" type="Control" parent="Rooms/entrance_garage"]
 custom_minimum_size = Vector2(11, 11)
@@ -295,6 +308,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "North Gatehouse"
 kind = 4
+region = &"north"
 
 [node name="Rect1" type="Control" parent="Rooms/entrance_north"]
 custom_minimum_size = Vector2(11, 11)
@@ -311,6 +325,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Registry"
 kind = 3
+region = &"north"
 
 [node name="Rect1" type="Control" parent="Rooms/north_registry"]
 custom_minimum_size = Vector2(11, 11)
@@ -327,6 +342,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Briefing Room"
 kind = 3
+region = &"north"
 
 [node name="Rect1" type="Control" parent="Rooms/north_briefing"]
 custom_minimum_size = Vector2(11, 11)
@@ -343,6 +359,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Records Annex"
 kind = 3
+region = &"north"
 
 [node name="Rect1" type="Control" parent="Rooms/north_annex"]
 custom_minimum_size = Vector2(11, 11)
@@ -359,6 +376,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "North Pad"
 kind = 5
+region = &"north"
 
 [node name="Rect1" type="Control" parent="Rooms/pad_north"]
 custom_minimum_size = Vector2(11, 11)
@@ -375,6 +393,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "East Corridor"
 kind = 0
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/east_corridor"]
 custom_minimum_size = Vector2(11, 11)
@@ -414,6 +433,7 @@ script = ExtResource("3_room")
 display_name = "East Door Control"
 kind = 1
 function = 2
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/doors_east"]
 custom_minimum_size = Vector2(11, 11)
@@ -431,6 +451,7 @@ script = ExtResource("3_room")
 display_name = "Generator Hall"
 kind = 1
 function = 4
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/east_generator"]
 custom_minimum_size = Vector2(11, 11)
@@ -448,6 +469,7 @@ script = ExtResource("3_room")
 display_name = "Breaker Room"
 kind = 1
 function = 6
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/east_breakers"]
 custom_minimum_size = Vector2(11, 11)
@@ -464,6 +486,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Crew Room"
 kind = 3
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/spawn_east"]
 custom_minimum_size = Vector2(11, 11)
@@ -480,6 +503,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Maintenance Bay"
 kind = 3
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/east_workshop"]
 custom_minimum_size = Vector2(11, 11)
@@ -496,6 +520,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Parts Store"
 kind = 3
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/east_stores"]
 custom_minimum_size = Vector2(11, 11)
@@ -512,6 +537,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Pump House"
 kind = 1
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/east_pump_house"]
 custom_minimum_size = Vector2(11, 11)
@@ -528,6 +554,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Plant Office"
 kind = 3
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/east_plant_office"]
 custom_minimum_size = Vector2(11, 11)
@@ -544,6 +571,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "East Loading Dock"
 kind = 4
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/extract_east"]
 custom_minimum_size = Vector2(11, 11)
@@ -560,6 +588,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Cold Store"
 kind = 1
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/east_cold_store"]
 custom_minimum_size = Vector2(11, 11)
@@ -576,6 +605,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Rail Platform"
 kind = 4
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/extract_rail"]
 custom_minimum_size = Vector2(11, 11)
@@ -592,6 +622,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "East Pad"
 kind = 5
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/pad_east"]
 custom_minimum_size = Vector2(11, 11)
@@ -608,6 +639,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "South Corridor"
 kind = 0
+region = &"south"
 
 [node name="Rect1" type="Control" parent="Rooms/south_corridor"]
 custom_minimum_size = Vector2(11, 11)
@@ -646,6 +678,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Barracks"
 kind = 3
+region = &"south"
 
 [node name="Rect1" type="Control" parent="Rooms/spawn_south"]
 custom_minimum_size = Vector2(11, 11)
@@ -663,6 +696,7 @@ script = ExtResource("3_room")
 display_name = "South Door Control"
 kind = 1
 function = 2
+region = &"south"
 
 [node name="Rect1" type="Control" parent="Rooms/doors_south"]
 custom_minimum_size = Vector2(11, 11)
@@ -679,6 +713,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Dormitory"
 kind = 3
+region = &"south"
 
 [node name="Rect1" type="Control" parent="Rooms/south_dormitory"]
 custom_minimum_size = Vector2(11, 11)
@@ -695,6 +730,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Break Room"
 kind = 3
+region = &"south"
 
 [node name="Rect1" type="Control" parent="Rooms/south_break_room"]
 custom_minimum_size = Vector2(11, 11)
@@ -711,6 +747,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Cafeteria"
 kind = 3
+region = &"south"
 
 [node name="Rect1" type="Control" parent="Rooms/south_cafeteria"]
 custom_minimum_size = Vector2(11, 11)
@@ -727,6 +764,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Infirmary"
 kind = 1
+region = &"south"
 
 [node name="Rect1" type="Control" parent="Rooms/south_infirmary"]
 custom_minimum_size = Vector2(11, 11)
@@ -743,6 +781,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Service Exit"
 kind = 4
+region = &"south"
 
 [node name="Rect1" type="Control" parent="Rooms/entrance_service"]
 custom_minimum_size = Vector2(11, 11)
@@ -759,6 +798,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Cargo Garage"
 kind = 4
+region = &"south"
 
 [node name="Rect1" type="Control" parent="Rooms/entrance_south"]
 custom_minimum_size = Vector2(11, 11)
@@ -775,6 +815,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Fuel Depot"
 kind = 1
+region = &"south"
 
 [node name="Rect1" type="Control" parent="Rooms/south_fuel_depot"]
 custom_minimum_size = Vector2(11, 11)
@@ -791,6 +832,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Vehicle Bay"
 kind = 3
+region = &"south"
 
 [node name="Rect1" type="Control" parent="Rooms/south_garage"]
 custom_minimum_size = Vector2(11, 11)
@@ -807,6 +849,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Stores"
 kind = 3
+region = &"south"
 
 [node name="Rect1" type="Control" parent="Rooms/south_stores"]
 custom_minimum_size = Vector2(11, 11)
@@ -823,6 +866,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "South Pad"
 kind = 5
+region = &"south"
 
 [node name="Rect1" type="Control" parent="Rooms/pad_south"]
 custom_minimum_size = Vector2(11, 11)
@@ -839,6 +883,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "West Corridor"
 kind = 0
+region = &"west"
 
 [node name="Rect1" type="Control" parent="Rooms/west_corridor"]
 custom_minimum_size = Vector2(11, 11)
@@ -877,6 +922,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Vault"
 kind = 2
+region = &"west"
 
 [node name="Rect1" type="Control" parent="Rooms/west_vault"]
 custom_minimum_size = Vector2(11, 11)
@@ -894,6 +940,7 @@ script = ExtResource("3_room")
 display_name = "West Door Control"
 kind = 1
 function = 2
+region = &"west"
 
 [node name="Rect1" type="Control" parent="Rooms/doors_west"]
 custom_minimum_size = Vector2(11, 11)
@@ -910,6 +957,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Records"
 kind = 2
+region = &"west"
 
 [node name="Rect1" type="Control" parent="Rooms/west_records"]
 custom_minimum_size = Vector2(11, 11)
@@ -926,6 +974,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Server Room"
 kind = 1
+region = &"west"
 
 [node name="Rect1" type="Control" parent="Rooms/west_server"]
 custom_minimum_size = Vector2(11, 11)
@@ -943,6 +992,7 @@ script = ExtResource("3_room")
 display_name = "Light Control"
 kind = 1
 function = 3
+region = &"west"
 
 [node name="Rect1" type="Control" parent="Rooms/west_lights"]
 custom_minimum_size = Vector2(11, 11)
@@ -959,6 +1009,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Lab B"
 kind = 3
+region = &"west"
 
 [node name="Rect1" type="Control" parent="Rooms/west_lab_b"]
 custom_minimum_size = Vector2(11, 11)
@@ -975,6 +1026,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Staff Lounge"
 kind = 3
+region = &"west"
 
 [node name="Rect1" type="Control" parent="Rooms/spawn_west"]
 custom_minimum_size = Vector2(11, 11)
@@ -991,6 +1043,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Research Lobby"
 kind = 3
+region = &"west"
 
 [node name="Rect1" type="Control" parent="Rooms/west_lobby"]
 custom_minimum_size = Vector2(11, 11)
@@ -1007,6 +1060,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Service Tunnel"
 kind = 4
+region = &"west"
 
 [node name="Rect1" type="Control" parent="Rooms/entrance_west"]
 custom_minimum_size = Vector2(11, 11)
@@ -1023,6 +1077,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Lab A"
 kind = 3
+region = &"west"
 
 [node name="Rect1" type="Control" parent="Rooms/west_lab_a"]
 custom_minimum_size = Vector2(11, 11)
@@ -1039,6 +1094,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Boat House"
 kind = 3
+region = &"west"
 
 [node name="Rect1" type="Control" parent="Rooms/west_boat_house"]
 custom_minimum_size = Vector2(11, 11)
@@ -1055,6 +1111,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "West Pad"
 kind = 5
+region = &"west"
 
 [node name="Rect1" type="Control" parent="Rooms/pad_west"]
 custom_minimum_size = Vector2(11, 11)
@@ -1071,6 +1128,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "NW Corridor"
 kind = 0
+region = &"north"
 
 [node name="Rect1" type="Control" parent="Rooms/nw_corridor"]
 custom_minimum_size = Vector2(11, 11)
@@ -1131,6 +1189,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Archive Stacks"
 kind = 2
+region = &"north"
 
 [node name="Rect1" type="Control" parent="Rooms/nw_archive"]
 custom_minimum_size = Vector2(11, 11)
@@ -1147,6 +1206,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Filing Room"
 kind = 3
+region = &"north"
 
 [node name="Rect1" type="Control" parent="Rooms/nw_files"]
 custom_minimum_size = Vector2(11, 11)
@@ -1163,6 +1223,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "HR Office"
 kind = 3
+region = &"north"
 
 [node name="Rect1" type="Control" parent="Rooms/nw_hr"]
 custom_minimum_size = Vector2(11, 11)
@@ -1179,6 +1240,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Mail Room"
 kind = 3
+region = &"north"
 
 [node name="Rect1" type="Control" parent="Rooms/nw_mail"]
 custom_minimum_size = Vector2(11, 11)
@@ -1195,6 +1257,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Conference Room"
 kind = 3
+region = &"north"
 
 [node name="Rect1" type="Control" parent="Rooms/nw_conference"]
 custom_minimum_size = Vector2(11, 11)
@@ -1211,6 +1274,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Director's Office"
 kind = 3
+region = &"north"
 
 [node name="Rect1" type="Control" parent="Rooms/nw_director"]
 custom_minimum_size = Vector2(11, 11)
@@ -1227,6 +1291,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Accounts"
 kind = 3
+region = &"north"
 
 [node name="Rect1" type="Control" parent="Rooms/nw_accounts"]
 custom_minimum_size = Vector2(11, 11)
@@ -1243,6 +1308,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Staff Kitchen"
 kind = 3
+region = &"north"
 
 [node name="Rect1" type="Control" parent="Rooms/nw_kitchen"]
 custom_minimum_size = Vector2(11, 11)
@@ -1259,6 +1325,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Supply Closet"
 kind = 1
+region = &"north"
 
 [node name="Rect1" type="Control" parent="Rooms/nw_supply"]
 custom_minimum_size = Vector2(11, 11)
@@ -1275,6 +1342,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Print Room"
 kind = 3
+region = &"north"
 
 [node name="Rect1" type="Control" parent="Rooms/nw_print"]
 custom_minimum_size = Vector2(11, 11)
@@ -1291,6 +1359,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "SW Corridor"
 kind = 0
+region = &"west"
 
 [node name="Rect1" type="Control" parent="Rooms/sw_corridor"]
 custom_minimum_size = Vector2(11, 11)
@@ -1351,6 +1420,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Receiving Bay"
 kind = 3
+region = &"west"
 
 [node name="Rect1" type="Control" parent="Rooms/sw_receiving"]
 custom_minimum_size = Vector2(11, 11)
@@ -1367,6 +1437,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Cold Storage"
 kind = 1
+region = &"west"
 
 [node name="Rect1" type="Control" parent="Rooms/sw_cold_store"]
 custom_minimum_size = Vector2(11, 11)
@@ -1383,6 +1454,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Parts Warehouse"
 kind = 3
+region = &"west"
 
 [node name="Rect1" type="Control" parent="Rooms/sw_parts"]
 custom_minimum_size = Vector2(11, 11)
@@ -1399,6 +1471,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Tool Crib"
 kind = 3
+region = &"west"
 
 [node name="Rect1" type="Control" parent="Rooms/sw_tool_crib"]
 custom_minimum_size = Vector2(11, 11)
@@ -1415,6 +1488,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Battery Room"
 kind = 1
+region = &"west"
 
 [node name="Rect1" type="Control" parent="Rooms/sw_battery"]
 custom_minimum_size = Vector2(11, 11)
@@ -1431,6 +1505,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Compressor Room"
 kind = 1
+region = &"west"
 
 [node name="Rect1" type="Control" parent="Rooms/sw_compressor"]
 custom_minimum_size = Vector2(11, 11)
@@ -1447,6 +1522,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Paint Shop"
 kind = 3
+region = &"west"
 
 [node name="Rect1" type="Control" parent="Rooms/sw_paint"]
 custom_minimum_size = Vector2(11, 11)
@@ -1463,6 +1539,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Welding Shop"
 kind = 3
+region = &"west"
 
 [node name="Rect1" type="Control" parent="Rooms/sw_welding"]
 custom_minimum_size = Vector2(11, 11)
@@ -1479,6 +1556,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Dispatch"
 kind = 3
+region = &"west"
 
 [node name="Rect1" type="Control" parent="Rooms/sw_dispatch"]
 custom_minimum_size = Vector2(11, 11)
@@ -1495,6 +1573,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Driver Lounge"
 kind = 3
+region = &"west"
 
 [node name="Rect1" type="Control" parent="Rooms/sw_lounge"]
 custom_minimum_size = Vector2(11, 11)
@@ -1511,6 +1590,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "NE Corridor"
 kind = 0
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/ne_corridor"]
 custom_minimum_size = Vector2(11, 11)
@@ -1571,6 +1651,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Helipad Hangar"
 kind = 4
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/extract_helipad"]
 custom_minimum_size = Vector2(11, 11)
@@ -1587,6 +1668,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Fuel Bunker"
 kind = 1
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/ne_fuel_bunker"]
 custom_minimum_size = Vector2(11, 11)
@@ -1603,6 +1685,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Flight Ops"
 kind = 3
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/ne_flight_ops"]
 custom_minimum_size = Vector2(11, 11)
@@ -1619,6 +1702,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Radio Room"
 kind = 1
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/ne_radio"]
 custom_minimum_size = Vector2(11, 11)
@@ -1635,6 +1719,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Pilot Briefing"
 kind = 3
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/ne_briefing"]
 custom_minimum_size = Vector2(11, 11)
@@ -1651,6 +1736,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Aviation Stores"
 kind = 3
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/ne_stores_a"]
 custom_minimum_size = Vector2(11, 11)
@@ -1667,6 +1753,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Hangar Stores"
 kind = 3
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/ne_stores_b"]
 custom_minimum_size = Vector2(11, 11)
@@ -1683,6 +1770,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Tool Room"
 kind = 3
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/ne_tools"]
 custom_minimum_size = Vector2(11, 11)
@@ -1699,6 +1787,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Crew Room A"
 kind = 3
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/ne_crew_a"]
 custom_minimum_size = Vector2(11, 11)
@@ -1715,6 +1804,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Crew Room B"
 kind = 3
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/ne_crew_b"]
 custom_minimum_size = Vector2(11, 11)
@@ -1731,6 +1821,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Pilot Lockers"
 kind = 3
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/ne_lockers"]
 custom_minimum_size = Vector2(11, 11)
@@ -1747,6 +1838,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Operations"
 kind = 3
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/ne_ops"]
 custom_minimum_size = Vector2(11, 11)
@@ -1763,6 +1855,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Hangar Security"
 kind = 1
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/ne_security"]
 custom_minimum_size = Vector2(11, 11)
@@ -1779,6 +1872,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Helipad"
 kind = 5
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/pad_helipad"]
 custom_minimum_size = Vector2(11, 11)
@@ -1795,6 +1889,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "SE Corridor"
 kind = 0
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/se_corridor"]
 custom_minimum_size = Vector2(11, 11)
@@ -1833,6 +1928,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Freight Office"
 kind = 3
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/se_freight_office"]
 custom_minimum_size = Vector2(11, 11)
@@ -1849,6 +1945,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Customs"
 kind = 3
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/se_customs"]
 custom_minimum_size = Vector2(11, 11)
@@ -1865,6 +1962,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Container Store"
 kind = 3
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/se_container_store"]
 custom_minimum_size = Vector2(11, 11)
@@ -1881,6 +1979,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Weigh Station"
 kind = 1
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/se_weigh_station"]
 custom_minimum_size = Vector2(11, 11)
@@ -1897,6 +1996,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Rail Office"
 kind = 3
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/se_rail_office"]
 custom_minimum_size = Vector2(11, 11)
@@ -1913,6 +2013,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Freight Bay 1"
 kind = 3
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/se_bay_1"]
 custom_minimum_size = Vector2(11, 11)
@@ -1929,6 +2030,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Freight Bay 2"
 kind = 3
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/se_bay_2"]
 custom_minimum_size = Vector2(11, 11)
@@ -1945,6 +2047,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Freight Bay 3"
 kind = 3
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/se_bay_3"]
 custom_minimum_size = Vector2(11, 11)
@@ -1961,6 +2064,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Tank Room"
 kind = 1
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/se_tank_room"]
 custom_minimum_size = Vector2(11, 11)
@@ -1977,6 +2081,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Switch Room"
 kind = 1
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/se_switch_room"]
 custom_minimum_size = Vector2(11, 11)
@@ -1993,6 +2098,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Loco Shed"
 kind = 3
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/se_loco_shed"]
 custom_minimum_size = Vector2(11, 11)
@@ -2009,6 +2115,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Service Chase"
 kind = 1
+region = &"north"
 
 [node name="Rect1" type="Control" parent="Rooms/nn_chase"]
 custom_minimum_size = Vector2(11, 11)
@@ -2025,6 +2132,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Janitor Closet"
 kind = 1
+region = &"north"
 
 [node name="Rect1" type="Control" parent="Rooms/nn_janitor"]
 custom_minimum_size = Vector2(11, 11)
@@ -2041,6 +2149,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Utility Core"
 kind = 1
+region = &"north"
 
 [node name="Rect1" type="Control" parent="Rooms/nn_core"]
 custom_minimum_size = Vector2(11, 11)
@@ -2057,6 +2166,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "West Link Corridor"
 kind = 0
+region = &"north"
 
 [node name="Rect1" type="Control" parent="Rooms/link_corridor"]
 custom_minimum_size = Vector2(11, 11)
@@ -2073,6 +2183,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "SW Link Corridor"
 kind = 0
+region = &"west"
 
 [node name="Rect1" type="Control" parent="Rooms/sw_link"]
 custom_minimum_size = Vector2(11, 11)
@@ -2089,6 +2200,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Boiler Room"
 kind = 1
+region = &"south"
 
 [node name="Rect1" type="Control" parent="Rooms/sl_boiler"]
 custom_minimum_size = Vector2(11, 11)
@@ -2105,6 +2217,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Linen Store"
 kind = 3
+region = &"south"
 
 [node name="Rect1" type="Control" parent="Rooms/sl_linen"]
 custom_minimum_size = Vector2(11, 11)
@@ -2121,6 +2234,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Maintenance Workshop"
 kind = 3
+region = &"south"
 
 [node name="Rect1" type="Control" parent="Rooms/sl_workshop"]
 custom_minimum_size = Vector2(11, 11)
@@ -2137,6 +2251,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "South Service Corridor"
 kind = 0
+region = &"south"
 
 [node name="Rect1" type="Control" parent="Rooms/ss_link"]
 custom_minimum_size = Vector2(11, 11)
@@ -2153,6 +2268,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Truck Bay"
 kind = 3
+region = &"south"
 
 [node name="Rect1" type="Control" parent="Rooms/ss_truck_bay"]
 custom_minimum_size = Vector2(11, 11)
@@ -2169,6 +2285,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Wash Bay"
 kind = 3
+region = &"south"
 
 [node name="Rect1" type="Control" parent="Rooms/ss_wash_bay"]
 custom_minimum_size = Vector2(11, 11)
@@ -2185,6 +2302,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Tyre Store"
 kind = 3
+region = &"south"
 
 [node name="Rect1" type="Control" parent="Rooms/ss_tyre_store"]
 custom_minimum_size = Vector2(11, 11)
@@ -2201,6 +2319,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "East Service Corridor"
 kind = 0
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/east_service"]
 custom_minimum_size = Vector2(11, 11)
@@ -2217,6 +2336,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Admin Offices"
 kind = 3
+region = &"north"
 
 [node name="Rect1" type="Control" parent="Rooms/na_offices"]
 custom_minimum_size = Vector2(11, 11)
@@ -2233,6 +2353,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Comms Room"
 kind = 1
+region = &"north"
 
 [node name="Rect1" type="Control" parent="Rooms/na_comms"]
 custom_minimum_size = Vector2(11, 11)
@@ -2249,6 +2370,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Annex Records"
 kind = 2
+region = &"north"
 
 [node name="Rect1" type="Control" parent="Rooms/na_records"]
 custom_minimum_size = Vector2(11, 11)
@@ -2265,6 +2387,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Press Room"
 kind = 3
+region = &"north"
 
 [node name="Rect1" type="Control" parent="Rooms/nw_press"]
 custom_minimum_size = Vector2(11, 11)
@@ -2281,6 +2404,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Reception"
 kind = 3
+region = &"north"
 
 [node name="Rect1" type="Control" parent="Rooms/nw_reception"]
 custom_minimum_size = Vector2(11, 11)
@@ -2297,6 +2421,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Gate Post"
 kind = 3
+region = &"north"
 
 [node name="Rect1" type="Control" parent="Rooms/nw_gate_post"]
 custom_minimum_size = Vector2(11, 11)
@@ -2313,6 +2438,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Valet Lockers"
 kind = 3
+region = &"north"
 
 [node name="Rect1" type="Control" parent="Rooms/nw_valet"]
 custom_minimum_size = Vector2(11, 11)
@@ -2329,6 +2455,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Delivery Depot"
 kind = 3
+region = &"north"
 
 [node name="Rect1" type="Control" parent="Rooms/nw_depot"]
 custom_minimum_size = Vector2(11, 11)
@@ -2345,6 +2472,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Spare Parts"
 kind = 1
+region = &"north"
 
 [node name="Rect1" type="Control" parent="Rooms/nw_spares"]
 custom_minimum_size = Vector2(11, 11)
@@ -2361,6 +2489,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Guard Shack"
 kind = 3
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/ne_guard_shack"]
 custom_minimum_size = Vector2(11, 11)
@@ -2377,6 +2506,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Supply Shed"
 kind = 3
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/ne_supply_shed"]
 custom_minimum_size = Vector2(11, 11)
@@ -2393,6 +2523,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "West Gate"
 kind = 3
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/ne_west_gate"]
 custom_minimum_size = Vector2(11, 11)
@@ -2409,6 +2540,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Ground Crew Lockers"
 kind = 3
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/ne_west_lockers"]
 custom_minimum_size = Vector2(11, 11)
@@ -2425,6 +2557,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Ground Support"
 kind = 3
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/ne_ground_support"]
 custom_minimum_size = Vector2(11, 11)
@@ -2441,6 +2574,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Fuel Pumps"
 kind = 1
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/ne_fuel_pumps"]
 custom_minimum_size = Vector2(11, 11)
@@ -2457,6 +2591,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Checkpoint"
 kind = 3
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/ne_checkpoint"]
 custom_minimum_size = Vector2(11, 11)
@@ -2473,6 +2608,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Plant Gate"
 kind = 3
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/ne_plant_gate"]
 custom_minimum_size = Vector2(11, 11)
@@ -2489,6 +2625,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Rail Gatehouse"
 kind = 3
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/se_gatehouse"]
 custom_minimum_size = Vector2(11, 11)
@@ -2505,6 +2642,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Scale House"
 kind = 3
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/se_scale_house"]
 custom_minimum_size = Vector2(11, 11)
@@ -2521,6 +2659,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Watch Post"
 kind = 3
+region = &"west"
 
 [node name="Rect1" type="Control" parent="Rooms/sw_watch_post"]
 custom_minimum_size = Vector2(11, 11)
@@ -2537,6 +2676,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Yard Overlook"
 kind = 3
+region = &"west"
 
 [node name="Rect1" type="Control" parent="Rooms/sw_overlook"]
 custom_minimum_size = Vector2(11, 11)
@@ -2553,6 +2693,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "East Store"
 kind = 3
+region = &"west"
 
 [node name="Rect1" type="Control" parent="Rooms/sw_east_store"]
 custom_minimum_size = Vector2(11, 11)
@@ -2569,6 +2710,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "East Bay"
 kind = 3
+region = &"west"
 
 [node name="Rect1" type="Control" parent="Rooms/sw_east_bay"]
 custom_minimum_size = Vector2(11, 11)
@@ -2585,6 +2727,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Equipment Garage"
 kind = 3
+region = &"west"
 
 [node name="Rect1" type="Control" parent="Rooms/sw_east_garage"]
 custom_minimum_size = Vector2(11, 11)
@@ -2601,6 +2744,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "East Perimeter Road"
 kind = 0
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/east_road"]
 custom_minimum_size = Vector2(11, 11)
@@ -2617,6 +2761,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "South Perimeter Road"
 kind = 0
+region = &"south"
 
 [node name="Rect1" type="Control" parent="Rooms/south_road"]
 custom_minimum_size = Vector2(11, 11)
@@ -2633,6 +2778,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Link Passage"
 kind = 0
+region = &"north"
 
 [node name="Rect1" type="Control" parent="Rooms/link_nw_mail_west_corridor"]
 custom_minimum_size = Vector2(11, 11)
@@ -2649,6 +2795,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Link Passage"
 kind = 0
+region = &"north"
 
 [node name="Rect1" type="Control" parent="Rooms/link_nw_director_entrance_garage"]
 custom_minimum_size = Vector2(11, 11)
@@ -2665,6 +2812,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Link Passage"
 kind = 0
+region = &"west"
 
 [node name="Rect1" type="Control" parent="Rooms/link_sw_receiving_west_boat_house"]
 custom_minimum_size = Vector2(11, 11)
@@ -2681,6 +2829,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Link Passage"
 kind = 0
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/link_ne_security_east_plant_office"]
 custom_minimum_size = Vector2(11, 11)
@@ -2697,6 +2846,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Link Passage"
 kind = 0
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/link_se_rail_office_extract_rail"]
 custom_minimum_size = Vector2(11, 11)
@@ -2713,6 +2863,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Link Passage"
 kind = 0
+region = &"north"
 
 [node name="Rect1" type="Control" parent="Rooms/link_link_corridor_nw_corridor"]
 custom_minimum_size = Vector2(11, 11)
@@ -2729,6 +2880,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Link Passage"
 kind = 0
+region = &"west"
 
 [node name="Rect1" type="Control" parent="Rooms/link_sw_link_sw_corridor"]
 custom_minimum_size = Vector2(11, 11)
@@ -2745,6 +2897,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_room")
 display_name = "Link Passage"
 kind = 0
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/link_east_service_se_corridor"]
 custom_minimum_size = Vector2(11, 11)
@@ -2756,6 +2909,33 @@ offset_right = 5797.0
 offset_bottom = 4433.0
 mouse_filter = 2
 script = ExtResource("rect_script")
+
+[node name="Regions" type="Node2D" parent="."]
+
+[node name="atrium" type="Control" parent="Regions"]
+script = ExtResource("11_region")
+display_name = "Central Atrium"
+colour = Color(0.9490196, 0.70980394, 0.26666668, 1)
+
+[node name="north" type="Control" parent="Regions"]
+script = ExtResource("11_region")
+display_name = "North Wing"
+colour = Color(0.5607843, 0.7019608, 0.8784314, 1)
+
+[node name="east" type="Control" parent="Regions"]
+script = ExtResource("11_region")
+display_name = "East Wing"
+colour = Color(0.7882353, 0.627451, 1, 1)
+
+[node name="south" type="Control" parent="Regions"]
+script = ExtResource("11_region")
+display_name = "South Wing"
+colour = Color(0.29411766, 0.8901961, 0.5411765, 1)
+
+[node name="west" type="Control" parent="Regions"]
+script = ExtResource("11_region")
+display_name = "West Wing"
+colour = Color(0.43529412, 0.827451, 0.9098039, 1)
 
 [node name="Doors" type="Node2D" parent="."]
 z_index = 1
@@ -10279,6 +10459,22 @@ position = Vector2(6144.36, 6487.75)
 
 [node name="Plant8" parent="Props/Furnishing/SouthRoad" instance=ExtResource("furn_plant")]
 position = Vector2(6971.3, 6491.88)
+[node name="NorthGenerator" parent="Props" instance=ExtResource("12_generator")]
+position = Vector2(4482, 742)
+
+[node name="EastGenerator" parent="Props" instance=ExtResource("12_generator")]
+position = Vector2(5934, 2656)
+
+[node name="SouthGenerator" parent="Props" instance=ExtResource("12_generator")]
+position = Vector2(4262, 5758)
+
+[node name="WestGenerator" parent="Props" instance=ExtResource("12_generator")]
+position = Vector2(2546, 2590)
+
+[node name="MainGenerator" parent="Props" instance=ExtResource("12_generator")]
+position = Vector2(5000, 2450)
+scope = 1
+
 
 [node name="Decor" type="Node2D" parent="."]
 y_sort_enabled = true

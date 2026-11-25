@@ -1,11 +1,13 @@
 class_name ExitsLayer
 extends MapLayer
 
-##The exit zones. Each is outlined faintly; the `highlighted` one (the designated exit, for a player allowed to know it) is filled and labelled.
+##The exit zones. Each is outlined faintly; the `highlighted` one (the designated exit, for a player allowed to know it) is filled and labelled,
+##or with `outline_only`, outlined in green and labelled.
 
 const COLOUR : Color = Palette.OK
 
 @export var show_all : bool = true #off: only the highlighted exit is drawn
+@export var outline_only : bool = false #the highlighted exit is outlined, not filled
 
 var highlighted : String = "" : set = set_highlighted
 
@@ -30,8 +32,9 @@ func _draw() -> void:
 			bounds = rect if first else bounds.merge(rect)
 			first = false
 			if is_designated:
-				var pulse : float = 0.35 + 0.15 * sin(Time.get_ticks_msec() / 250.0)
-				draw_rect(rect, Color(COLOUR, pulse))
+				if not outline_only:
+					var pulse : float = 0.35 + 0.15 * sin(Time.get_ticks_msec() / 250.0)
+					draw_rect(rect, Color(COLOUR, pulse))
 				draw_rect(rect, COLOUR, false, px(2.5))
 			else:
 				draw_rect(rect, Color(Palette.METAL, 0.6), false, px(1.0))

@@ -25,6 +25,52 @@ A console is a `ControlPanel` scene (`game/utility/control_panel.tscn`; `door_co
 starts and gives it its screen; nothing is registered in code. A new kind of console: a screen scene (a `Control` with `open(player)`, `close()` and a
 `closed` signal), plus an inherited `control_panel.tscn` pointing at it.
 
+## Regions and power
+The facility has lost power. Guards start backup generators, and everything the security system does costs power while it is on. Power is a flow, in
+points per second (pts/s): generators give it, and closed doors and lights that are on (later cameras and turrets) take it. The code is in `game/power/`. `PowerGrid`
+does the counting, and the lobby decides every change.
+
+- **Regions** are `FacilityRegion` nodes under the map's `Regions` node. The node name is the region id; `display_name` and `colour` are its settings.
+  Each one is drawn in the 2D view as a name badge, which the map moves to the middle of the region's biggest room.
+  - **To see a region's rooms**, click its badge in the 2D view or select it in the scene tree. Its rooms light up in its colour, its outline is drawn
+    and every other room is dimmed. The *Select its rooms* button in the inspector selects the rooms themselves.
+  - **To add or remove rooms**, keep the region selected and click rooms in the 2D view. A click adds a room, or takes it out if it is already in.
+    Shift-click only adds. A room is in one region at a time, so clicking a room of another region moves it here. Ctrl+Z undoes it. Ctrl- or
+    Alt-click selects normally. This is the `addons/facility_editor` plugin; turn it on under Project Settings > Plugins if it is off.
+  - The membership is stored on the rooms: each `FacilityRoom` has a `region` dropdown. Select several rooms and set it once to assign them all.
+  - Each room shows a band in its region's colour, with the region's name under the room's name.
+- **Generators**: drag `game/power/generator.tscn` under `Props`, standing in a room.
+  - `scope` is *Region* (powers the region of the room it stands in) or *Whole map* (feeds a shared pool every region draws on).
+  - Tick `starts_running` for one that is already running when the match starts. Otherwise a guard has to hold E on it.
+  - The `*_override` numbers replace the defaults for that generator; -1 keeps the default.
+  - They are solid. Shots damage them, and one shot down stops; a guard holds E longer to repair it.
+  - A generator outside a room, or a region generator in a room with no region, gets a warning.
+- **Doors** cost power to keep shut. The region that pays is the one of the room the door leads into, not the corridor it leads out of. Set
+  `region_override` on the door to choose another.
+- **Ceiling lights**: every room except an outdoor one has a light. There is nothing to place: it is sized from the room's `FacilityRoomRect`s every
+  time the map builds, so resizing a room resizes its light.
+  - Guards switch them on and off from the door console: click a door to work it, or anywhere else in a room to switch its light. All lights
+    are off when a match starts.
+  - A light that is on costs `light_cost` (1 pt/s) from its room's region.
+  - The light fills the room, stops at walls and shut doors, and spills out through open doorways (`spill_m` on the level's `RoomLights` node).
+  - Each room rectangle's lamp is a real `PointLight2D`, like the flashlight, so the art keeps its colours under it. Its colour and brightness
+    are `color` and `energy` on the level's `RoomLights` node.
+  - Each player sees a light only where they have a clear line of sight to it, in any direction. `PlayerSight` takes the light back off
+    everywhere else, for that player only.
+  - A player standing in a lit room counts as lit, like one in a flashlight beam.
+  - Furniture (generators, consoles) casts shadows in flashlight beams but not in room lights, because the lamp is on the ceiling. New furniture
+    needs three things to behave the same: physics layer 5 (`FacilityTileSet.PROP_LAYER`) in its `collision_layer`, and a `LightOccluder2D` the
+    size of its body with `occluder_light_mask` = 2 (only the flashlight and muzzle flash, whose `shadow_item_cull_mask` is 3, see it).
+  - The code is in `game/lights/`.
+- **`game/power/power_settings.tres`** holds the numbers: the cost per second of each kind of thing, generator output, health and hold times.
+  - It also holds **`shed_order`**: when power runs short, the first category in the list is switched off first, then the next, until what is left
+    fits. Drag the entries to reorder it. Within a category, the thing switched on last goes first.
+  - A region that its own generators cover is never touched; only regions drawing on the pool lose things.
+- **How a region's power works out:** a region uses its own generators first and takes the rest from the pool. The power free there is what its
+  generators have left plus what the pool has left. A door can only be closed when its cost fits in that.
+- **Who sees it:** guards get a readout on the HUD for the region they stand in. On the Caps Lock map everyone sees the region outlines, and guards
+  also see each region's power and the generators. All guards see it, so a secret attacker among them is not given away.
+
 ## Player visuals
 `game/player/skin/player_skin.tscn` is a real scene: `Legs`, `Torso` and `Full` have the guard's `SpriteFrames` (`guard/guard_frames.tres`) assigned, so every
 animation can be previewed; `HitReaction` (flinch and blood) and `Death` (the fall) are nodes with their own settings; the `Flashlight` has `Cone` and `Halo`
@@ -45,7 +91,10 @@ floor and wall layers match, every console stands in a room whose function it wo
 ## Maps on screens
 Every screen that shows the facility uses one map: `FacilityMapView` (`game/ui/map_view/`). It scrolls (drag with the mouse, trackpad pan) and zooms in
 and out (mouse wheel, trackpad pinch, the + / - buttons), so it stays readable however big the facility gets. What it shows is its **layers**: `MapLayer`
-nodes placed under it in the screen's scene, drawn in order: `RoomsLayer`, `DoorsLayer` (clickable or not), `ExitsLayer`, `SpawnLayer`, `PlayerDotLayer`.
+nodes placed under it in the screen's scene, drawn in order: `RoomsLayer`, `LightsLayer` (the rooms' lights, clickable), `RelicRoomsLayer` (rooms outlined in yellow), `DoorsLayer` (clickable or not), `ExitsLayer` (with `outline_only` the target exit is outlined in green, not filled), `SpawnLayer`, `PlayerDotLayer`.
+The Caps Lock map (`map_screen.tscn`) outlines in yellow, for everyone, each treasure room (`kind` = Item) that had a relic in it when the match started.
+The outline stays when the relic is carried off. It outlines the target exit in green for intruders only. A guard who is secretly attacking is told the
+exit too (the spawn selection map shows it to every attacker), but the Caps Lock map does not show it to them.
 The door console (`door_map_screen.tscn`) and the spawn selection (`spawn_select_phase.tscn`) are built this way. A new map screen (lights, cameras,
 the full map on Tab) is a scene with a `FacilityMapView` and the layers it needs; something new to show on a map is a new `MapLayer` script that draws in
 world pixels (use `px()` for sizes that should stay the same on screen, `draw_label()` for text) and overrides `map_click()` to take clicks.

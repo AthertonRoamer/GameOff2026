@@ -9,6 +9,8 @@ extends Node2D
 ##The map reads the rooms and the doors and builds the floor, the walls (every empty cell touching a floor cell, so rooms need a one cell gap
 ##between them), the soft shadows and the minimap from them, so resizing a room never touches any art.
 ##A room of kind Exit is an exit zone, not a room: see is_exit().
+##`region` is the power region it belongs to (a FacilityRegion under the map's Regions node, see PowerGrid): a dropdown of the map's regions. Select several
+##rooms to set it on all of them at once, or select the region and click rooms in the 2D view (addons/facility_editor).
 
 enum Kind { CORRIDOR, UTILITY, ITEM, OFFICE, EXTERIOR_ROOM, OUTDOOR, EXIT }
 enum Function { NONE, CAMERAS, DOORS, LIGHTS, GENERATOR, TURRETS, POWER }
@@ -21,6 +23,7 @@ const TILE : int = FacilityTileSet.TILE
 @export var display_name : String = "" : set = _set_display_name
 @export var kind : Kind = Kind.OFFICE : set = _set_kind
 @export var function : Function = Function.NONE #what the room's console does, if it has one
+@export var region : StringName = &"" : set = _set_region #the power region it is in (a FacilityRegion's node name), empty for none
 
 var clash_with : String = "" #set by the map while two rooms share floor, so the editor can say so
 var spawn_kinds : Array = [] #SpawnRoomMarker.Kind of every spawn marker standing in this room, set by the map in the editor (shown as badges)
@@ -32,6 +35,18 @@ func _ready() -> void:
 
 func room_id() -> String:
 	return String(name)
+
+
+##The FacilityRegion this room is in, or null (none set, or the name matches no region of the map).
+func region_node() -> FacilityRegion:
+	var map : Node = get_parent().get_parent() if get_parent() != null else null
+	if region == &"" or map == null:
+		return null
+	return map.get_node_or_null(NodePath("Regions/" + String(region))) as FacilityRegion
+
+
+func redraw() -> void:
+	_redraw_rects()
 
 
 ##An exit zone is an area, not a room: the map paints no floor or wall on it. It goes outside a room's wall, with the same one cell gap as between
@@ -96,12 +111,36 @@ func _get_configuration_warnings() -> PackedStringArray:
 		warnings.append("This exit is in or against %s. Leave a one cell wall between them and put a door in it." % clash_with)
 	elif clash_with != "":
 		warnings.append("This room overlaps %s. Rooms need a one cell gap between them." % clash_with)
+	if region != &"" and is_inside_tree() and region_node() == null:
+		warnings.append("This room's region \"%s\" is not one of the map's regions (under Regions)." % region)
 	return warnings
 
 
 func _set_display_name(value : String) -> void:
 	display_name = value
 	_redraw_rects()
+
+
+func _set_region(value : StringName) -> void:
+	region = value
+	_redraw_rects()
+	if is_inside_tree():
+		update_configuration_warnings()
+
+
+##`region` is a dropdown of the map's regions (a name can still be typed; one that matches no region gets a warning).
+func _validate_property(property : Dictionary) -> void:
+	if property["name"] != "region":
+		return
+	var map : Node = get_parent().get_parent() if get_parent() != null else null
+	var regions_node : Node = map.get_node_or_null("Regions") if map != null else null
+	var names : PackedStringArray = [""]
+	if regions_node != null:
+		for child : Node in regions_node.get_children():
+			if child is FacilityRegion:
+				names.append(String(child.name))
+	property["hint"] = PROPERTY_HINT_ENUM_SUGGESTION
+	property["hint_string"] = ",".join(names)
 
 
 func _set_kind(value : Kind) -> void:
