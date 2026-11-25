@@ -9,7 +9,9 @@ extends Node2D
 ## however well it could follow the shooter's input itself. A peer that is only watching ignores its own run of use() for another player's shot.
 ## A shot repeated by a resimulated tick is ignored (fire returns false), like ProjectileManager.spawn does.
 
-signal shot_hit(shot : Dictionary, target : Node) #lobby only
+signal shot_hit(shot : Dictionary, target : Node) #lobby only. The target is a player, or a solid thing in SHOOTABLE_GROUP the shot ended on (a generator)
+
+const SHOOTABLE_GROUP : StringName = &"shootable" ## solid bodies on the world mask that take damage when a shot ends on them: take_damage(damage, direction), lobby only
 signal hit_confirmed(damage : float) #on the shooter's own peer
 signal wall_hit(at : Vector2, own_shot : bool) #a shot ended on a wall (on every peer that is told of the shot: the impact sound). own_shot: this peer's own player made it
 
@@ -86,7 +88,10 @@ func _trace(owner_node : Node, owner_id : int, origin : Vector2, dir : Vector2, 
 	var end : Vector2 = origin + dir * max_range
 	var on_wall : bool = false
 	var wall : Dictionary = get_world_2d().direct_space_state.intersect_ray(PhysicsRayQueryParameters2D.create(origin, end, world_collision_mask))
+	var struck : Node = null #a solid thing that takes damage (in SHOOTABLE_GROUP, like a generator) the shot ends on
 	if not wall.is_empty():
+		if wall["collider"] is Node and (wall["collider"] as Node).is_in_group(SHOOTABLE_GROUP):
+			struck = wall["collider"]
 		end = wall["position"]
 		on_wall = true
 	var wall_distance : float = origin.distance_to(end)
@@ -106,6 +111,9 @@ func _trace(owner_node : Node, owner_id : int, origin : Vector2, dir : Vector2, 
 			on_wall = false
 			dealt = damage
 			shot_hit.emit({"damage": damage, "direction": dir, "owner_id": owner_id}, hit["node"])
+		elif struck != null and on_wall: #no player in the way: the shot strikes the shootable thing it ended on
+			dealt = damage
+			shot_hit.emit({"damage": damage, "direction": dir, "owner_id": owner_id}, struck)
 	return {"end": end, "on_wall": on_wall, "damage": dealt}
 
 

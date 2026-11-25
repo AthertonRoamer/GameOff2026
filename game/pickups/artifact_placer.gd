@@ -6,6 +6,8 @@ extends Node
 ##Intruders can always take artifacts; the exports cover the guards. Teams are only known where they may be, but that is enough here: a player only
 ##needs their own team to see the prompt, and the lobby, which decides, knows every team.
 
+signal placed(positions : PackedVector2Array) #the artifacts are on their locations: where each one was put (world positions), once per match
+
 @export var artifacts : Array[Artifact] = []
 @export var pickups : PickupControl
 @export var attacking_guards_can_pick_up : bool = true
@@ -26,8 +28,12 @@ func roll(rng : RandomNumberGenerator) -> PackedInt32Array:
 
 func place(picks : PackedInt32Array) -> void:
 	var locations : Array[Node] = get_tree().get_nodes_in_group(ArtifactLocation.GROUP)
+	var positions : PackedVector2Array = PackedVector2Array()
 	for i in picks.size():
-		pickups.spawn(artifacts[picks[i]], (locations[i] as ArtifactLocation).global_position, _can_player_carry)
+		var at : Vector2 = (locations[i] as ArtifactLocation).global_position
+		pickups.spawn(artifacts[picks[i]], at, _can_player_carry)
+		positions.append(at)
+	placed.emit(positions)
 
 
 func can_carry(team : int, is_intruder : bool) -> bool:

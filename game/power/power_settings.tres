@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="PowerSettings" format=3]
+
+[ext_resource type="Script" path="res://game/power/power_settings.gd" id="1_settings"]
+
+[resource]
+script = ExtResource("1_settings")
+shed_order = Array[int]([3, 2, 1, 0])
+door_cost = 2.0
+light_cost = 1.0
+camera_cost = 3.0
+turret_cost = 5.0
+region_generator_output = 12.0
+whole_map_generator_output = 20.0
+generator_health = 300.0
+start_seconds = 4.0
+repair_seconds = 8.0

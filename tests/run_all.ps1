@@ -33,6 +33,22 @@ $mapPass = (Select-String -Path "$env:TEMP\maptest.out" -Pattern "RESULT: PASS" 
 $results["facility map unit test"] = $mapPass
 "{0,-62} {1}" -f "facility map unit test", $(if ($mapPass) { "PASS" } else { "FAIL" })
 if (-not $mapPass) { Select-String -Path "$env:TEMP\maptest.out" -Pattern "FAIL" | ForEach-Object { "      " + $_.Line } }
+# unit test of the power system: regions, generators, door costs, the shared pool, switching off in shed_order, repair (and the wings map's regions)
+$p = Start-Process $Godot -ArgumentList "--headless", "--path", "`"$project`"", "res://tests/unit/test_power_grid.tscn" -NoNewWindow -PassThru `
+	-RedirectStandardOutput "$env:TEMP\powertest.out" -RedirectStandardError "$env:TEMP\powertest.err"
+if (-not $p.WaitForExit(120000)) { Stop-Process -Id $p.Id -Force }
+$powerPass = (Select-String -Path "$env:TEMP\powertest.out" -Pattern "RESULT: PASS" -Quiet)
+$results["power grid unit test"] = $powerPass
+"{0,-62} {1}" -f "power grid unit test", $(if ($powerPass) { "PASS" } else { "FAIL" })
+if (-not $powerPass) { Select-String -Path "$env:TEMP\powertest.out" -Pattern "FAIL" | ForEach-Object { "      " + $_.Line } }
+# unit test of the rooms' ceiling lights: one per room, sized from its rectangles, stopped by walls and shut doors, spilling out of open doorways
+$p = Start-Process $Godot -ArgumentList "--headless", "--path", "`"$project`"", "res://tests/unit/test_room_lights.tscn" -NoNewWindow -PassThru `
+	-RedirectStandardOutput "$env:TEMP\lightstest.out" -RedirectStandardError "$env:TEMP\lightstest.err"
+if (-not $p.WaitForExit(90000)) { Stop-Process -Id $p.Id -Force }
+$lightsPass = (Select-String -Path "$env:TEMP\lightstest.out" -Pattern "RESULT: PASS" -Quiet)
+$results["room lights unit test"] = $lightsPass
+"{0,-62} {1}" -f "room lights unit test", $(if ($lightsPass) { "PASS" } else { "FAIL" })
+if (-not $lightsPass) { Select-String -Path "$env:TEMP\lightstest.out" -Pattern "FAIL" | ForEach-Object { "      " + $_.Line } }
 # unit test of the map streaming: tiles near the view only, decor in and out of the tree
 $p = Start-Process $Godot -ArgumentList "--headless", "--path", "`"$project`"", "res://tests/unit/test_map_streaming.tscn" -NoNewWindow -PassThru `
 	-RedirectStandardOutput "$env:TEMP\streamtest.out" -RedirectStandardError "$env:TEMP\streamtest.err"

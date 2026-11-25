@@ -16,6 +16,8 @@ const CONSOLE_REACH_SLACK : float = 1.5 #the lobby's view of a player can be a f
 @onready var hitscan : HitscanManager = $ProjectileLayer/HitscanManager #instant shots (above the darkness, like the bullets)
 @onready var control : FacilityControl = $FacilityControl
 @onready var consoles : UtilityConsoles = $UtilityConsoles
+@onready var power : PowerGrid = $PowerGrid #the generators and what the doors and lights (and later cameras, turrets) cost to keep on
+@onready var lights : RoomLightShapes = $RoomLights #where each room's ceiling light falls (switched by FacilityControl, drawn by PlayerSight)
 @onready var blood : BloodSplats = $BloodSplats #the blood on the floor (above the floor, below the bodies)
 @onready var sound : SoundSystem = $Sound #plays footsteps, shots and doors for the local player, shaped by the map (see game/audio)
 
@@ -31,6 +33,8 @@ func _ready() -> void:
 	consoles.build()
 	consoles.player_of = func(peer_id : int) -> Player: return player_lookup.call(peer_id) if player_lookup.is_valid() else null
 	control.can_operate = _can_operate
+	power.player_of = consoles.player_of
+	power.build()
 
 
 func spawn_position() -> Vector2:

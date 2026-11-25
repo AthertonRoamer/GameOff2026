@@ -9,11 +9,15 @@ extends Node
 ##  interact(player) -> Control            does its thing; returns a screen to hold the player at (a Control with close() and a `closed`
 ##                                         signal), or null for something instant
 ##  can_interact(player) -> bool           optional: false hides it from this player
+##  hold_seconds(player) -> float          optional: E has to be held this long (a progress bar on the HUD) before interact() is called. The player
+##                                         stands still meanwhile. Letting go, walking out of reach or dying cancels it. The interactable may also have
+##                                         hold_started(player) and hold_cancelled(player), told when a hold begins and when it ends without finishing
 ##While a screen is open the player stands still (its input is off) and plays the interact animation, which the other peers see too
 ##(PlayerInput.interacting is part of the synced input). E closes the screen again; the screen closes itself on Esc.
 
 signal prompt_changed(text : String) #"" when there is nothing in reach
 signal inventory_full_changed(full : bool) #true while the only thing in reach is an item the player would take but has no room for
+signal hold_progress_changed(progress : float) #0 to 1 while E is held on something that needs holding, -1 when the hold ends (finished or not)
 
 const GROUP : StringName = &"interactables"
 
@@ -22,6 +26,10 @@ const GROUP : StringName = &"interactables"
 var target : Node #the closest interactable in reach, or null
 var screen : Control #the screen the player is using, or null
 
+var holding : Node #what E is being held on, or null
+var hold_time : float = 0.0
+var hold_total : float = 0.0
+
 var _prompt : String = ""
 var _inventory_full : bool = false
 
@@ -29,9 +37,13 @@ var _inventory_full : bool = false
 func _ready() -> void:
 	set_process((player.get_node("Input") as PlayerInput).is_multiplayer_authority()) #by node: this is readied before the player, whose @onready vars are still unset
 	player.died.connect(close_screen)
+	player.died.connect(cancel_hold)
 
 
-func _process(_delta : float) -> void:
+func _process(delta : float) -> void:
+	if holding != null:
+		_continue_hold(delta)
+		return
 	_find_target()
 	var text : String = target.get_prompt() if target != null else ""
 	if text != _prompt:
@@ -40,8 +52,58 @@ func _process(_delta : float) -> void:
 	if Input.is_action_just_pressed("player_interact"):
 		if screen != null:
 			screen.close()
+		elif target != null and target.has_method("hold_seconds"):
+			start_hold(target)
 		elif target != null:
 			use(target)
+
+
+##Starts holding E on an interactable that needs it (as pressing E does). The playground's check mode calls it directly.
+func start_hold(interactable : Node) -> void:
+	holding = interactable
+	hold_time = 0.0
+	hold_total = maxf(0.01, interactable.hold_seconds(player))
+	player.set_active(false) #the player stands still while working it
+	player.input.at_console = true
+	player.input.interacting = true
+	if interactable.has_method("hold_started"):
+		interactable.hold_started(player)
+	hold_progress_changed.emit(0.0)
+
+
+##Lets go before the hold is done.
+func cancel_hold() -> void:
+	if holding == null:
+		return
+	var was : Node = holding
+	_end_hold()
+	if is_instance_valid(was) and was.has_method("hold_cancelled"):
+		was.hold_cancelled(player)
+
+
+func _continue_hold(delta : float) -> void:
+	var still_ok : bool = is_instance_valid(holding) and player.is_alive() and Input.is_action_pressed("player_interact") \
+		and holding.is_in_reach(player.global_position) and (not holding.has_method("can_interact") or holding.can_interact(player))
+	if not still_ok:
+		cancel_hold()
+		return
+	hold_time += delta
+	if hold_time < hold_total:
+		hold_progress_changed.emit(hold_time / hold_total)
+		return
+	var done : Node = holding
+	_end_hold()
+	done.interact(player)
+
+
+func _end_hold() -> void:
+	holding = null
+	hold_time = 0.0
+	player.input.at_console = false
+	player.input.interacting = false
+	if player.is_alive():
+		player.set_active(true)
+	hold_progress_changed.emit(-1.0)
 
 
 ##Uses an interactable now, as E would (the playground's check mode calls it directly).

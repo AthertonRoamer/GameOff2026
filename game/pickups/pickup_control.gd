@@ -11,6 +11,11 @@ extends Node
 
 var spawn_parent : Node #where pickups are added: y-sorted with the players
 var player_lookup : Callable = Callable() #(peer_id : int) -> Player, or null
+## (point) -> float, how well the local player sees that point, 0 to 1 (PlayerSight.visibility: inside the view, not behind a wall, lit or not). Set by the game:
+## items on the floor (ammo, relics) are only drawn where they can be seen, like blood and other players. Unset: everywhere
+var sight : Callable = Callable()
+
+const SEEN_FADE_PER_SECOND : float = 8.0 #how quickly an item comes into view and goes out of it (the same as blood)
 
 var _pickups : Dictionary = {} #pickup id -> Pickup, everything still on the floor
 var _pending : Array[Dictionary] = [] #{tick, id, peer, slot}, in the order they were accepted
@@ -37,7 +42,18 @@ func spawn(item : Item, world_position : Vector2, can_take : Callable = Callable
 	_pickups[pickup.pickup_id] = pickup
 	spawn_parent.add_child(pickup)
 	pickup.global_position = world_position
+	if sight.is_valid():
+		pickup.seen = sight.call(world_position) #(one out of sight does not flash in for a moment)
 	return pickup
+
+
+func _process(delta : float) -> void:
+	if not sight.is_valid():
+		return
+	for entry in _pickups.values(): #(untyped: one freed by someone else is a freed object, which a typed variable refuses)
+		if is_instance_valid(entry):
+			var pickup : Pickup = entry
+			pickup.seen = move_toward(pickup.seen, sight.call(pickup.global_position), SEEN_FADE_PER_SECOND * delta)
 
 
 func get_pickups() -> Array:
