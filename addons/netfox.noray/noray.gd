@@ -190,9 +190,12 @@ func _handle_commands(command: String, data: String):
 		on_pid.emit(pid)
 		_logger.debug("Saved PID: %s", [pid])
 	elif command == "connect":
-		var parts = data.split(":")
-		var host = parts[0]
-		var port = parts[1].to_int()
+		var split_at : int = data.rfind(":") #(the last colon, so a host with colons in it still works)
+		if split_at < 0:
+			_logger.error("Received a malformed connect command: %s", [data])
+			return
+		var host = data.substr(0, split_at)
+		var port = data.substr(split_at + 1).to_int()
 		_logger.debug("Received connect command to %s:%s", [host, port])
 		on_connect_nat.emit(host, port)
 	elif command == "connect-relay":
