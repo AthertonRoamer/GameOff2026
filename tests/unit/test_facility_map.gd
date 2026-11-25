@@ -17,6 +17,22 @@ func check(condition : bool, what : String) -> void:
 		failures += 1
 
 
+##Power regions and generators (game/power): every room's region is one of the map's, every region has rooms, every generator stands in a room, and a
+##region generator stands in a room that is in a region (or it would power nothing). Also run on the wings map by test_power_grid.
+func check_power(map : FacilityMap) -> void:
+	for id : String in map.rooms:
+		var region : String = map.rooms[id]["region"]
+		check(region == "" or map.regions.has(region), "%s: room %s's region (%s) is one of the map's" % [map.name, id, region])
+	for id : String in map.regions:
+		check(not (map.regions[id]["rooms"] as Array).is_empty(), "%s: region %s has rooms" % [map.name, id])
+	for node : Node in map.props_node.get_children():
+		if node is Generator:
+			var at : Vector2 = map.to_local((node as Generator).global_position)
+			check(map.room_at(at) != "", "%s: generator %s stands in a room" % [map.name, node.name])
+			if (node as Generator).scope == Generator.Scope.REGION:
+				check(map.region_at(at) != "", "%s: region generator %s stands in a room that is in a region (%s)" % [map.name, node.name, map.room_at(at)])
+
+
 func _ready() -> void:
 	var map : FacilityMap = MAP_SCENE.instantiate()
 	add_child(map)
@@ -125,6 +141,7 @@ func _ready() -> void:
 			var room : String = map.room_at(node.position)
 			check(room != "" and map.rooms[room]["function"] == (node as ControlPanel).function, "console %s stands in a room whose function is %s (in %s)" % [node.name, (node as ControlPanel).function, room])
 	check(panels > 0, "there is at least one console (%d)" % panels)
+	check_power(map)
 
 	#resizing a room only changes its rectangle: the floor, walls and shadows follow, nothing else is touched
 	check(map.floors.owner == null and map.walls.owner == null and map.shadows.owner == null, "the tile layers are made by the map, not part of the scene file")

@@ -16,6 +16,8 @@ extends CanvasLayer
 @onready var ammo_label : Label = $AmmoLabel #the gun in the hands: rounds in the magazine / the supply
 @onready var minimap : Minimap = $Minimap
 @onready var map_screen : MapScreen = $MapScreen #the full map, on the map key
+@onready var power_readout : PowerReadout = $PowerReadout #guards: the power free in the region they are in
+@onready var hold_bar : ProgressBar = $HoldBar #fills while E is held on something that needs holding (starting a generator)
 
 var _player : Player
 var _slot_panels : Array[PanelContainer] = []
@@ -63,10 +65,27 @@ func bind_map(facility : FacilityMap) -> void:
 	map_screen.facility = facility
 
 
+## The full map outlines the target exit, for intruders only (see MapScreen.shows_exit_to).
+func bind_exit(exit_chooser : DesignatedExitChooser) -> void:
+	map_screen.exit_chooser = exit_chooser
+
+
+## The full map outlines the treasure rooms the relics are placed in at the start of the match, and keeps them outlined after a relic is taken.
+func bind_relics(placer : ArtifactPlacer) -> void:
+	placer.placed.connect(map_screen.mark_relic_rooms)
+
+
+## Guards see the power: the readout of the region they stand in, and every region's power on the full map.
+func bind_power(grid : PowerGrid) -> void:
+	power_readout.grid = grid
+	map_screen.power = grid
+
+
 func bind_player(player : Player) -> void:
 	_player = player
 	minimap.track(player)
 	map_screen.player = player
+	power_readout.player = player
 	stamina_bar.max_value = player.stamina_max
 	health_bar.max_value = player.starting_health
 	_show_health(player.health)
@@ -74,6 +93,7 @@ func bind_player(player : Player) -> void:
 	var interactor : PlayerInteractor = player.get_node("Interactor") #by node: the player is not in the tree yet, so its @onready vars are unset
 	interactor.prompt_changed.connect(_show_prompt)
 	interactor.inventory_full_changed.connect(inventory_full_label.set_visible)
+	interactor.hold_progress_changed.connect(_show_hold)
 	call_deferred("_bind_inventory", player) #player hasn't entered the tree yet, so Inventory._ready() hasn't populated slots
 
 
@@ -125,6 +145,11 @@ func _bind_inventory(player : Player) -> void:
 	_highlight_slot(_inventory.active_slot)
 	_inventory.active_slot_changed.connect(_highlight_slot)
 	_inventory.items_changed.connect(_refresh_icons)
+
+
+func _show_hold(progress : float) -> void:
+	hold_bar.visible = progress >= 0.0
+	hold_bar.value = maxf(progress, 0.0)
 
 
 func _show_prompt(text : String) -> void:

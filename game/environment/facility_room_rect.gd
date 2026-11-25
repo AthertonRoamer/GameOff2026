@@ -52,6 +52,9 @@ func _draw() -> void:
 	var colour : Color = room.kind_colour() if room != null else Color.WHITE
 	draw_rect(Rect2(Vector2.ZERO, size), Color(colour, 0.2))
 	draw_rect(Rect2(Vector2.ZERO, size), Color(colour, 0.9), false, 2.0)
+	var region : FacilityRegion = room.region_node() if room != null else null
+	if region != null: #its power region: a band in the region's colour along the top
+		draw_rect(Rect2(Vector2(2.0, 2.0), Vector2(size.x - 4.0, 6.0)), region.colour)
 	var spawn_kinds : Array = room.spawn_kinds if room != null else []
 	for i in spawn_kinds.size(): #a spawn room: a dashed frame inside the outline per kind, in the spawn marker's colour
 		_draw_dashed_frame(Rect2(Vector2.ONE * (5.0 + 4.0 * i), size - Vector2.ONE * (10.0 + 8.0 * i)), SpawnRoomMarker.colour_of(spawn_kinds[i]))
@@ -59,6 +62,12 @@ func _draw() -> void:
 		var label : String = room.display_name if room.display_name != "" else String(room.name)
 		draw_string(ThemeDB.fallback_font, Vector2(8.0, 22.0), label, HORIZONTAL_ALIGNMENT_LEFT, size.x - 16.0, 18, Color(colour, 1.0))
 		var y : float = 44.0
+		if region != null:
+			draw_string(ThemeDB.fallback_font, Vector2(8.0, y), "REGION " + region.label().to_upper(), HORIZONTAL_ALIGNMENT_LEFT, size.x - 16.0, 14, region.colour)
+			y += 18.0
+		elif room != null and room.region != &"":
+			draw_string(ThemeDB.fallback_font, Vector2(8.0, y), "unknown region " + String(room.region), HORIZONTAL_ALIGNMENT_LEFT, size.x - 16.0, 14, Color("#e5484d"))
+			y += 18.0
 		for spawn_kind : int in spawn_kinds: #"GUARD SPAWN", "INTRUDER SPAWN"
 			draw_string(ThemeDB.fallback_font, Vector2(8.0, y), "%s SPAWN" % SpawnRoomMarker.name_of(spawn_kind).to_upper(), HORIZONTAL_ALIGNMENT_LEFT, size.x - 16.0, 14, SpawnRoomMarker.colour_of(spawn_kind))
 			y += 18.0

@@ -11,6 +11,11 @@ extends Node2D
 ##Command line (after --), for screenshots and checks:  --shot=<png> [--press=<action>] [--hold=<seconds>] [--aim=dx,dy] [--at=x,y] [--flash=off] [--dark=off]
 ##  [--panel=1] [--toggle=<door index>,<door index>] [--close]  presses an input action for a while, aims at a point on screen, takes a screenshot and prints what the player did.
 ##  --panel=1 walks the player to the panel and opens its screen; --toggle clicks those doors on the screen, like a mouse would.
+##  --generator=1 holds E on the nearest generator until it starts and prints the power where the player stands (--mid=<png> takes a picture half way);
+##  --map=1 opens the full map (as the map key does), zoomed out, before the picture.
+##  --exit=<exit id> plays an intruder who knows that target exit (the full map outlines it).
+##  --relics=<room>,<room> outlines those rooms on the full map as if relics had started in them (only treasure rooms count).
+##  --lights=<room>,<room> switches those rooms' ceiling lights on at the start (as the console would), and starts every generator so there is power for them.
 
 const PLAYER_SCENE : PackedScene = preload("res://game/player/player.tscn")
 
@@ -36,6 +41,8 @@ func _ready() -> void:
 	player.projectile_manager = level.projectiles #the gun spawns its bullets here; walls and closed doors stop them
 	hud.bind_player(player)
 	hud.bind_hitscan(level.hitscan)
+	hud.bind_map(level.facility)
+	hud.bind_power(level.power)
 	level.actors.add_child(player)
 	player.input.flashlight_on = String(_args.get("flash", "on")) != "off"
 	level.player_lookup = func(_peer_id : int) -> Player: return player
@@ -51,6 +58,30 @@ func _ready() -> void:
 	level.blood.players = func() -> Array: return [player]
 	player.damaged.connect(level.blood.on_player_damaged.bind(player))
 	player.died.connect(level.blood.on_player_died.bind(player), CONNECT_DEFERRED)
+	var sight : PlayerSight = PlayerSight.new() #draws the rooms' ceiling lights where the player can see them, as in a game
+	sight.name = "PlayerSight"
+	add_child(sight)
+	sight.ambient = level.darkness.color
+	sight.players = func() -> Array: return [player]
+	sight.local_player = func() -> Player: return player
+	sight.room_lights = level.lights
+	level.blood.sight = sight.visibility #blood is seen only in the view, as in a game
+	if _args.has("exit"): #play an attacker who knows the target exit: the full map outlines it
+		var chooser : DesignatedExitChooser = DesignatedExitChooser.new()
+		chooser.set_designated(String(_args["exit"]))
+		add_child(chooser)
+		hud.bind_exit(chooser)
+		hud.map_screen.exit_needs_intruder = false #(the playground's player has no role)
+	if _args.has("relics"): #as if relics had been placed in these rooms at the start
+		var at : PackedVector2Array = PackedVector2Array()
+		for room : String in String(_args["relics"]).split(","):
+			at.append(facility.to_global(facility.room_center_px(room)))
+		hud.map_screen.mark_relic_rooms(at)
+	if _args.has("lights"):
+		for generator : Generator in level.power.generators: #(with no power they would be switched straight off again)
+			level.power.set_generator(generator, Generator.State.RUNNING)
+		for room : String in String(_args["lights"]).split(","):
+			level.control.set_light_now(facility.light_of_room(room), true)
 	if _args.has("shot"):
 		_run_check()
 
@@ -91,6 +122,24 @@ func _run_check() -> void:
 		if _args.has("close"): #leave the screen again, as E would
 			screen.close()
 			await get_tree().create_timer(0.3).timeout
+	if _args.has("generator"): #hold E on the nearest generator until it starts, then report the power where the player stands
+		var nearest : Generator = null
+		for generator : Generator in level.power.generators:
+			if nearest == null or generator.global_position.distance_to(player.global_position) < nearest.global_position.distance_to(player.global_position):
+				nearest = generator
+		Input.action_press("player_interact")
+		player.interactor.start_hold(nearest)
+		await get_tree().create_timer(nearest.hold_seconds(player) * 0.5).timeout
+		if _args.has("mid"): #a picture with the bar half full
+			get_viewport().get_texture().get_image().save_png(String(_args["mid"]))
+		await get_tree().create_timer(nearest.hold_seconds(player) * 0.5 + 0.3).timeout
+		Input.action_release("player_interact")
+		var region : String = facility.region_at(player.global_position)
+		print("PLAYGROUND generator %s state=%s region=%s available=%.1f capacity=%.1f" % [nearest.name, Generator.State.keys()[nearest.state], region, level.power.available(region), level.power.capacity(region)])
+	if _args.has("map"): #the full map, as the map key opens it, zoomed out to the whole facility
+		hud.map_screen.open()
+		hud.map_screen.map.fit_all()
+		await get_tree().create_timer(0.3).timeout
 	var start : Vector2 = player.position
 	var action : String = String(_args.get("press", ""))
 	if action != "":

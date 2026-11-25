@@ -138,6 +138,34 @@ func _ready() -> void:
 	check(hud.map_screen.visible and hud.map_screen.map.facility == level.facility, "the map key opens the full map")
 	hud.map_screen.toggle()
 	check(not hud.map_screen.visible, "and closes it")
+	#the target exit: intruders see it, a secretly attacking guard does not (although their game knows it)
+	var chooser : DesignatedExitChooser = DesignatedExitChooser.new()
+	add_child(chooser)
+	var exit_id : String = level.facility.exits.keys()[0]
+	chooser.set_designated(exit_id)
+	hud.bind_exit(chooser)
+	var role_before : Role = player.role
+	player.role = load("res://game/roles/infiltrator.tres")
+	hud.map_screen.open()
+	check(player.role.is_intruder() and hud.map_screen.exits_layer.highlighted == exit_id, "an intruder sees the target exit on the full map")
+	hud.map_screen.close()
+	player.role = load("res://game/roles/guard.tres")
+	player.team = Team.ATTACKERS
+	hud.map_screen.open()
+	check(not player.role.is_intruder() and hud.map_screen.exits_layer.highlighted == "", "a secretly attacking guard does not")
+	hud.map_screen.close()
+	player.role = role_before
+	#the relics' rooms: the treasure rooms the relics start in, and they stay outlined once a relic is taken
+	var placer : ArtifactPlacer = ArtifactPlacer.new()
+	add_child(placer)
+	hud.bind_relics(placer)
+	var treasure : String = level.facility.rooms_of_kind("item")[0]
+	var corridor : String = level.facility.rooms_of_kind("corridor")[0]
+	placer.placed.emit(PackedVector2Array([level.facility.to_global(level.facility.room_center_px(treasure)), level.facility.to_global(level.facility.room_center_px(corridor))]))
+	check(hud.map_screen.relic_rooms_layer.rooms == ([treasure] as Array[String]), "the treasure room with a relic is outlined, a relic outside a treasure room is not (%s)" % [hud.map_screen.relic_rooms_layer.rooms])
+	check(level.facility.rooms_of_kind("item").size() > 1 and not hud.map_screen.relic_rooms_layer.rooms.has(level.facility.rooms_of_kind("item")[1]), "an empty treasure room is not")
+	placer.free()
+	chooser.free()
 	inventory.set_items([pistol])
 	await get_tree().process_frame
 	check(hud.ammo_label.visible and hud.ammo_label.text == "%d / %d" % [pistol.magazine_size, inventory.spare_rounds_at_start], "the HUD shows the magazine and the supply")

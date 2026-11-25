@@ -6,6 +6,7 @@
 [ext_resource type="Script" path="res://game/ui/map_view/layers/rooms_layer.gd" id="4_rooms"]
 [ext_resource type="Script" path="res://game/ui/map_view/layers/player_dot_layer.gd" id="5_dot"]
 [ext_resource type="PackedScene" path="res://game/ui/map_view/map_screen.tscn" id="6_mapscreen"]
+[ext_resource type="Script" path="res://game/player_hud/power_readout.gd" id="7_power"]
 
 [node name="PlayerHud" type="CanvasLayer"]
 script = ExtResource("1_hud")
@@ -214,6 +215,40 @@ theme_override_colors/font_color = Color(0.9490196, 0.70980394, 0.26666668, 1)
 theme_override_colors/font_outline_color = Color(0.023529412, 0.03137255, 0.047058824, 1)
 theme_override_constants/outline_size = 6
 theme_override_font_sizes/font_size = 18
+
+[node name="PowerReadout" type="Control" parent="."]
+visible = false
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -236.0
+offset_top = -296.0
+offset_right = -16.0
+offset_bottom = -248.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
+script = ExtResource("7_power")
+
+[node name="HoldBar" type="ProgressBar" parent="."]
+visible = false
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -120.0
+offset_top = -118.0
+offset_right = 120.0
+offset_bottom = -108.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+max_value = 1.0
+step = 0.0
+show_percentage = false
 
 [node name="Minimap" type="Control" parent="."]
 anchors_preset = 3

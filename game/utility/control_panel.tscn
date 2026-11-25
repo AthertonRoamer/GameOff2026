@@ -5,6 +5,9 @@
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
 size = Vector2(62, 26)
 
+[sub_resource type="OccluderPolygon2D" id="OccluderPolygon2D_body"]
+polygon = PackedVector2Array(-31, -13, 31, -13, 31, 13, -31, 13)
+
 [sub_resource type="Gradient" id="Gradient_glow"]
 colors = PackedColorArray(1, 1, 1, 1, 0, 0, 0, 1)
 
@@ -18,11 +21,16 @@ fill_to = Vector2(1, 0.5)
 
 [node name="ControlPanel" type="StaticBody2D"]
 texture_filter = 4
+collision_layer = 17
 collision_mask = 0
 script = ExtResource("1_panel")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("RectangleShape2D_body")
+
+[node name="Occluder" type="LightOccluder2D" parent="."]
+occluder = SubResource("OccluderPolygon2D_body")
+occluder_light_mask = 2
 
 [node name="Light" type="PointLight2D" parent="."]
 position = Vector2(0, 20)

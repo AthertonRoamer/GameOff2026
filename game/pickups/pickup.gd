@@ -11,6 +11,7 @@ extends Node2D
 var pickup_id : int = -1
 var control : PickupControl
 var can_take : Callable = Callable() #(player : Player) -> bool. Who may take this one. Unset: anyone
+var seen : float = 1.0 : set = set_seen ## how well the local player sees it, 0 to 1 (PickupControl sets it from the player's view, as for blood and bodies): drawn that strongly
 
 @onready var icon_sprite : Sprite2D = $Icon
 
@@ -19,6 +20,11 @@ func _ready() -> void:
 	add_to_group(PlayerInteractor.GROUP)
 	icon_sprite.texture = item.icon
 	icon_sprite.scale = Vector2.ONE * icon_size_px / maxf(item.icon.get_width(), item.icon.get_height())
+
+
+func set_seen(value : float) -> void:
+	seen = value
+	modulate.a = value
 
 
 func can_interact(player : Player) -> bool:

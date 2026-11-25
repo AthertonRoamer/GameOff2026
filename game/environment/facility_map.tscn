@@ -5,9 +5,11 @@
 [ext_resource type="PackedScene" path="res://game/environment/facility_door.tscn" id="4_yd85k"]
 [ext_resource type="PackedScene" path="res://game/utility/door_control_panel.tscn" id="6_ieksj"]
 [ext_resource type="Script" uid="uid://b7r08rbd5msb8" path="res://game/pickups/artifact_location.gd" id="7_artifact_location"]
-[ext_resource type="Script" path="res://game/pickups/ammo_location.gd" id="99_ammo_location"]
 [ext_resource type="Script" uid="uid://bj3o6xoh76qn0" path="res://game/environment/guard_spawn.gd" id="9_guard_spawn"]
 [ext_resource type="Script" uid="uid://ck27vjswqmbtn" path="res://game/environment/intruder_spawn.gd" id="10_intruder_spawn"]
+[ext_resource type="Script" uid="uid://m1dpyh5we8w5" path="res://game/environment/facility_region.gd" id="11_region"]
+[ext_resource type="PackedScene" path="res://game/power/generator.tscn" id="12_generator"]
+[ext_resource type="Script" uid="uid://nshrcs0f36ea" path="res://game/pickups/ammo_location.gd" id="99_ammo_location"]
 [ext_resource type="Script" uid="uid://cwn71j7krn0x6" path="res://game/environment/facility_room_rect.gd" id="rect_script"]
 
 [node name="FacilityMap" type="Node2D" unique_id=577932594]
@@ -20,6 +22,7 @@ script = ExtResource("1_map")
 script = ExtResource("3_j40us")
 display_name = "Main Corridor"
 kind = 0
+region = &"core"
 
 [node name="Rect1" type="Control" parent="Rooms/ring" unique_id=1508108703]
 custom_minimum_size = Vector2(11, 11)
@@ -91,6 +94,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_j40us")
 display_name = "Archive"
 kind = 2
+region = &"west"
 
 [node name="Rect1" type="Control" parent="Rooms/archive" unique_id=2120113852]
 custom_minimum_size = Vector2(11, 11)
@@ -108,6 +112,7 @@ script = ExtResource("3_j40us")
 display_name = "Camera Room"
 kind = 1
 function = 1
+region = &"central"
 
 [node name="Rect1" type="Control" parent="Rooms/camera_room" unique_id=1591137089]
 custom_minimum_size = Vector2(11, 11)
@@ -125,6 +130,7 @@ script = ExtResource("3_j40us")
 display_name = "Door Control"
 kind = 1
 function = 2
+region = &"central"
 
 [node name="Rect1" type="Control" parent="Rooms/door_control" unique_id=371796709]
 custom_minimum_size = Vector2(11, 11)
@@ -142,6 +148,7 @@ script = ExtResource("3_j40us")
 display_name = "Lighting Control"
 kind = 1
 function = 3
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/light_control" unique_id=1826064285]
 custom_minimum_size = Vector2(11, 11)
@@ -158,6 +165,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_j40us")
 display_name = "Vault"
 kind = 2
+region = &"west"
 
 [node name="Rect1" type="Control" parent="Rooms/vault" unique_id=282003298]
 custom_minimum_size = Vector2(11, 11)
@@ -175,6 +183,7 @@ script = ExtResource("3_j40us")
 display_name = "Generator Room"
 kind = 1
 function = 4
+region = &"central"
 
 [node name="Rect1" type="Control" parent="Rooms/generator" unique_id=495621153]
 custom_minimum_size = Vector2(11, 11)
@@ -192,6 +201,7 @@ script = ExtResource("3_j40us")
 display_name = "Turret Control"
 kind = 1
 function = 5
+region = &"central"
 
 [node name="Rect1" type="Control" parent="Rooms/turret_control" unique_id=1155765433]
 custom_minimum_size = Vector2(11, 11)
@@ -209,6 +219,7 @@ script = ExtResource("3_j40us")
 display_name = "Breaker Room"
 kind = 1
 function = 6
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/breaker" unique_id=2015428858]
 custom_minimum_size = Vector2(11, 11)
@@ -224,6 +235,7 @@ script = ExtResource("rect_script")
 [node name="break_room" type="Node2D" parent="Rooms" unique_id=1239246593]
 script = ExtResource("3_j40us")
 display_name = "Break Room"
+region = &"west"
 
 [node name="Rect1" type="Control" parent="Rooms/break_room" unique_id=27031147]
 custom_minimum_size = Vector2(11, 11)
@@ -240,6 +252,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_j40us")
 display_name = "Locker Room"
 kind = 2
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/locker_room" unique_id=689737789]
 custom_minimum_size = Vector2(11, 11)
@@ -255,6 +268,7 @@ script = ExtResource("rect_script")
 [node name="office" type="Node2D" parent="Rooms" unique_id=1968478608]
 script = ExtResource("3_j40us")
 display_name = "Offices"
+region = &"west"
 
 [node name="Rect1" type="Control" parent="Rooms/office" unique_id=1469891176]
 custom_minimum_size = Vector2(11, 11)
@@ -271,6 +285,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_j40us")
 display_name = "Records"
 kind = 2
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/records" unique_id=1076099747]
 custom_minimum_size = Vector2(11, 11)
@@ -287,6 +302,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_j40us")
 display_name = "Roof Stairwell"
 kind = 4
+region = &"core"
 
 [node name="Rect1" type="Control" parent="Rooms/stairwell" unique_id=89890363]
 custom_minimum_size = Vector2(11, 11)
@@ -303,6 +319,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_j40us")
 display_name = "Loading Dock"
 kind = 4
+region = &"core"
 
 [node name="Rect1" type="Control" parent="Rooms/loading_dock" unique_id=1348128560]
 custom_minimum_size = Vector2(11, 11)
@@ -319,6 +336,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_j40us")
 display_name = "Maintenance Bay"
 kind = 4
+region = &"west"
 
 [node name="Rect1" type="Control" parent="Rooms/maintenance_bay" unique_id=1247418114]
 custom_minimum_size = Vector2(11, 11)
@@ -335,6 +353,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_j40us")
 display_name = "Cafeteria"
 kind = 4
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/cafeteria" unique_id=1723465624]
 custom_minimum_size = Vector2(11, 11)
@@ -351,6 +370,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_j40us")
 display_name = "Roof"
 kind = 5
+region = &"core"
 
 [node name="Rect1" type="Control" parent="Rooms/pad_north" unique_id=1670751982]
 custom_minimum_size = Vector2(11, 11)
@@ -367,6 +387,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_j40us")
 display_name = "Loading Yard"
 kind = 5
+region = &"core"
 
 [node name="Rect1" type="Control" parent="Rooms/pad_south" unique_id=2034367262]
 custom_minimum_size = Vector2(11, 11)
@@ -383,6 +404,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_j40us")
 display_name = "Car Park"
 kind = 5
+region = &"west"
 
 [node name="Rect1" type="Control" parent="Rooms/pad_west" unique_id=1563883957]
 custom_minimum_size = Vector2(11, 11)
@@ -399,6 +421,7 @@ script = ExtResource("rect_script")
 script = ExtResource("3_j40us")
 display_name = "Smoking Area"
 kind = 5
+region = &"east"
 
 [node name="Rect1" type="Control" parent="Rooms/pad_east" unique_id=1794148233]
 custom_minimum_size = Vector2(11, 11)
@@ -474,6 +497,60 @@ offset_right = 1925.0
 offset_bottom = 660.0
 mouse_filter = 2
 script = ExtResource("rect_script")
+
+[node name="Regions" type="Node2D" parent="." unique_id=696984332]
+
+[node name="west" type="Control" parent="Regions" unique_id=693531128]
+custom_minimum_size = Vector2(220, 44)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 215.0
+offset_top = 1029.0
+offset_right = 435.0
+offset_bottom = 1073.0
+mouse_filter = 2
+script = ExtResource("11_region")
+display_name = "West Wing"
+colour = Color(0.43529412, 0.827451, 0.9098039, 1)
+
+[node name="core" type="Control" parent="Regions" unique_id=116411067]
+custom_minimum_size = Vector2(220, 44)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 765.0
+offset_top = 325.0
+offset_right = 985.0
+offset_bottom = 369.0
+mouse_filter = 2
+script = ExtResource("11_region")
+display_name = "Core"
+colour = Color(0.3349341, 0.8596059, 0.738121, 1)
+
+[node name="east" type="Control" parent="Regions" unique_id=1855467662]
+custom_minimum_size = Vector2(220, 44)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1315.0
+offset_top = 1029.0
+offset_right = 1535.0
+offset_bottom = 1073.0
+mouse_filter = 2
+script = ExtResource("11_region")
+display_name = "East Wing"
+colour = Color(0.7882353, 0.627451, 1, 1)
+
+[node name="central" type="Control" parent="Regions" unique_id=900413835]
+custom_minimum_size = Vector2(220, 44)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 699.0
+offset_top = 699.0
+offset_right = 919.0
+offset_bottom = 743.0
+mouse_filter = 2
+script = ExtResource("11_region")
+display_name = "Central"
+colour = Color(0.5100472, 0.3297935, 1, 1)
 
 [node name="Doors" type="Node2D" parent="." unique_id=1364101371]
 z_index = 1
@@ -612,32 +689,32 @@ position = Vector2(638, 1122)
 [node name="ArtifactLocations" type="Node2D" parent="." unique_id=1567761743]
 
 [node name="ArchiveArtifact" type="Marker2D" parent="ArtifactLocations" unique_id=663769036]
-position = Vector2(478, 511)
+position = Vector2(613, 442)
 script = ExtResource("7_artifact_location")
 
 [node name="VaultArtifact" type="Marker2D" parent="ArtifactLocations" unique_id=2082862683]
-position = Vector2(478, 720)
+position = Vector2(603, 781)
 script = ExtResource("7_artifact_location")
 
 [node name="RecordsArtifact" type="Marker2D" parent="ArtifactLocations" unique_id=1904601438]
-position = Vector2(1424, 1050)
+position = Vector2(1206, 982)
 script = ExtResource("7_artifact_location")
 
-[node name="AmmoLocations" type="Node2D" parent="."]
+[node name="AmmoLocations" type="Node2D" parent="." unique_id=340847836]
 
-[node name="BreakRoomAmmo" type="Marker2D" parent="AmmoLocations"]
+[node name="BreakRoomAmmo" type="Marker2D" parent="AmmoLocations" unique_id=2134789392]
 position = Vector2(400, 240)
 script = ExtResource("99_ammo_location")
 
-[node name="LockerRoomAmmo" type="Marker2D" parent="AmmoLocations"]
+[node name="LockerRoomAmmo" type="Marker2D" parent="AmmoLocations" unique_id=614678470]
 position = Vector2(1560, 250)
 script = ExtResource("99_ammo_location")
 
-[node name="MaintenanceBayAmmo" type="Marker2D" parent="AmmoLocations"]
+[node name="MaintenanceBayAmmo" type="Marker2D" parent="AmmoLocations" unique_id=511536043]
 position = Vector2(115, 740)
 script = ExtResource("99_ammo_location")
 
-[node name="OfficeAmmo" type="Marker2D" parent="AmmoLocations"]
+[node name="OfficeAmmo" type="Marker2D" parent="AmmoLocations" unique_id=468931024]
 position = Vector2(500, 1100)
 script = ExtResource("99_ammo_location")
 
@@ -672,7 +749,7 @@ position = Vector2(-16, 588)
 script = ExtResource("10_intruder_spawn")
 
 [node name="IntruderSpawnEast" type="Marker2D" parent="Spawns" unique_id=1212601899]
-position = Vector2(1765, 588)
+position = Vector2(1766, 586)
 script = ExtResource("10_intruder_spawn")
 
 [node name="Props" type="Node2D" parent="." unique_id=818355929]
@@ -680,6 +757,18 @@ y_sort_enabled = true
 
 [node name="DoorControlPanel" parent="Props" unique_id=219723147 instance=ExtResource("6_ieksj")]
 position = Vector2(997, 429)
+
+[node name="WestGenerator" parent="Props" unique_id=1241425255 instance=ExtResource("12_generator")]
+position = Vector2(115, 520)
+
+[node name="EastGenerator" parent="Props" unique_id=1526736273 instance=ExtResource("12_generator")]
+position = Vector2(1633, 520)
+
+[node name="MainGenerator" parent="Props" unique_id=2109122632 instance=ExtResource("12_generator")]
+position = Vector2(760, 700)
+
+[node name="MainGenerator2" parent="Props" unique_id=1017306230 instance=ExtResource("12_generator")]
+position = Vector2(866, 698)
 
 [node name="Actors" type="Node2D" parent="." unique_id=286938923]
 y_sort_enabled = true
