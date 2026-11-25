@@ -84,7 +84,7 @@ func _choose_map(option : MapOption) -> void:
 		chosen.name = &"FacilityMap"
 		level_node.add_child(chosen)
 		level_node.move_child(chosen, current.get_index())
-		for node_name : String in ["FacilityControl", "UtilityConsoles", "Sound"]:
+		for node_name : String in ["FacilityControl", "UtilityConsoles", "Sound", "PowerGrid", "RoomLights"]:
 			level_node.get_node(node_name).facility = chosen
 		current.free()
 	level_node.spawn_room = option.spawn_room

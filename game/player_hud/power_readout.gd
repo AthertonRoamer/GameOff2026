@@ -39,7 +39,7 @@ static func shows_power_to(who : Node) -> bool:
 
 
 func _process(delta : float) -> void:
-	visible = grid != null and shows_power_to(player)
+	visible = is_instance_valid(grid) and is_instance_valid(grid.facility) and grid.facility.is_inside_tree() and shows_power_to(player) and player.is_inside_tree()
 	if not visible:
 		return
 	_since += delta
@@ -53,7 +53,7 @@ func _process(delta : float) -> void:
 
 
 func _draw() -> void:
-	if grid == null or _region == "?":
+	if not is_instance_valid(grid) or not is_instance_valid(grid.facility) or _region == "?":
 		return
 	var map : FacilityMap = grid.facility
 	var free : float = grid.available(_region)
