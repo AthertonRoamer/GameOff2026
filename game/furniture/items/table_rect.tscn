@@ -1,0 +1,11 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://game/furniture/furniture.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://game/furniture/art/table_rect.png" id="2_art"]
+
+[node name="TableRect" type="StaticBody2D"]
+script = ExtResource("1_script")
+display_name = "Table"
+texture = ExtResource("2_art")
+footprint_size = Vector2(70.50, 35.25)
+height = 0.75

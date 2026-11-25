@@ -1,0 +1,11 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://game/furniture/furniture.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://game/furniture/art/rack_single_e.png" id="2_art"]
+
+[node name="RackSingleE" type="StaticBody2D"]
+script = ExtResource("1_script")
+display_name = "Racking (1 bay) (faces E)"
+texture = ExtResource("2_art")
+footprint_size = Vector2(26.75, 49.50)
+height = 2.3

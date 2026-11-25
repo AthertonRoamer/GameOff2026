@@ -1,5 +1,57 @@
 [gd_scene format=3 uid="uid://bq6ro63p8oq1b"]
 
+[ext_resource type="PackedScene" path="res://game/furniture/items/barrel_navy.tscn" id="furn_barrel_navy"]
+[ext_resource type="PackedScene" path="res://game/furniture/items/barrel_olive.tscn" id="furn_barrel_olive"]
+[ext_resource type="PackedScene" path="res://game/furniture/items/barrel_rust.tscn" id="furn_barrel_rust"]
+[ext_resource type="PackedScene" path="res://game/furniture/items/bench_e.tscn" id="furn_bench_e"]
+[ext_resource type="PackedScene" path="res://game/furniture/items/bench_n.tscn" id="furn_bench_n"]
+[ext_resource type="PackedScene" path="res://game/furniture/items/bench_s.tscn" id="furn_bench_s"]
+[ext_resource type="PackedScene" path="res://game/furniture/items/bin.tscn" id="furn_bin"]
+[ext_resource type="PackedScene" path="res://game/furniture/items/box_cardboard.tscn" id="furn_box_cardboard"]
+[ext_resource type="PackedScene" path="res://game/furniture/items/box_stack.tscn" id="furn_box_stack"]
+[ext_resource type="PackedScene" path="res://game/furniture/items/chair_office_n.tscn" id="furn_chair_office_n"]
+[ext_resource type="PackedScene" path="res://game/furniture/items/chair_plain_e.tscn" id="furn_chair_plain_e"]
+[ext_resource type="PackedScene" path="res://game/furniture/items/chair_plain_n.tscn" id="furn_chair_plain_n"]
+[ext_resource type="PackedScene" path="res://game/furniture/items/chair_plain_s.tscn" id="furn_chair_plain_s"]
+[ext_resource type="PackedScene" path="res://game/furniture/items/chair_plain_w.tscn" id="furn_chair_plain_w"]
+[ext_resource type="PackedScene" path="res://game/furniture/items/chest_steel.tscn" id="furn_chest_steel"]
+[ext_resource type="PackedScene" path="res://game/furniture/items/couch_e.tscn" id="furn_couch_e"]
+[ext_resource type="PackedScene" path="res://game/furniture/items/couch_n.tscn" id="furn_couch_n"]
+[ext_resource type="PackedScene" path="res://game/furniture/items/counter_sink_s.tscn" id="furn_counter_sink_s"]
+[ext_resource type="PackedScene" path="res://game/furniture/items/crate_wood.tscn" id="furn_crate_wood"]
+[ext_resource type="PackedScene" path="res://game/furniture/items/desk_monitors_s.tscn" id="furn_desk_monitors_s"]
+[ext_resource type="PackedScene" path="res://game/furniture/items/desk_s.tscn" id="furn_desk_s"]
+[ext_resource type="PackedScene" path="res://game/furniture/items/drum_plastic.tscn" id="furn_drum_plastic"]
+[ext_resource type="PackedScene" path="res://game/furniture/items/electrical_cabinet_e.tscn" id="furn_electrical_cabinet_e"]
+[ext_resource type="PackedScene" path="res://game/furniture/items/electrical_cabinet_n.tscn" id="furn_electrical_cabinet_n"]
+[ext_resource type="PackedScene" path="res://game/furniture/items/electrical_cabinet_w.tscn" id="furn_electrical_cabinet_w"]
+[ext_resource type="PackedScene" path="res://game/furniture/items/filing_cabinet_e.tscn" id="furn_filing_cabinet_e"]
+[ext_resource type="PackedScene" path="res://game/furniture/items/filing_cabinet_s.tscn" id="furn_filing_cabinet_s"]
+[ext_resource type="PackedScene" path="res://game/furniture/items/fridge_n.tscn" id="furn_fridge_n"]
+[ext_resource type="PackedScene" path="res://game/furniture/items/fridge_s.tscn" id="furn_fridge_s"]
+[ext_resource type="PackedScene" path="res://game/furniture/items/gas_bottle_olive.tscn" id="furn_gas_bottle_olive"]
+[ext_resource type="PackedScene" path="res://game/furniture/items/gas_bottle_steel.tscn" id="furn_gas_bottle_steel"]
+[ext_resource type="PackedScene" path="res://game/furniture/items/generator_s.tscn" id="furn_generator_s"]
+[ext_resource type="PackedScene" path="res://game/furniture/items/locker_bank_s.tscn" id="furn_locker_bank_s"]
+[ext_resource type="PackedScene" path="res://game/furniture/items/pallet.tscn" id="furn_pallet"]
+[ext_resource type="PackedScene" path="res://game/furniture/items/pallet_jack_e.tscn" id="furn_pallet_jack_e"]
+[ext_resource type="PackedScene" path="res://game/furniture/items/plant.tscn" id="furn_plant"]
+[ext_resource type="PackedScene" path="res://game/furniture/items/rack_double_n.tscn" id="furn_rack_double_n"]
+[ext_resource type="PackedScene" path="res://game/furniture/items/rack_double_s.tscn" id="furn_rack_double_s"]
+[ext_resource type="PackedScene" path="res://game/furniture/items/rack_single_n.tscn" id="furn_rack_single_n"]
+[ext_resource type="PackedScene" path="res://game/furniture/items/rack_single_s.tscn" id="furn_rack_single_s"]
+[ext_resource type="PackedScene" path="res://game/furniture/items/rack_single_w.tscn" id="furn_rack_single_w"]
+[ext_resource type="PackedScene" path="res://game/furniture/items/safe_n.tscn" id="furn_safe_n"]
+[ext_resource type="PackedScene" path="res://game/furniture/items/safe_w.tscn" id="furn_safe_w"]
+[ext_resource type="PackedScene" path="res://game/furniture/items/table_rect.tscn" id="furn_table_rect"]
+[ext_resource type="PackedScene" path="res://game/furniture/items/table_round.tscn" id="furn_table_round"]
+[ext_resource type="PackedScene" path="res://game/furniture/items/tote_black.tscn" id="furn_tote_black"]
+[ext_resource type="PackedScene" path="res://game/furniture/items/tyre.tscn" id="furn_tyre"]
+[ext_resource type="PackedScene" path="res://game/furniture/items/vending_n.tscn" id="furn_vending_n"]
+[ext_resource type="PackedScene" path="res://game/furniture/items/vending_s.tscn" id="furn_vending_s"]
+[ext_resource type="PackedScene" path="res://game/furniture/items/workbench_e.tscn" id="furn_workbench_e"]
+[ext_resource type="PackedScene" path="res://game/furniture/items/workbench_n.tscn" id="furn_workbench_n"]
+[ext_resource type="PackedScene" path="res://game/furniture/items/workbench_w.tscn" id="furn_workbench_w"]
 [ext_resource type="Script" uid="uid://cbd2ruuswtvvn" path="res://game/environment/facility_map.gd" id="1_map"]
 [ext_resource type="Script" uid="uid://dc3o76s1verd5" path="res://game/environment/facility_room.gd" id="3_j40us"]
 [ext_resource type="PackedScene" path="res://game/environment/facility_door.tscn" id="4_yd85k"]
@@ -758,6 +810,521 @@ y_sort_enabled = true
 [node name="DoorControlPanel" parent="Props" unique_id=219723147 instance=ExtResource("6_ieksj")]
 position = Vector2(997, 429)
 
+[node name="Furnishing" type="Node2D" parent="Props"]
+
+[node name="Archive" type="Node2D" parent="Props/Furnishing"]
+
+[node name="RackDouble1" parent="Props/Furnishing/Archive" instance=ExtResource("furn_rack_double_s")]
+position = Vector2(380, 420.38)
+
+[node name="RackSingle1" parent="Props/Furnishing/Archive" instance=ExtResource("furn_rack_single_s")]
+position = Vector2(580, 420.38)
+
+[node name="RackDouble2" parent="Props/Furnishing/Archive" instance=ExtResource("furn_rack_double_n")]
+position = Vector2(380, 602.62)
+
+[node name="RackSingle2" parent="Props/Furnishing/Archive" instance=ExtResource("furn_rack_single_n")]
+position = Vector2(580, 602.62)
+
+[node name="BoxCardboard1" parent="Props/Furnishing/Archive" instance=ExtResource("furn_box_cardboard")]
+position = Vector2(341.5, 490.5)
+
+[node name="BoxStack1" parent="Props/Furnishing/Archive" instance=ExtResource("furn_box_stack")]
+position = Vector2(338.0, 542.62)
+
+[node name="CrateWood1" parent="Props/Furnishing/Archive" instance=ExtResource("furn_crate_wood")]
+position = Vector2(609.62, 505.12)
+
+[node name="CameraRoom" type="Node2D" parent="Props/Furnishing"]
+
+[node name="DeskMonitors1" parent="Props/Furnishing/CameraRoom" instance=ExtResource("furn_desk_monitors_s")]
+position = Vector2(705, 423.5)
+
+[node name="ChairOffice1" parent="Props/Furnishing/CameraRoom" instance=ExtResource("furn_chair_office_n")]
+position = Vector2(705, 458)
+
+[node name="FilingCabinet1" parent="Props/Furnishing/CameraRoom" instance=ExtResource("furn_filing_cabinet_e")]
+position = Vector2(662.25, 520)
+
+[node name="FilingCabinet2" parent="Props/Furnishing/CameraRoom" instance=ExtResource("furn_filing_cabinet_e")]
+position = Vector2(662.25, 546)
+
+[node name="ElectricalCabinet1" parent="Props/Furnishing/CameraRoom" instance=ExtResource("furn_electrical_cabinet_n")]
+position = Vector2(700, 607.25)
+
+[node name="Bin1" parent="Props/Furnishing/CameraRoom" instance=ExtResource("furn_bin")]
+position = Vector2(915.12, 590)
+
+[node name="Plant1" parent="Props/Furnishing/CameraRoom" instance=ExtResource("furn_plant")]
+position = Vector2(905.62, 427.12)
+
+[node name="DoorControl" type="Node2D" parent="Props/Furnishing"]
+
+[node name="ElectricalCabinet1" parent="Props/Furnishing/DoorControl" instance=ExtResource("furn_electrical_cabinet_w")]
+position = Vector2(1157.25, 520)
+
+[node name="Bench1" parent="Props/Furnishing/DoorControl" instance=ExtResource("furn_bench_n")]
+position = Vector2(985, 607.25)
+
+[node name="Plant1" parent="Props/Furnishing/DoorControl" instance=ExtResource("furn_plant")]
+position = Vector2(1147.62, 597.62)
+
+[node name="FilingCabinet1" parent="Props/Furnishing/DoorControl" instance=ExtResource("furn_filing_cabinet_s")]
+position = Vector2(1140, 420.25)
+
+[node name="LightControl" type="Node2D" parent="Props/Furnishing"]
+
+[node name="Desk1" parent="Props/Furnishing/LightControl" instance=ExtResource("furn_desk_s")]
+position = Vector2(1230, 423.5)
+
+[node name="ChairOffice1" parent="Props/Furnishing/LightControl" instance=ExtResource("furn_chair_office_n")]
+position = Vector2(1230, 458)
+
+[node name="ElectricalCabinet1" parent="Props/Furnishing/LightControl" instance=ExtResource("furn_electrical_cabinet_w")]
+position = Vector2(1421.25, 505)
+
+[node name="ElectricalCabinet2" parent="Props/Furnishing/LightControl" instance=ExtResource("furn_electrical_cabinet_w")]
+position = Vector2(1421.25, 550)
+
+[node name="FilingCabinet1" parent="Props/Furnishing/LightControl" instance=ExtResource("furn_filing_cabinet_e")]
+position = Vector2(1190.25, 560)
+
+[node name="Bin1" parent="Props/Furnishing/LightControl" instance=ExtResource("furn_bin")]
+position = Vector2(1215, 607.12)
+
+[node name="Vault" type="Node2D" parent="Props/Furnishing"]
+
+[node name="Safe1" parent="Props/Furnishing/Vault" instance=ExtResource("furn_safe_n")]
+position = Vector2(430, 798.62)
+
+[node name="Safe2" parent="Props/Furnishing/Vault" instance=ExtResource("furn_safe_n")]
+position = Vector2(580, 798.62)
+
+[node name="Safe3" parent="Props/Furnishing/Vault" instance=ExtResource("furn_safe_w")]
+position = Vector2(622.62, 700)
+
+[node name="ChestSteel1" parent="Props/Furnishing/Vault" instance=ExtResource("furn_chest_steel")]
+position = Vector2(590, 638.62)
+
+[node name="ChestSteel2" parent="Props/Furnishing/Vault" instance=ExtResource("furn_chest_steel")]
+position = Vector2(336.0, 660)
+
+[node name="Pallet1" parent="Props/Furnishing/Vault" instance=ExtResource("furn_pallet")]
+position = Vector2(560.12, 741.62)
+
+[node name="CrateWood1" parent="Props/Furnishing/Vault" instance=ExtResource("furn_crate_wood")]
+position = Vector2(560, 740)
+
+[node name="Generator" type="Node2D" parent="Props/Furnishing"]
+
+[node name="Generator1" parent="Props/Furnishing/Generator" instance=ExtResource("furn_generator_s")]
+position = Vector2(866, 651.25)
+
+[node name="Generator2" parent="Props/Furnishing/Generator" instance=ExtResource("furn_generator_s")]
+position = Vector2(934, 651.25)
+
+[node name="BarrelOlive1" parent="Props/Furnishing/Generator" instance=ExtResource("furn_barrel_olive")]
+position = Vector2(669.62, 647.62)
+
+[node name="BarrelNavy1" parent="Props/Furnishing/Generator" instance=ExtResource("furn_barrel_navy")]
+position = Vector2(669.62, 686.12)
+
+[node name="DrumPlastic1" parent="Props/Furnishing/Generator" instance=ExtResource("furn_drum_plastic")]
+position = Vector2(702.62, 669.62)
+
+[node name="GasBottleSteel1" parent="Props/Furnishing/Generator" instance=ExtResource("furn_gas_bottle_steel")]
+position = Vector2(669.62, 724.62)
+
+[node name="GasBottleOlive1" parent="Props/Furnishing/Generator" instance=ExtResource("furn_gas_bottle_olive")]
+position = Vector2(691.62, 724.62)
+
+[node name="ToteBlack1" parent="Props/Furnishing/Generator" instance=ExtResource("furn_tote_black")]
+position = Vector2(948.0, 730)
+
+[node name="Workbench1" parent="Props/Furnishing/Generator" instance=ExtResource("furn_workbench_n")]
+position = Vector2(905, 798.62)
+
+[node name="TurretControl" type="Node2D" parent="Props/Furnishing"]
+
+[node name="DeskMonitors1" parent="Props/Furnishing/TurretControl" instance=ExtResource("furn_desk_monitors_s")]
+position = Vector2(1158, 643.5)
+
+[node name="ChairOffice1" parent="Props/Furnishing/TurretControl" instance=ExtResource("furn_chair_office_n")]
+position = Vector2(1158, 674)
+
+[node name="FilingCabinet1" parent="Props/Furnishing/TurretControl" instance=ExtResource("furn_filing_cabinet_e")]
+position = Vector2(992.25, 700)
+
+[node name="FilingCabinet2" parent="Props/Furnishing/TurretControl" instance=ExtResource("furn_filing_cabinet_e")]
+position = Vector2(992.25, 726)
+
+[node name="ElectricalCabinet1" parent="Props/Furnishing/TurretControl" instance=ExtResource("furn_electrical_cabinet_w")]
+position = Vector2(1201.25, 740)
+
+[node name="Bin1" parent="Props/Furnishing/TurretControl" instance=ExtResource("furn_bin")]
+position = Vector2(1180, 805.12)
+
+[node name="Breaker" type="Node2D" parent="Props/Furnishing"]
+
+[node name="ElectricalCabinet1" parent="Props/Furnishing/Breaker" instance=ExtResource("furn_electrical_cabinet_e")]
+position = Vector2(1229.75, 665)
+
+[node name="ElectricalCabinet2" parent="Props/Furnishing/Breaker" instance=ExtResource("furn_electrical_cabinet_e")]
+position = Vector2(1229.75, 710)
+
+[node name="ElectricalCabinet3" parent="Props/Furnishing/Breaker" instance=ExtResource("furn_electrical_cabinet_e")]
+position = Vector2(1229.75, 755)
+
+[node name="Workbench1" parent="Props/Furnishing/Breaker" instance=ExtResource("furn_workbench_w")]
+position = Vector2(1414.62, 690)
+
+[node name="ToteBlack1" parent="Props/Furnishing/Breaker" instance=ExtResource("furn_tote_black")]
+position = Vector2(1262, 641.0)
+
+[node name="ChestSteel1" parent="Props/Furnishing/Breaker" instance=ExtResource("furn_chest_steel")]
+position = Vector2(1413.0, 750)
+
+[node name="BreakRoom" type="Node2D" parent="Props/Furnishing"]
+
+[node name="CounterSink1" parent="Props/Furnishing/BreakRoom" instance=ExtResource("furn_counter_sink_s")]
+position = Vector2(159.62, 68.25)
+
+[node name="Fridge1" parent="Props/Furnishing/BreakRoom" instance=ExtResource("furn_fridge_s")]
+position = Vector2(216.88, 71.5)
+
+[node name="Vending1" parent="Props/Furnishing/BreakRoom" instance=ExtResource("furn_vending_s")]
+position = Vector2(254.25, 72.62)
+
+[node name="Couch1" parent="Props/Furnishing/BreakRoom" instance=ExtResource("furn_couch_e")]
+position = Vector2(72.0, 200)
+
+[node name="TableRound1" parent="Props/Furnishing/BreakRoom" instance=ExtResource("furn_table_round")]
+position = Vector2(377.5, 135.5)
+
+[node name="ChairPlain1" parent="Props/Furnishing/BreakRoom" instance=ExtResource("furn_chair_plain_n")]
+position = Vector2(377.5, 164.35)
+
+[node name="ChairPlain2" parent="Props/Furnishing/BreakRoom" instance=ExtResource("furn_chair_plain_s")]
+position = Vector2(377.5, 106.65)
+
+[node name="ChairPlain3" parent="Props/Furnishing/BreakRoom" instance=ExtResource("furn_chair_plain_e")]
+position = Vector2(348.65, 135.5)
+
+[node name="ChairPlain4" parent="Props/Furnishing/BreakRoom" instance=ExtResource("furn_chair_plain_w")]
+position = Vector2(406.35, 135.5)
+
+[node name="TableRect1" parent="Props/Furnishing/BreakRoom" instance=ExtResource("furn_table_rect")]
+position = Vector2(172.75, 232.12)
+
+[node name="ChairPlain5" parent="Props/Furnishing/BreakRoom" instance=ExtResource("furn_chair_plain_n")]
+position = Vector2(172.75, 258.6)
+
+[node name="Bin1" parent="Props/Furnishing/BreakRoom" instance=ExtResource("furn_bin")]
+position = Vector2(440, 277.12)
+
+[node name="Plant1" parent="Props/Furnishing/BreakRoom" instance=ExtResource("furn_plant")]
+position = Vector2(443.62, 80.62)
+
+[node name="LockerRoom" type="Node2D" parent="Props/Furnishing"]
+
+[node name="LockerBank1" parent="Props/Furnishing/LockerRoom" instance=ExtResource("furn_locker_bank_s")]
+position = Vector2(1314.0, 133.38)
+
+[node name="LockerBank2" parent="Props/Furnishing/LockerRoom" instance=ExtResource("furn_locker_bank_s")]
+position = Vector2(1362.0, 133.38)
+
+[node name="LockerBank3" parent="Props/Furnishing/LockerRoom" instance=ExtResource("furn_locker_bank_s")]
+position = Vector2(1410.0, 133.38)
+
+[node name="LockerBank4" parent="Props/Furnishing/LockerRoom" instance=ExtResource("furn_locker_bank_s")]
+position = Vector2(1458.0, 133.38)
+
+[node name="LockerBank5" parent="Props/Furnishing/LockerRoom" instance=ExtResource("furn_locker_bank_s")]
+position = Vector2(1506.0, 133.38)
+
+[node name="LockerBank6" parent="Props/Furnishing/LockerRoom" instance=ExtResource("furn_locker_bank_s")]
+position = Vector2(1554.0, 133.38)
+
+[node name="Bench1" parent="Props/Furnishing/LockerRoom" instance=ExtResource("furn_bench_n")]
+position = Vector2(1344.5, 206.75)
+
+[node name="Bench2" parent="Props/Furnishing/LockerRoom" instance=ExtResource("furn_bench_n")]
+position = Vector2(1564.5, 190.25)
+
+[node name="Bin1" parent="Props/Furnishing/LockerRoom" instance=ExtResource("furn_bin")]
+position = Vector2(1305, 277.12)
+
+[node name="Plant1" parent="Props/Furnishing/LockerRoom" instance=ExtResource("furn_plant")]
+position = Vector2(1598.62, 267.62)
+
+[node name="Office" type="Node2D" parent="Props/Furnishing"]
+
+[node name="Desk1" parent="Props/Furnishing/Office" instance=ExtResource("furn_desk_s")]
+position = Vector2(110, 951.5)
+
+[node name="ChairOffice1" parent="Props/Furnishing/Office" instance=ExtResource("furn_chair_office_n")]
+position = Vector2(110, 982)
+
+[node name="Desk2" parent="Props/Furnishing/Office" instance=ExtResource("furn_desk_s")]
+position = Vector2(186, 951.5)
+
+[node name="ChairOffice2" parent="Props/Furnishing/Office" instance=ExtResource("furn_chair_office_n")]
+position = Vector2(186, 982)
+
+[node name="Desk3" parent="Props/Furnishing/Office" instance=ExtResource("furn_desk_s")]
+position = Vector2(422, 951.5)
+
+[node name="ChairOffice3" parent="Props/Furnishing/Office" instance=ExtResource("furn_chair_office_n")]
+position = Vector2(422, 982)
+
+[node name="Desk4" parent="Props/Furnishing/Office" instance=ExtResource("furn_desk_s")]
+position = Vector2(498, 951.5)
+
+[node name="ChairOffice4" parent="Props/Furnishing/Office" instance=ExtResource("furn_chair_office_n")]
+position = Vector2(498, 982)
+
+[node name="FilingCabinet1" parent="Props/Furnishing/Office" instance=ExtResource("furn_filing_cabinet_e")]
+position = Vector2(68.25, 1021.25)
+
+[node name="FilingCabinet2" parent="Props/Furnishing/Office" instance=ExtResource("furn_filing_cabinet_e")]
+position = Vector2(68.25, 1043.75)
+
+[node name="FilingCabinet3" parent="Props/Furnishing/Office" instance=ExtResource("furn_filing_cabinet_e")]
+position = Vector2(68.25, 1066.25)
+
+[node name="TableRect1" parent="Props/Furnishing/Office" instance=ExtResource("furn_table_rect")]
+position = Vector2(469.75, 1035.12)
+
+[node name="ChairPlain1" parent="Props/Furnishing/Office" instance=ExtResource("furn_chair_plain_n")]
+position = Vector2(469.75, 1061.59)
+
+[node name="ChairPlain2" parent="Props/Furnishing/Office" instance=ExtResource("furn_chair_plain_s")]
+position = Vector2(469.75, 1008.64)
+
+[node name="Couch1" parent="Props/Furnishing/Office" instance=ExtResource("furn_couch_n")]
+position = Vector2(215, 1149.0)
+
+[node name="Bin1" parent="Props/Furnishing/Office" instance=ExtResource("furn_bin")]
+position = Vector2(330, 1157.12)
+
+[node name="Plant1" parent="Props/Furnishing/Office" instance=ExtResource("furn_plant")]
+position = Vector2(575.62, 1147.62)
+
+[node name="Records" type="Node2D" parent="Props/Furnishing"]
+
+[node name="FilingCabinet1" parent="Props/Furnishing/Records" instance=ExtResource("furn_filing_cabinet_s")]
+position = Vector2(1178.25, 948.25)
+
+[node name="FilingCabinet2" parent="Props/Furnishing/Records" instance=ExtResource("furn_filing_cabinet_s")]
+position = Vector2(1200.75, 948.25)
+
+[node name="FilingCabinet3" parent="Props/Furnishing/Records" instance=ExtResource("furn_filing_cabinet_s")]
+position = Vector2(1223.25, 948.25)
+
+[node name="FilingCabinet4" parent="Props/Furnishing/Records" instance=ExtResource("furn_filing_cabinet_s")]
+position = Vector2(1443.25, 948.25)
+
+[node name="FilingCabinet5" parent="Props/Furnishing/Records" instance=ExtResource("furn_filing_cabinet_s")]
+position = Vector2(1465.75, 948.25)
+
+[node name="FilingCabinet6" parent="Props/Furnishing/Records" instance=ExtResource("furn_filing_cabinet_s")]
+position = Vector2(1488.25, 948.25)
+
+[node name="FilingCabinet7" parent="Props/Furnishing/Records" instance=ExtResource("furn_filing_cabinet_s")]
+position = Vector2(1510.75, 948.25)
+
+[node name="RackDouble1" parent="Props/Furnishing/Records" instance=ExtResource("furn_rack_double_n")]
+position = Vector2(1240, 1152.62)
+
+[node name="RackDouble2" parent="Props/Furnishing/Records" instance=ExtResource("furn_rack_double_n")]
+position = Vector2(1400, 1152.62)
+
+[node name="RackSingle1" parent="Props/Furnishing/Records" instance=ExtResource("furn_rack_single_n")]
+position = Vector2(1540, 1152.62)
+
+[node name="TableRect1" parent="Props/Furnishing/Records" instance=ExtResource("furn_table_rect")]
+position = Vector2(1278.25, 1040.62)
+
+[node name="ChairPlain1" parent="Props/Furnishing/Records" instance=ExtResource("furn_chair_plain_n")]
+position = Vector2(1278.25, 1067.09)
+
+[node name="ChairPlain2" parent="Props/Furnishing/Records" instance=ExtResource("furn_chair_plain_s")]
+position = Vector2(1278.25, 1014.14)
+
+[node name="Bin1" parent="Props/Furnishing/Records" instance=ExtResource("furn_bin")]
+position = Vector2(1685.12, 1010)
+
+[node name="BoxStack1" parent="Props/Furnishing/Records" instance=ExtResource("furn_box_stack")]
+position = Vector2(1608.5, 999.12)
+
+[node name="Stairwell" type="Node2D" parent="Props/Furnishing"]
+
+[node name="CrateWood1" parent="Props/Furnishing/Stairwell" instance=ExtResource("furn_crate_wood")]
+position = Vector2(736.12, 263.12)
+
+[node name="BoxStack1" parent="Props/Furnishing/Stairwell" instance=ExtResource("furn_box_stack")]
+position = Vector2(1009.0, 262.12)
+
+[node name="BarrelNavy1" parent="Props/Furnishing/Stairwell" instance=ExtResource("furn_barrel_navy")]
+position = Vector2(1010.62, 97.62)
+
+[node name="Bench1" parent="Props/Furnishing/Stairwell" instance=ExtResource("furn_bench_e")]
+position = Vector2(723.75, 195)
+
+[node name="Bin1" parent="Props/Furnishing/Stairwell" instance=ExtResource("furn_bin")]
+position = Vector2(784.38, 261.88)
+
+[node name="LoadingDock" type="Node2D" parent="Props/Furnishing"]
+
+[node name="Pallet1" parent="Props/Furnishing/LoadingDock" instance=ExtResource("furn_pallet")]
+position = Vector2(692.12, 1022.12)
+
+[node name="CrateWood1" parent="Props/Furnishing/LoadingDock" instance=ExtResource("furn_crate_wood")]
+position = Vector2(690, 1020)
+
+[node name="Pallet2" parent="Props/Furnishing/LoadingDock" instance=ExtResource("furn_pallet")]
+position = Vector2(752.62, 1022.12)
+
+[node name="BoxStack1" parent="Props/Furnishing/LoadingDock" instance=ExtResource("furn_box_stack")]
+position = Vector2(752, 1022)
+
+[node name="Pallet3" parent="Props/Furnishing/LoadingDock" instance=ExtResource("furn_pallet")]
+position = Vector2(1049.62, 1022.12)
+
+[node name="BoxCardboard1" parent="Props/Furnishing/LoadingDock" instance=ExtResource("furn_box_cardboard")]
+position = Vector2(1040.0, 1013.0)
+
+[node name="BoxCardboard2" parent="Props/Furnishing/LoadingDock" instance=ExtResource("furn_box_cardboard")]
+position = Vector2(1067.5, 1040.5)
+
+[node name="PalletJack1" parent="Props/Furnishing/LoadingDock" instance=ExtResource("furn_pallet_jack_e")]
+position = Vector2(932.0, 1121.38)
+
+[node name="BarrelRust1" parent="Props/Furnishing/LoadingDock" instance=ExtResource("furn_barrel_rust")]
+position = Vector2(1126.12, 961.12)
+
+[node name="BarrelOlive1" parent="Props/Furnishing/LoadingDock" instance=ExtResource("furn_barrel_olive")]
+position = Vector2(1126.12, 994.12)
+
+[node name="Tyre1" parent="Props/Furnishing/LoadingDock" instance=ExtResource("furn_tyre")]
+position = Vector2(625.62, 999.62)
+
+[node name="Tyre2" parent="Props/Furnishing/LoadingDock" instance=ExtResource("furn_tyre")]
+position = Vector2(625.62, 1032.62)
+
+[node name="RackDouble1" parent="Props/Furnishing/LoadingDock" instance=ExtResource("furn_rack_double_s")]
+position = Vector2(1000, 948.38)
+
+[node name="MaintenanceBay" type="Node2D" parent="Props/Furnishing"]
+
+[node name="Workbench1" parent="Props/Furnishing/MaintenanceBay" instance=ExtResource("furn_workbench_e")]
+position = Vector2(48.38, 500)
+
+[node name="GasBottleSteel1" parent="Props/Furnishing/MaintenanceBay" instance=ExtResource("furn_gas_bottle_steel")]
+position = Vector2(64.62, 444.12)
+
+[node name="GasBottleOlive1" parent="Props/Furnishing/MaintenanceBay" instance=ExtResource("furn_gas_bottle_olive")]
+position = Vector2(86.62, 444.12)
+
+[node name="Tyre1" parent="Props/Furnishing/MaintenanceBay" instance=ExtResource("furn_tyre")]
+position = Vector2(169.12, 471.62)
+
+[node name="Tyre2" parent="Props/Furnishing/MaintenanceBay" instance=ExtResource("furn_tyre")]
+position = Vector2(169.12, 504.62)
+
+[node name="BarrelOlive1" parent="Props/Furnishing/MaintenanceBay" instance=ExtResource("furn_barrel_olive")]
+position = Vector2(59.12, 691.62)
+
+[node name="BarrelRust1" parent="Props/Furnishing/MaintenanceBay" instance=ExtResource("furn_barrel_rust")]
+position = Vector2(92.12, 691.62)
+
+[node name="RackSingle1" parent="Props/Furnishing/MaintenanceBay" instance=ExtResource("furn_rack_single_w")]
+position = Vector2(184.62, 730)
+
+[node name="ChestSteel1" parent="Props/Furnishing/MaintenanceBay" instance=ExtResource("furn_chest_steel")]
+position = Vector2(50.0, 760)
+
+[node name="ToteBlack1" parent="Props/Furnishing/MaintenanceBay" instance=ExtResource("furn_tote_black")]
+position = Vector2(119.0, 652.0)
+
+[node name="Cafeteria" type="Node2D" parent="Props/Furnishing"]
+
+[node name="CounterSink1" parent="Props/Furnishing/Cafeteria" instance=ExtResource("furn_counter_sink_s")]
+position = Vector2(1634, 442.25)
+
+[node name="Vending1" parent="Props/Furnishing/Cafeteria" instance=ExtResource("furn_vending_n")]
+position = Vector2(1590, 774.38)
+
+[node name="Fridge1" parent="Props/Furnishing/Cafeteria" instance=ExtResource("furn_fridge_n")]
+position = Vector2(1660, 775.5)
+
+[node name="TableRound1" parent="Props/Furnishing/Cafeteria" instance=ExtResource("furn_table_round")]
+position = Vector2(1593.0, 520.5)
+
+[node name="ChairPlain1" parent="Props/Furnishing/Cafeteria" instance=ExtResource("furn_chair_plain_n")]
+position = Vector2(1593.0, 549.35)
+
+[node name="ChairPlain2" parent="Props/Furnishing/Cafeteria" instance=ExtResource("furn_chair_plain_s")]
+position = Vector2(1593.0, 491.65)
+
+[node name="TableRound2" parent="Props/Furnishing/Cafeteria" instance=ExtResource("furn_table_round")]
+position = Vector2(1670.0, 520.5)
+
+[node name="ChairPlain3" parent="Props/Furnishing/Cafeteria" instance=ExtResource("furn_chair_plain_n")]
+position = Vector2(1670.0, 549.35)
+
+[node name="ChairPlain4" parent="Props/Furnishing/Cafeteria" instance=ExtResource("furn_chair_plain_s")]
+position = Vector2(1670.0, 491.65)
+
+[node name="TableRound3" parent="Props/Furnishing/Cafeteria" instance=ExtResource("furn_table_round")]
+position = Vector2(1593.0, 680.0)
+
+[node name="ChairPlain5" parent="Props/Furnishing/Cafeteria" instance=ExtResource("furn_chair_plain_n")]
+position = Vector2(1593.0, 708.85)
+
+[node name="ChairPlain6" parent="Props/Furnishing/Cafeteria" instance=ExtResource("furn_chair_plain_s")]
+position = Vector2(1593.0, 651.15)
+
+[node name="TableRound4" parent="Props/Furnishing/Cafeteria" instance=ExtResource("furn_table_round")]
+position = Vector2(1670.0, 680.0)
+
+[node name="ChairPlain7" parent="Props/Furnishing/Cafeteria" instance=ExtResource("furn_chair_plain_n")]
+position = Vector2(1670.0, 708.85)
+
+[node name="ChairPlain8" parent="Props/Furnishing/Cafeteria" instance=ExtResource("furn_chair_plain_s")]
+position = Vector2(1670.0, 651.15)
+
+[node name="Plant1" parent="Props/Furnishing/Cafeteria" instance=ExtResource("furn_plant")]
+position = Vector2(1697.62, 443.62)
+
+[node name="Bin1" parent="Props/Furnishing/Cafeteria" instance=ExtResource("furn_bin")]
+position = Vector2(1707.12, 700)
+
+[node name="Corridor" type="Node2D" parent="Props/Furnishing"]
+
+[node name="Bench1" parent="Props/Furnishing/Corridor" instance=ExtResource("furn_bench_s")]
+position = Vector2(600, 305.75)
+
+[node name="Bench2" parent="Props/Furnishing/Corridor" instance=ExtResource("furn_bench_n")]
+position = Vector2(1170, 387.25)
+
+[node name="Bin1" parent="Props/Furnishing/Corridor" instance=ExtResource("furn_bin")]
+position = Vector2(400, 387.12)
+
+[node name="Bin2" parent="Props/Furnishing/Corridor" instance=ExtResource("furn_bin")]
+position = Vector2(1250, 833.88)
+
+[node name="Plant1" parent="Props/Furnishing/Corridor" instance=ExtResource("furn_plant")]
+position = Vector2(223.62, 311.62)
+
+[node name="Plant2" parent="Props/Furnishing/Corridor" instance=ExtResource("furn_plant")]
+position = Vector2(1527.12, 311.62)
+
+[node name="Plant3" parent="Props/Furnishing/Corridor" instance=ExtResource("furn_plant")]
+position = Vector2(223.62, 905.62)
+
+[node name="Plant4" parent="Props/Furnishing/Corridor" instance=ExtResource("furn_plant")]
+position = Vector2(1527.12, 905.62)
 [node name="WestGenerator" parent="Props" unique_id=1241425255 instance=ExtResource("12_generator")]
 position = Vector2(115, 520)
 

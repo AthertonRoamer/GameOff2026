@@ -54,18 +54,51 @@ var view_lag : int: #ticks this player sees the others behind the lobby: half th
 	set(value): buttons = (buttons & ~(63 << LAG_SHIFT)) | (clampi(value, 0, 63) << LAG_SHIFT)
 
 
+## The key presses (not the held keys) since the last tick. A press is a moment, and the game draws more frames than it runs ticks, so asking Input "was it just pressed"
+## when a tick gathers misses the presses that fall between ticks (R, F and the slot keys sometimes did nothing). They are noted as they happen and handed over by the tick.
+var _pressed : Dictionary = {} #action -> how many times it was pressed
+var _slot_pressed : int = -1
+var _scroll : int = 0
+
+
+func _input(event : InputEvent) -> void:
+	if not active or not event.is_pressed() or event.is_echo():
+		return
+	for action : StringName in [&"player_holster", &"player_reload", &"player_flashlight"]:
+		if event.is_action(action):
+			_pressed[action] = _pressed.get(action, 0) + 1
+	for i in 4:
+		if event.is_action("inventory_slot_%d" % (i + 1)):
+			_slot_pressed = i
+	if event.is_action("inventory_scroll_up"):
+		_scroll = -1
+	elif event.is_action("inventory_scroll_down"):
+		_scroll = 1
+
+
+func _took_press(action : StringName) -> int:
+	var count : int = _pressed.get(action, 0)
+	_pressed[action] = 0
+	return count
+
+
 func _gather() -> void:
 	movement = Input.get_vector("player_left", "player_right", "player_up", "player_down") if active else Vector2.ZERO
 	aim = (get_parent() as Node2D).get_global_mouse_position() if active else aim
 	use_item = active and Input.is_action_pressed("player_use_active_item")
 	run = active and Input.is_action_pressed("player_run")
-	holster = active and Input.is_action_just_pressed("player_holster")
-	reload = active and Input.is_action_just_pressed("player_reload")
-	slot_select = _gather_slot_select() if active else -1
-	slot_delta = _gather_slot_delta() if active else 0
+	var holsters : int = _took_press(&"player_holster")
+	var reloads : int = _took_press(&"player_reload")
+	var flashlights : int = _took_press(&"player_flashlight")
+	holster = active and holsters > 0
+	reload = active and reloads > 0
+	slot_select = _slot_pressed if active else -1
+	slot_delta = _scroll if active else 0
+	_slot_pressed = -1
+	_scroll = 0
 	interacting = at_console
 	view_lag = ceili(NetworkTime.remote_rtt * 0.5 * NetworkTime.tickrate) + NetworkRollback.display_offset
-	if active and Input.is_action_just_pressed("player_flashlight"):
+	if active and flashlights % 2 == 1:
 		flashlight_on = not flashlight_on
 
 
@@ -73,16 +106,3 @@ func _set_flag(flag : int, value : bool) -> void:
 	buttons = (buttons | flag) if value else (buttons & ~flag)
 
 
-func _gather_slot_select() -> int:
-	for i in range(4):
-		if Input.is_action_just_pressed("inventory_slot_%d" % (i + 1)):
-			return i
-	return -1
-
-
-func _gather_slot_delta() -> int:
-	if Input.is_action_just_pressed("inventory_scroll_up"):
-		return -1
-	if Input.is_action_just_pressed("inventory_scroll_down"):
-		return 1
-	return 0

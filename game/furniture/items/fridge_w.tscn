@@ -1,0 +1,11 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://game/furniture/furniture.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://game/furniture/art/fridge_w.png" id="2_art"]
+
+[node name="FridgeW" type="StaticBody2D"]
+script = ExtResource("1_script")
+display_name = "Fridge (faces W)"
+texture = ExtResource("2_art")
+footprint_size = Vector2(33.00, 35.25)
+height = 1.7

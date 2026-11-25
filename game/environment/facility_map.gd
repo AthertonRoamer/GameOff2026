@@ -221,8 +221,31 @@ func room_center_px(room_id : String) -> Vector2:
 	return rects[0].get_center()
 
 
-##A random point on the floor of the facility, inside a room (not outdoors), in world pixels. Rooms count by their size, so every part of the floor is as likely as any other.
+##A random point on the floor of the facility, inside a room (not outdoors), in world pixels, with room for a player to stand (not in a piece of furniture). Rooms count by
+##their size, so every part of the floor is as likely as any other.
 func random_floor_point() -> Vector2:
+	var point : Vector2 = _random_room_point()
+	for attempt in 24:
+		if is_clear(point):
+			return point
+		point = _random_room_point()
+	return point
+
+
+##Whether a player (a circle of this radius, in world pixels) fits at a point of the map: nothing solid (walls, furniture, shut doors) within reach.
+func is_clear(point : Vector2, radius : float = 14.0) -> bool:
+	if not is_inside_tree():
+		return true
+	var shape : CircleShape2D = CircleShape2D.new()
+	shape.radius = radius
+	var query : PhysicsShapeQueryParameters2D = PhysicsShapeQueryParameters2D.new()
+	query.shape = shape
+	query.transform = Transform2D(0.0, to_global(point))
+	query.collision_mask = FacilityTileSet.WORLD_LAYER | FacilityTileSet.DOOR_LAYER
+	return get_world_2d().direct_space_state.intersect_shape(query, 1).is_empty()
+
+
+func _random_room_point() -> Vector2:
 	var rects : Array[Rect2i] = []
 	var cells : int = 0
 	for id : String in rooms:

@@ -1,0 +1,11 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://game/furniture/furniture.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://game/furniture/art/desk_monitors_e.png" id="2_art"]
+
+[node name="DeskMonitorsE" type="StaticBody2D"]
+script = ExtResource("1_script")
+display_name = "Desk with three monitors (faces E)"
+texture = ExtResource("2_art")
+footprint_size = Vector2(33.00, 88.00)
+height = 0.75

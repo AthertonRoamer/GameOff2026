@@ -1,0 +1,1135 @@
+{
+ "barrel_navy": {
+  "base": "barrel_navy",
+  "kind": "circle",
+  "solid": true,
+  "w": 30.25,
+  "h": 30.25,
+  "art": [
+   123,
+   123
+  ]
+ },
+ "barrel_olive": {
+  "base": "barrel_olive",
+  "kind": "circle",
+  "solid": true,
+  "w": 30.25,
+  "h": 30.25,
+  "art": [
+   123,
+   123
+  ]
+ },
+ "barrel_rust": {
+  "base": "barrel_rust",
+  "kind": "circle",
+  "solid": true,
+  "w": 30.25,
+  "h": 30.25,
+  "art": [
+   123,
+   123
+  ]
+ },
+ "drum_plastic": {
+  "base": "drum_plastic",
+  "kind": "circle",
+  "solid": true,
+  "w": 30.25,
+  "h": 30.25,
+  "art": [
+   123,
+   123
+  ]
+ },
+ "keg": {
+  "base": "keg",
+  "kind": "circle",
+  "solid": true,
+  "w": 26.0,
+  "h": 26.0,
+  "art": [
+   107,
+   106
+  ]
+ },
+ "tyre": {
+  "base": "tyre",
+  "kind": "circle",
+  "solid": true,
+  "w": 30.25,
+  "h": 30.25,
+  "art": [
+   123,
+   123
+  ]
+ },
+ "gas_bottle_olive": {
+  "base": "gas_bottle_olive",
+  "kind": "circle",
+  "solid": true,
+  "w": 19.25,
+  "h": 19.25,
+  "art": [
+   79,
+   79
+  ]
+ },
+ "gas_bottle_steel": {
+  "base": "gas_bottle_steel",
+  "kind": "circle",
+  "solid": true,
+  "w": 19.25,
+  "h": 19.25,
+  "art": [
+   79,
+   79
+  ]
+ },
+ "tote_black": {
+  "base": "tote_black",
+  "kind": "rect",
+  "solid": true,
+  "w": 40.0,
+  "h": 28.0,
+  "art": [
+   162,
+   114
+  ]
+ },
+ "chest_steel": {
+  "base": "chest_steel",
+  "kind": "rect",
+  "solid": true,
+  "w": 34.0,
+  "h": 23.25,
+  "art": [
+   138,
+   95
+  ]
+ },
+ "crate_wood": {
+  "base": "crate_wood",
+  "kind": "rect",
+  "solid": true,
+  "w": 42.25,
+  "h": 42.25,
+  "art": [
+   171,
+   171
+  ]
+ },
+ "box_cardboard": {
+  "base": "box_cardboard",
+  "kind": "rect",
+  "solid": true,
+  "w": 34.0,
+  "h": 24.0,
+  "art": [
+   138,
+   98
+  ]
+ },
+ "box_stack": {
+  "base": "box_stack",
+  "kind": "rect",
+  "solid": true,
+  "w": 38.0,
+  "h": 29.25,
+  "art": [
+   154,
+   119
+  ]
+ },
+ "pallet": {
+  "base": "pallet",
+  "kind": "none",
+  "solid": false,
+  "w": 42.25,
+  "h": 42.25,
+  "art": [
+   171,
+   171
+  ]
+ },
+ "pallet_jack_n": {
+  "base": "pallet_jack",
+  "kind": "none",
+  "solid": false,
+  "w": 64.75,
+  "h": 27.0,
+  "art": [
+   261,
+   110
+  ]
+ },
+ "pallet_jack_e": {
+  "base": "pallet_jack",
+  "kind": "none",
+  "solid": false,
+  "w": 27.0,
+  "h": 64.75,
+  "art": [
+   110,
+   261
+  ]
+ },
+ "pallet_jack_s": {
+  "base": "pallet_jack",
+  "kind": "none",
+  "solid": false,
+  "w": 64.75,
+  "h": 27.0,
+  "art": [
+   261,
+   110
+  ]
+ },
+ "pallet_jack_w": {
+  "base": "pallet_jack",
+  "kind": "none",
+  "solid": false,
+  "w": 27.0,
+  "h": 64.75,
+  "art": [
+   110,
+   261
+  ]
+ },
+ "rack_double_n": {
+  "base": "rack_double",
+  "kind": "rect",
+  "solid": true,
+  "w": 95.5,
+  "h": 26.75,
+  "art": [
+   384,
+   109
+  ]
+ },
+ "rack_double_e": {
+  "base": "rack_double",
+  "kind": "rect",
+  "solid": true,
+  "w": 26.75,
+  "h": 95.5,
+  "art": [
+   109,
+   384
+  ]
+ },
+ "rack_double_s": {
+  "base": "rack_double",
+  "kind": "rect",
+  "solid": true,
+  "w": 95.5,
+  "h": 26.75,
+  "art": [
+   384,
+   109
+  ]
+ },
+ "rack_double_w": {
+  "base": "rack_double",
+  "kind": "rect",
+  "solid": true,
+  "w": 26.75,
+  "h": 95.5,
+  "art": [
+   109,
+   384
+  ]
+ },
+ "rack_single_n": {
+  "base": "rack_single",
+  "kind": "rect",
+  "solid": true,
+  "w": 49.5,
+  "h": 26.75,
+  "art": [
+   200,
+   109
+  ]
+ },
+ "rack_single_e": {
+  "base": "rack_single",
+  "kind": "rect",
+  "solid": true,
+  "w": 26.75,
+  "h": 49.5,
+  "art": [
+   109,
+   200
+  ]
+ },
+ "rack_single_s": {
+  "base": "rack_single",
+  "kind": "rect",
+  "solid": true,
+  "w": 49.5,
+  "h": 26.75,
+  "art": [
+   200,
+   109
+  ]
+ },
+ "rack_single_w": {
+  "base": "rack_single",
+  "kind": "rect",
+  "solid": true,
+  "w": 26.75,
+  "h": 49.5,
+  "art": [
+   109,
+   200
+  ]
+ },
+ "desk_n": {
+  "base": "desk",
+  "kind": "rect",
+  "solid": true,
+  "w": 66.0,
+  "h": 33.0,
+  "art": [
+   266,
+   134
+  ]
+ },
+ "desk_e": {
+  "base": "desk",
+  "kind": "rect",
+  "solid": true,
+  "w": 33.0,
+  "h": 66.0,
+  "art": [
+   134,
+   266
+  ]
+ },
+ "desk_s": {
+  "base": "desk",
+  "kind": "rect",
+  "solid": true,
+  "w": 66.0,
+  "h": 33.0,
+  "art": [
+   266,
+   134
+  ]
+ },
+ "desk_w": {
+  "base": "desk",
+  "kind": "rect",
+  "solid": true,
+  "w": 33.0,
+  "h": 66.0,
+  "art": [
+   134,
+   266
+  ]
+ },
+ "desk_monitors_n": {
+  "base": "desk_monitors",
+  "kind": "rect",
+  "solid": true,
+  "w": 88.0,
+  "h": 33.0,
+  "art": [
+   354,
+   134
+  ]
+ },
+ "desk_monitors_e": {
+  "base": "desk_monitors",
+  "kind": "rect",
+  "solid": true,
+  "w": 33.0,
+  "h": 88.0,
+  "art": [
+   134,
+   354
+  ]
+ },
+ "desk_monitors_s": {
+  "base": "desk_monitors",
+  "kind": "rect",
+  "solid": true,
+  "w": 88.0,
+  "h": 33.0,
+  "art": [
+   354,
+   134
+  ]
+ },
+ "desk_monitors_w": {
+  "base": "desk_monitors",
+  "kind": "rect",
+  "solid": true,
+  "w": 33.0,
+  "h": 88.0,
+  "art": [
+   134,
+   354
+  ]
+ },
+ "chair_office_n": {
+  "base": "chair_office",
+  "kind": "circle",
+  "solid": true,
+  "w": 20.25,
+  "h": 20.25,
+  "art": [
+   85,
+   83
+  ]
+ },
+ "chair_office_e": {
+  "base": "chair_office",
+  "kind": "circle",
+  "solid": true,
+  "w": 20.25,
+  "h": 20.25,
+  "art": [
+   83,
+   85
+  ]
+ },
+ "chair_office_s": {
+  "base": "chair_office",
+  "kind": "circle",
+  "solid": true,
+  "w": 20.25,
+  "h": 20.25,
+  "art": [
+   85,
+   83
+  ]
+ },
+ "chair_office_w": {
+  "base": "chair_office",
+  "kind": "circle",
+  "solid": true,
+  "w": 20.25,
+  "h": 20.25,
+  "art": [
+   83,
+   85
+  ]
+ },
+ "chair_plain_n": {
+  "base": "chair_plain",
+  "kind": "rect",
+  "solid": true,
+  "w": 16.0,
+  "h": 16.5,
+  "art": [
+   66,
+   68
+  ]
+ },
+ "chair_plain_e": {
+  "base": "chair_plain",
+  "kind": "rect",
+  "solid": true,
+  "w": 16.5,
+  "h": 16.0,
+  "art": [
+   68,
+   66
+  ]
+ },
+ "chair_plain_s": {
+  "base": "chair_plain",
+  "kind": "rect",
+  "solid": true,
+  "w": 16.0,
+  "h": 16.5,
+  "art": [
+   66,
+   68
+  ]
+ },
+ "chair_plain_w": {
+  "base": "chair_plain",
+  "kind": "rect",
+  "solid": true,
+  "w": 16.5,
+  "h": 16.0,
+  "art": [
+   68,
+   66
+  ]
+ },
+ "table_rect": {
+  "base": "table_rect",
+  "kind": "rect",
+  "solid": true,
+  "w": 70.5,
+  "h": 35.25,
+  "art": [
+   284,
+   143
+  ]
+ },
+ "table_round": {
+  "base": "table_round",
+  "kind": "circle",
+  "solid": true,
+  "w": 40.0,
+  "h": 40.0,
+  "art": [
+   162,
+   162
+  ]
+ },
+ "couch_n": {
+  "base": "couch",
+  "kind": "rect",
+  "solid": true,
+  "w": 79.25,
+  "h": 34.0,
+  "art": [
+   319,
+   138
+  ]
+ },
+ "couch_e": {
+  "base": "couch",
+  "kind": "rect",
+  "solid": true,
+  "w": 34.0,
+  "h": 79.25,
+  "art": [
+   138,
+   319
+  ]
+ },
+ "couch_s": {
+  "base": "couch",
+  "kind": "rect",
+  "solid": true,
+  "w": 79.25,
+  "h": 34.0,
+  "art": [
+   319,
+   138
+  ]
+ },
+ "couch_w": {
+  "base": "couch",
+  "kind": "rect",
+  "solid": true,
+  "w": 34.0,
+  "h": 79.25,
+  "art": [
+   138,
+   319
+  ]
+ },
+ "locker_bank_n": {
+  "base": "locker_bank",
+  "kind": "rect",
+  "solid": true,
+  "w": 48.0,
+  "h": 24.75,
+  "art": [
+   194,
+   101
+  ]
+ },
+ "locker_bank_e": {
+  "base": "locker_bank",
+  "kind": "rect",
+  "solid": true,
+  "w": 24.75,
+  "h": 48.0,
+  "art": [
+   101,
+   194
+  ]
+ },
+ "locker_bank_s": {
+  "base": "locker_bank",
+  "kind": "rect",
+  "solid": true,
+  "w": 48.0,
+  "h": 24.75,
+  "art": [
+   194,
+   101
+  ]
+ },
+ "locker_bank_w": {
+  "base": "locker_bank",
+  "kind": "rect",
+  "solid": true,
+  "w": 24.75,
+  "h": 48.0,
+  "art": [
+   101,
+   194
+  ]
+ },
+ "vending_n": {
+  "base": "vending",
+  "kind": "rect",
+  "solid": true,
+  "w": 39.5,
+  "h": 35.25,
+  "art": [
+   160,
+   143
+  ]
+ },
+ "vending_e": {
+  "base": "vending",
+  "kind": "rect",
+  "solid": true,
+  "w": 35.25,
+  "h": 39.5,
+  "art": [
+   143,
+   160
+  ]
+ },
+ "vending_s": {
+  "base": "vending",
+  "kind": "rect",
+  "solid": true,
+  "w": 39.5,
+  "h": 35.25,
+  "art": [
+   160,
+   143
+  ]
+ },
+ "vending_w": {
+  "base": "vending",
+  "kind": "rect",
+  "solid": true,
+  "w": 35.25,
+  "h": 39.5,
+  "art": [
+   143,
+   160
+  ]
+ },
+ "fridge_n": {
+  "base": "fridge",
+  "kind": "rect",
+  "solid": true,
+  "w": 35.25,
+  "h": 33.0,
+  "art": [
+   143,
+   134
+  ]
+ },
+ "fridge_e": {
+  "base": "fridge",
+  "kind": "rect",
+  "solid": true,
+  "w": 33.0,
+  "h": 35.25,
+  "art": [
+   134,
+   143
+  ]
+ },
+ "fridge_s": {
+  "base": "fridge",
+  "kind": "rect",
+  "solid": true,
+  "w": 35.25,
+  "h": 33.0,
+  "art": [
+   143,
+   134
+  ]
+ },
+ "fridge_w": {
+  "base": "fridge",
+  "kind": "rect",
+  "solid": true,
+  "w": 33.0,
+  "h": 35.25,
+  "art": [
+   134,
+   143
+  ]
+ },
+ "filing_cabinet_n": {
+  "base": "filing_cabinet",
+  "kind": "rect",
+  "solid": true,
+  "w": 22.5,
+  "h": 26.5,
+  "art": [
+   92,
+   108
+  ]
+ },
+ "filing_cabinet_e": {
+  "base": "filing_cabinet",
+  "kind": "rect",
+  "solid": true,
+  "w": 26.5,
+  "h": 22.5,
+  "art": [
+   108,
+   92
+  ]
+ },
+ "filing_cabinet_s": {
+  "base": "filing_cabinet",
+  "kind": "rect",
+  "solid": true,
+  "w": 22.5,
+  "h": 26.5,
+  "art": [
+   92,
+   108
+  ]
+ },
+ "filing_cabinet_w": {
+  "base": "filing_cabinet",
+  "kind": "rect",
+  "solid": true,
+  "w": 26.5,
+  "h": 22.5,
+  "art": [
+   108,
+   92
+  ]
+ },
+ "electrical_cabinet_n": {
+  "base": "electrical_cabinet",
+  "kind": "rect",
+  "solid": true,
+  "w": 39.5,
+  "h": 17.5,
+  "art": [
+   160,
+   72
+  ]
+ },
+ "electrical_cabinet_e": {
+  "base": "electrical_cabinet",
+  "kind": "rect",
+  "solid": true,
+  "w": 17.5,
+  "h": 39.5,
+  "art": [
+   72,
+   160
+  ]
+ },
+ "electrical_cabinet_s": {
+  "base": "electrical_cabinet",
+  "kind": "rect",
+  "solid": true,
+  "w": 39.5,
+  "h": 17.5,
+  "art": [
+   160,
+   72
+  ]
+ },
+ "electrical_cabinet_w": {
+  "base": "electrical_cabinet",
+  "kind": "rect",
+  "solid": true,
+  "w": 17.5,
+  "h": 39.5,
+  "art": [
+   72,
+   160
+  ]
+ },
+ "workbench_n": {
+  "base": "workbench",
+  "kind": "rect",
+  "solid": true,
+  "w": 70.5,
+  "h": 30.75,
+  "art": [
+   284,
+   125
+  ]
+ },
+ "workbench_e": {
+  "base": "workbench",
+  "kind": "rect",
+  "solid": true,
+  "w": 30.75,
+  "h": 70.5,
+  "art": [
+   125,
+   284
+  ]
+ },
+ "workbench_s": {
+  "base": "workbench",
+  "kind": "rect",
+  "solid": true,
+  "w": 70.5,
+  "h": 30.75,
+  "art": [
+   284,
+   125
+  ]
+ },
+ "workbench_w": {
+  "base": "workbench",
+  "kind": "rect",
+  "solid": true,
+  "w": 30.75,
+  "h": 70.5,
+  "art": [
+   125,
+   284
+  ]
+ },
+ "bench_n": {
+  "base": "bench",
+  "kind": "rect",
+  "solid": true,
+  "w": 60.0,
+  "h": 17.5,
+  "art": [
+   242,
+   72
+  ]
+ },
+ "bench_e": {
+  "base": "bench",
+  "kind": "rect",
+  "solid": true,
+  "w": 17.5,
+  "h": 60.0,
+  "art": [
+   72,
+   242
+  ]
+ },
+ "bench_s": {
+  "base": "bench",
+  "kind": "rect",
+  "solid": true,
+  "w": 60.0,
+  "h": 17.5,
+  "art": [
+   242,
+   72
+  ]
+ },
+ "bench_w": {
+  "base": "bench",
+  "kind": "rect",
+  "solid": true,
+  "w": 17.5,
+  "h": 60.0,
+  "art": [
+   72,
+   242
+  ]
+ },
+ "bin": {
+  "base": "bin",
+  "kind": "circle",
+  "solid": true,
+  "w": 17.75,
+  "h": 17.75,
+  "art": [
+   73,
+   73
+  ]
+ },
+ "plant": {
+  "base": "plant",
+  "kind": "circle",
+  "solid": true,
+  "w": 18.25,
+  "h": 18.25,
+  "art": [
+   76,
+   75
+  ]
+ },
+ "generator_n": {
+  "base": "generator",
+  "kind": "rect",
+  "solid": true,
+  "w": 66.0,
+  "h": 48.5,
+  "art": [
+   266,
+   196
+  ]
+ },
+ "generator_e": {
+  "base": "generator",
+  "kind": "rect",
+  "solid": true,
+  "w": 48.5,
+  "h": 66.0,
+  "art": [
+   196,
+   266
+  ]
+ },
+ "generator_s": {
+  "base": "generator",
+  "kind": "rect",
+  "solid": true,
+  "w": 66.0,
+  "h": 48.5,
+  "art": [
+   266,
+   196
+  ]
+ },
+ "generator_w": {
+  "base": "generator",
+  "kind": "rect",
+  "solid": true,
+  "w": 48.5,
+  "h": 66.0,
+  "art": [
+   196,
+   266
+  ]
+ },
+ "safe_n": {
+  "base": "safe",
+  "kind": "rect",
+  "solid": true,
+  "w": 30.75,
+  "h": 30.75,
+  "art": [
+   125,
+   125
+  ]
+ },
+ "safe_e": {
+  "base": "safe",
+  "kind": "rect",
+  "solid": true,
+  "w": 30.75,
+  "h": 30.75,
+  "art": [
+   125,
+   125
+  ]
+ },
+ "safe_s": {
+  "base": "safe",
+  "kind": "rect",
+  "solid": true,
+  "w": 30.75,
+  "h": 30.75,
+  "art": [
+   125,
+   125
+  ]
+ },
+ "safe_w": {
+  "base": "safe",
+  "kind": "rect",
+  "solid": true,
+  "w": 30.75,
+  "h": 30.75,
+  "art": [
+   125,
+   125
+  ]
+ },
+ "counter_n": {
+  "base": "counter",
+  "kind": "rect",
+  "solid": true,
+  "w": 79.25,
+  "h": 26.5,
+  "art": [
+   319,
+   108
+  ]
+ },
+ "counter_e": {
+  "base": "counter",
+  "kind": "rect",
+  "solid": true,
+  "w": 26.5,
+  "h": 79.25,
+  "art": [
+   108,
+   319
+  ]
+ },
+ "counter_s": {
+  "base": "counter",
+  "kind": "rect",
+  "solid": true,
+  "w": 79.25,
+  "h": 26.5,
+  "art": [
+   319,
+   108
+  ]
+ },
+ "counter_w": {
+  "base": "counter",
+  "kind": "rect",
+  "solid": true,
+  "w": 26.5,
+  "h": 79.25,
+  "art": [
+   108,
+   319
+  ]
+ },
+ "counter_sink_n": {
+  "base": "counter_sink",
+  "kind": "rect",
+  "solid": true,
+  "w": 79.25,
+  "h": 26.5,
+  "art": [
+   319,
+   108
+  ]
+ },
+ "counter_sink_e": {
+  "base": "counter_sink",
+  "kind": "rect",
+  "solid": true,
+  "w": 26.5,
+  "h": 79.25,
+  "art": [
+   108,
+   319
+  ]
+ },
+ "counter_sink_s": {
+  "base": "counter_sink",
+  "kind": "rect",
+  "solid": true,
+  "w": 79.25,
+  "h": 26.5,
+  "art": [
+   319,
+   108
+  ]
+ },
+ "counter_sink_w": {
+  "base": "counter_sink",
+  "kind": "rect",
+  "solid": true,
+  "w": 26.5,
+  "h": 79.25,
+  "art": [
+   108,
+   319
+  ]
+ },
+ "bed_n": {
+  "base": "bed",
+  "kind": "rect",
+  "solid": true,
+  "w": 39.5,
+  "h": 88.0,
+  "art": [
+   160,
+   354
+  ]
+ },
+ "bed_e": {
+  "base": "bed",
+  "kind": "rect",
+  "solid": true,
+  "w": 88.0,
+  "h": 39.5,
+  "art": [
+   354,
+   160
+  ]
+ },
+ "bed_s": {
+  "base": "bed",
+  "kind": "rect",
+  "solid": true,
+  "w": 39.5,
+  "h": 88.0,
+  "art": [
+   160,
+   354
+  ]
+ },
+ "bed_w": {
+  "base": "bed",
+  "kind": "rect",
+  "solid": true,
+  "w": 88.0,
+  "h": 39.5,
+  "art": [
+   354,
+   160
+  ]
+ },
+ "server_rack_n": {
+  "base": "server_rack",
+  "kind": "rect",
+  "solid": true,
+  "w": 26.5,
+  "h": 44.0,
+  "art": [
+   108,
+   178
+  ]
+ },
+ "server_rack_e": {
+  "base": "server_rack",
+  "kind": "rect",
+  "solid": true,
+  "w": 44.0,
+  "h": 26.5,
+  "art": [
+   178,
+   108
+  ]
+ },
+ "server_rack_s": {
+  "base": "server_rack",
+  "kind": "rect",
+  "solid": true,
+  "w": 26.5,
+  "h": 44.0,
+  "art": [
+   108,
+   178
+  ]
+ },
+ "server_rack_w": {
+  "base": "server_rack",
+  "kind": "rect",
+  "solid": true,
+  "w": 44.0,
+  "h": 26.5,
+  "art": [
+   178,
+   108
+  ]
+ },
+ "table_conference": {
+  "base": "table_conference",
+  "kind": "rect",
+  "solid": true,
+  "w": 132.0,
+  "h": 52.75,
+  "art": [
+   530,
+   213
+  ]
+ }
+}
