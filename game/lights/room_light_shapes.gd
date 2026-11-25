@@ -106,7 +106,7 @@ func source_count() -> int:
 
 
 func is_source_on(source : int) -> bool:
-	return control != null and control.is_light_on(facility.light_sources[source]["light"])
+	return is_instance_valid(control) and is_instance_valid(facility) and control.is_light_on(facility.light_sources[source]["light"])
 
 
 ## The rectangle a source can light at most: its room rectangle and the spill round it, in world pixels.
@@ -116,7 +116,7 @@ func reach_rect(source : int) -> Rect2:
 
 ## The polygons a source lights (world pixels). Worked out when first asked for and after a nearby door changed.
 func polygons(source : int) -> Array:
-	if source < 0 or source >= _stale_since.size():
+	if source < 0 or source >= _stale_since.size() or not is_instance_valid(facility):
 		return []
 	if _stale_since[source] >= 0 and Engine.get_physics_frames() >= _stale_since[source] + SETTLE_PHYSICS_FRAMES:
 		_shapes[source] = _compute(source)
@@ -127,6 +127,8 @@ func polygons(source : int) -> Array:
 ## How strongly the lights that are on fall on a point, 0 to 1: 1 inside a lit room, fading out through its doorways, 0 where no lit room's light reaches.
 func light_at(point : Vector2) -> float:
 	var best : float = 0.0
+	if not is_instance_valid(facility) or not facility.is_inside_tree(): #the level is being torn down (the match ended, a lobby left) while a player's sight is still asking
+		return best
 	var local : Vector2 = facility.to_local(point)
 	for source in source_count():
 		if not is_source_on(source) or not reach_rect(source).has_point(local):
