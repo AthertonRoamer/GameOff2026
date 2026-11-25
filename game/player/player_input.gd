@@ -104,5 +104,3 @@ func _gather() -> void:
 
 func _set_flag(flag : int, value : bool) -> void:
 	buttons = (buttons | flag) if value else (buttons & ~flag)
-
-

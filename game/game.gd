@@ -22,6 +22,7 @@ signal play_started #every peer: the phases are over and the players can move (t
 @export var intruder_roles : Array[Role] = []
 @export var intruder_count : int = 1
 @export var attacking_guard_count : int = 1 #guards who are secretly attackers. At least one guard always defends
+@export var min_players_for_attacking_guards : int = 4 #with fewer players no guard secretly attacks (three players: two loyal guards and one intruder)
 @export var intruders_know_attackers : bool = true #intruders are told which guards are secretly on their side
 @export var attacking_guards_know_each_other : bool = false #secretly attacking guards are told about each other
 
@@ -205,6 +206,7 @@ func _configure_role_assigner() -> void:
 	role_assigner.intruder_roles = intruder_roles
 	role_assigner.intruder_count = intruder_count
 	role_assigner.attacking_guard_count = attacking_guard_count
+	role_assigner.min_players_for_attacking_guards = min_players_for_attacking_guards
 	role_assigner.intruders_know_attackers = intruders_know_attackers
 	role_assigner.attacking_guards_know_each_other = attacking_guards_know_each_other
 	role_assigner.everyone_knows_all_teams = debug_show_team_rings

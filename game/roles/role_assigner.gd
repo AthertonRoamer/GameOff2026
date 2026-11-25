@@ -11,6 +11,7 @@ var guard_roles : Array[Role] = []
 var intruder_roles : Array[Role] = []
 var intruder_count : int = 1
 var attacking_guard_count : int = 1 #how many guards are secretly attackers. At least one guard always defends
+var min_players_for_attacking_guards : int = 4 #with fewer players, no guard secretly attacks: three players are two loyal guards and one intruder
 var intruders_know_attackers : bool = true #intruders are told which guards are secretly on their side
 var attacking_guards_know_each_other : bool = false #secretly attacking guards are told about each other
 var everyone_knows_all_teams : bool = false #debug: every peer is told every team
@@ -47,6 +48,8 @@ func assign(member_ids : Array[int], rng : RandomNumberGenerator) -> Dictionary:
 		push_warning("RoleAssigner has no guard roles, guards will have no role")
 	var guard_picks : Array[int] = _pick_unique(guard_roles.size(), guard_ids.size(), rng, "guard")
 	var attackers : int = clampi(attacking_guard_count, 0, maxi(guard_ids.size() - 1, 0))
+	if member_ids.size() < min_players_for_attacking_guards:
+		attackers = 0
 	for i in guard_ids.size(): #guard_ids is already shuffled, so the first few being attackers is random
 		roles[guard_ids[i]] = guard_picks[i] if guard_picks[i] >= 0 else -1
 		teams[guard_ids[i]] = Team.ATTACKERS if i < attackers else Team.DEFENDERS

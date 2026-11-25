@@ -65,7 +65,8 @@ func _ready() -> void:
 			var guard_attackers : int = count_where(a, assigner, false, Team.ATTACKERS)
 			var defenders : int = count_where(a, assigner, false, Team.DEFENDERS)
 			var guards : int = players - assigner.intruder_count
-			if a["roles"].size() != players or intruders != assigner.intruder_count or bad_intruders != 0 or guard_attackers != mini(1, guards - 1):
+			var expected_attackers : int = 0 if players < assigner.min_players_for_attacking_guards else mini(1, guards - 1)
+			if a["roles"].size() != players or intruders != assigner.intruder_count or bad_intruders != 0 or guard_attackers != expected_attackers:
 				all_ok = false
 				print("    players=%d seed=%d: %s" % [players, seed_value, a])
 			if defenders < 1:
@@ -76,7 +77,15 @@ func _ready() -> void:
 				if seen.has(role_index) and guards <= 4:
 					unique_ok = false
 				seen[role_index] = true
-	check(all_ok, "everyone gets a role, intruders are all attackers, one guard secretly attacks")
+	check(all_ok, "everyone gets a role, intruders are all attackers, one guard secretly attacks (from 4 players)")
+	var three_ok : bool = true
+	for seed_value in 20:
+		rng.seed = seed_value
+		var trio : RoleAssigner = make_assigner()
+		var t : Dictionary = trio.assign(ids(3), rng)
+		if count_where(t, trio, true, Team.ATTACKERS) != 1 or count_where(t, trio, false, Team.DEFENDERS) != 2 or count_where(t, trio, false, Team.ATTACKERS) != 0:
+			three_ok = false
+	check(three_ok, "three players: one intruder and two loyal guards, no secretly attacking guard")
 	check(unique_ok, "roles are unique while there are enough of them")
 	check(defender_ok, "at least one guard always defends")
 
