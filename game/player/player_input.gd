@@ -12,6 +12,7 @@ const HOLSTER : int = 1 << 2 #the holster key (H) went down: draw or holster the
 const FLASHLIGHT : int = 1 << 3 #a state, not a press: the flashlight action flips it. Sent with the input, so every peer sees the beam
 const INTERACTING : int = 1 << 4 #at a console with its screen up (set by PlayerInteractor, not gathered)
 const RELOAD : int = 1 << 16 #the reload key (R) went down
+const SNEAK : int = 1 << 17 #ctrl held: a slow, silent walk
 const SLOT_SHIFT : int = 5 #3 bits: the slot chosen this tick plus one (so 0 is none)
 const DELTA_SHIFT : int = 8 #2 bits: the wheel's turn this tick plus one (so 1 is none)
 const LAG_SHIFT : int = 10 #6 bits: how many ticks behind the lobby this player sees the others (0 to 63), for lag compensated shots
@@ -32,6 +33,9 @@ var run : bool:
 var holster : bool:
 	get: return buttons & HOLSTER != 0
 	set(value): _set_flag(HOLSTER, value)
+var sneak : bool:
+	get: return buttons & SNEAK != 0
+	set(value): _set_flag(SNEAK, value)
 var reload : bool:
 	get: return buttons & RELOAD != 0
 	set(value): _set_flag(RELOAD, value)
@@ -87,6 +91,7 @@ func _gather() -> void:
 	aim = (get_parent() as Node2D).get_global_mouse_position() if active else aim
 	use_item = active and Input.is_action_pressed("player_use_active_item")
 	run = active and Input.is_action_pressed("player_run")
+	sneak = active and Input.is_action_pressed("player_sneak")
 	var holsters : int = _took_press(&"player_holster")
 	var reloads : int = _took_press(&"player_reload")
 	var flashlights : int = _took_press(&"player_flashlight")

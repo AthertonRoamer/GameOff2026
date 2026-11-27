@@ -64,7 +64,7 @@ func _ready() -> void:
 
 	check(Array(view.layers()) == [rooms, doors, counter] and rooms.view == view, "its layers are the MapLayer children, in drawing order, and know their view")
 	var bounds : Rect2 = view.map_bounds()
-	check(bounds.has_point(facility.room_center_px("ring")) and bounds.size.x > 1000.0, "the map bounds take in the whole facility")
+	check(bounds.has_point(facility.room_center_px(facility.start_room())) and bounds.size.x > 1000.0, "the map bounds take in the whole facility")
 	var world : Vector2 = Vector2(700, 500)
 	check(near(view.screen_to_world(view.world_to_screen(world)), world), "screen and world positions convert both ways")
 	check(rooms.scale.is_equal_approx(Vector2.ONE * view.zoom) and doors.position.is_equal_approx(rooms.position), "every layer gets the same scroll and zoom")

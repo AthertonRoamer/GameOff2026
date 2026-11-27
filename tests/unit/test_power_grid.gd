@@ -34,7 +34,7 @@ func _ready() -> void:
 	check(map.region_at(map.room_center_px("cafeteria")) == "east", "the cafeteria is in the east wing")
 	check(map.region_at(Vector2(-5000, -5000)) == "", "nowhere is in no region")
 	check(not map.region_outline("west").is_empty() and map.region_outline("west").size() % 2 == 0, "the west wing has an outline (%d points)" % map.region_outline("west").size())
-	var vault_door : FacilityDoor = _door_between(map, "ring", "vault")
+	var vault_door : FacilityDoor = _door_between(map, "corridor", "vault")
 	check(vault_door != null and map.region_of_door(vault_door) == "west", "the door from the corridor into the vault is paid for by the vault's region")
 
 	var grid : PowerGrid = PowerGrid.new()
@@ -63,7 +63,7 @@ func _ready() -> void:
 	var pool : float = main_gen.output()
 	check(is_equal_approx(grid.available("core"), pool), "the pool is free for the core (%d)" % pool)
 	check(is_equal_approx(grid.available("west"), west_out - grid.door_cost() + pool), "the west wing has its own power left plus the pool")
-	var core_door : FacilityDoor = _door_between(map, "ring", "door_control")
+	var core_door : FacilityDoor = _door_between(map, "corridor", "door_control")
 	core_door.state = FacilityDoor.State.CLOSED
 	grid.add_load("light", PowerSettings.Category.LIGHTS, "core")
 	grid.add_load("turret", PowerSettings.Category.TURRETS, "core")
@@ -127,7 +127,7 @@ func _ready() -> void:
 	control.door_refused.connect(func(door : FacilityDoor, reason : String) -> void: refused.append([door, reason]))
 	for generator : Generator in grid.generators:
 		grid.set_generator(generator, Generator.State.OFF)
-	var east_door : FacilityDoor = _door_between(map, "ring", "cafeteria")
+	var east_door : FacilityDoor = _door_between(map, "corridor", "cafeteria")
 	if east_door == null:
 		east_door = _door_between(map, "cafeteria", "pad_east")
 	control.request_door(east_door, FacilityDoor.State.CLOSED)
@@ -206,9 +206,11 @@ func _ready() -> void:
 	get_tree().quit(0 if failures == 0 else 1)
 
 
+##The door between two rooms. "corridor" stands for any corridor room, so the test does not depend on how the main corridor is split up and named.
 func _door_between(map : FacilityMap, a : String, b : String) -> FacilityDoor:
+	var is_a : Callable = func(id : String) -> bool: return id == a or (a == "corridor" and map.rooms.has(id) and map.rooms[id]["kind"] == "corridor")
 	for door : FacilityDoor in map.doors:
-		if (door.room_a == a and door.room_b == b) or (door.room_a == b and door.room_b == a):
+		if (is_a.call(door.room_a) and door.room_b == b) or (door.room_a == b and is_a.call(door.room_b)):
 			return door
 	return null
 

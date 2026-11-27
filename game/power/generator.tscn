@@ -29,7 +29,7 @@ shape = SubResource("RectangleShape2D_body")
 
 [node name="Occluder" type="LightOccluder2D" parent="."]
 occluder = SubResource("OccluderPolygon2D_body")
-occluder_light_mask = 2
+occluder_light_mask = 32
 
 [node name="Light" type="PointLight2D" parent="."]
 visible = false

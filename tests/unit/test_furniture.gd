@@ -35,7 +35,7 @@ func _ready() -> void:
 		if piece.footprint == Furniture.Footprint.NONE:
 			check(not piece.has_node("Footprint") and piece.collision_layer == 0 and piece.z_index == Furniture.FLAT_Z, "%s lies on the floor: no collision, under bodies" % file)
 		else:
-			check(fits and piece.has_node("Footprint") and piece.has_node("Occluder") and piece.collision_layer == FacilityTileSet.WORLD_LAYER, "%s: footprint inside its picture, on the wall layer, with a light occluder" % file)
+			check(fits and piece.has_node("Footprint") and piece.has_node("Occluder") and piece.collision_layer == FacilityTileSet.WORLD_LAYER | FacilityTileSet.PROP_LAYER, "%s: footprint inside its picture, on the wall and furniture layers (no shadow in ceiling lights), with a light occluder" % file)
 		piece.queue_free()
 	check(count >= 40, "there are furniture scenes to drag into the map (%d)" % count)
 
@@ -71,7 +71,7 @@ func _ready() -> void:
 	check(in_rooms == pieces.size(), "every piece stands on a room's floor")
 	for id : String in (map.rooms if map_path == SMALL_MAP else {}):
 		if map.rooms[id]["kind"] != "outdoor" and not map.rooms[id]["exterior"] or id in ["stairwell", "loading_dock", "maintenance_bay", "cafeteria"]:
-			check(rooms_with.has(id) or id == "ring", "room %s has furniture" % id)
+			check(rooms_with.has(id) or map.rooms[id]["kind"] == "corridor", "room %s has furniture" % id)
 
 	# physics: a solid piece stops a body and a shot where its picture is, and is not there where it is not
 	var space : PhysicsDirectSpaceState2D = map.get_world_2d().direct_space_state

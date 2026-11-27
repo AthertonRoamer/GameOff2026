@@ -15,7 +15,7 @@ extends RefCounted
 ##
 ##The flashlight is four lights, one for each layer of pictures (Light2D.range_item_cull_mask): the one that lights the floor takes the shadows of everything, the one that
 ##lights low furniture those of mid and tall furniture and walls, and so on up. Each picture is lit by one of them only, so lighting costs no more than with one light; only the
-##shadows are worked out four times (each time of fewer things). Every other light (the glow round a player, a muzzle flash, a console's screen) has no height: it lights
+##shadows are worked out four times (each time of fewer things). A room's ceiling lamp lights every layer and takes only the walls' shadows (make_ceiling). Every other light (the glow round a player, a muzzle flash, a console's screen) has no height: it lights
 ##every layer of pictures and takes every shadow (make_heightless).
 ##
 ##Godot applies a light's shadows (shadow_item_cull_mask) to a picture only if the picture's layer is in that mask too, and takes them from the occluders whose layer is in it.
@@ -83,6 +83,13 @@ static func add_height_cones(cone : PointLight2D) -> Array[PointLight2D]:
 		parent.add_child(extra)
 		cones.append(extra)
 	return cones
+
+
+## A ceiling light (a room's lamp): it is above everything, so it lights every layer of pictures and takes the shadows of walls and doors only (FLOOR), never of
+## furniture, generators or consoles (their occluders are on the CAST layers, which are left out).
+static func make_ceiling(light : Light2D) -> void:
+	light.range_item_cull_mask = ALL_PICTURES
+	light.shadow_item_cull_mask = ALL_PICTURES #(each picture layer, so walls shade pictures of every height; occluders are on FLOOR for walls only)
 
 
 ## A light with no height of its own: lights every layer of pictures and takes every shadow.

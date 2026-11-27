@@ -24,6 +24,7 @@ const LAMP_OFF : Color = Color("#2a313d")
 @export_range(-1.0, 60.0, 0.1) var start_seconds_override : float = -1.0 ## how long E is held to start it; -1 uses PowerSettings
 @export_range(-1.0, 60.0, 0.1) var repair_seconds_override : float = -1.0 ## how long E is held to repair it; -1 uses PowerSettings
 @export var reach_m : float = 1.3 ## how close a player has to be to work it, from its middle
+@export_range(0.0, 3.0, 0.05, "suffix:m") var height : float = 1.2 ## how tall it is: its shadow falls on lower things in a flashlight beam (see LightLayers), never in a ceiling light
 
 var grid : PowerGrid #set by the grid when it finds the generator
 var index : int = -1 #its place among the grid's generators (the same on every peer: the scene is the same)
@@ -39,6 +40,9 @@ var _time : float = 0.0
 func _ready() -> void:
 	collision_layer = FacilityTileSet.WORLD_LAYER | FacilityTileSet.PROP_LAYER #solid like a wall: stops players and shots; and furniture: shadows in flashlight beams (its Occluder), none in room lights
 	collision_mask = 0
+	var tier : LightLayers.Tier = LightLayers.tier_of(height)
+	light_mask = LightLayers.receiver_layer(tier) #lit by the flashlight beam for its height, like furniture
+	($Occluder as LightOccluder2D).occluder_light_mask = LightLayers.caster_layer(tier) #shades lower things only, in flashlights
 	if Engine.is_editor_hint():
 		return
 	add_to_group(PlayerInteractor.GROUP)

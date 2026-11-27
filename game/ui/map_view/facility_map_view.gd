@@ -7,7 +7,7 @@ extends Control
 ##
 ##What it shows is up to its layers: MapLayer nodes placed directly under it in the screen's scene (RoomsLayer, DoorsLayer, SpawnLayer...), drawn
 ##in that order, the first at the bottom. They draw in world pixels; this node gives them all the same scroll and zoom transform. A click that is not a drag goes to the
-##layers from the top down until one takes it (MapLayer.map_click). Set `facility` before showing it, then call reset_view() or center_on().
+##layers from the top down until one takes it (MapLayer.map_click); a right click the same way (MapLayer.map_right_click). Set `facility` before showing it, then call reset_view() or center_on().
 
 signal view_changed #scrolled or zoomed
 
@@ -28,6 +28,7 @@ var _center : Vector2 = Vector2.ZERO #the world point in the middle of the view
 var _pressing : bool = false
 var _dragging : bool = false
 var _press_at : Vector2 = Vector2.ZERO
+var _right_press_at : Vector2 = Vector2.ZERO
 var _zoom_buttons : HBoxContainer
 
 
@@ -182,6 +183,12 @@ func _gui_input(event : InputEvent) -> void:
 				_pressing = false
 				_dragging = false
 			accept_event()
+		elif button.button_index == MOUSE_BUTTON_RIGHT:
+			if button.pressed:
+				_right_press_at = button.position
+			elif button.position.distance_to(_right_press_at) <= DRAG_THRESHOLD_PX:
+				right_click(button.position)
+			accept_event()
 	elif event is InputEventMouseMotion:
 		var motion : InputEventMouseMotion = event
 		if _pressing and not _dragging and motion.position.distance_to(_press_at) > DRAG_THRESHOLD_PX:
@@ -208,6 +215,16 @@ func click(screen_point : Vector2) -> bool:
 	var all : Array[MapLayer] = layers()
 	for i in range(all.size() - 1, -1, -1):
 		if all[i].visible and all[i].map_click(world):
+			return true
+	return false
+
+
+##A right click at a point in this control: offered to the layers from the top down like click().
+func right_click(screen_point : Vector2) -> bool:
+	var world : Vector2 = screen_to_world(screen_point)
+	var all : Array[MapLayer] = layers()
+	for i in range(all.size() - 1, -1, -1):
+		if all[i].visible and all[i].map_right_click(world):
 			return true
 	return false
 

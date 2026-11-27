@@ -6,6 +6,7 @@ const DEAD_Z : int = -10 #z_index of a dead player: above the floor (FacilityMap
 
 @export var speed : float = 250.0
 @export var run_multiplier : float = 1.6 #top speed while shift is held and the player is moving
+@export var sneak_multiplier : float = 0.5 #top speed while ctrl is held: a sneak is slow, but its steps make no sound
 @export var acceleration : float = 500.0
 @export var acceleration_time : float = .025
 @export var set_acceleration_from_time : bool = true
@@ -161,7 +162,7 @@ var _was_reloading : bool = false
 func _process(_delta : float) -> void:
 	#The body no longer turns to face the mouse: the skin turns its own legs (to the way it moves) and torso (to the aim). The gun stays out.
 	var aim_direction : Vector2 = (input.aim - global_position).normalized() if input.aim != Vector2.ZERO and not input.interacting else Vector2.ZERO #(at a console the player does not turn: the skin keeps its facing)
-	skin.update_visual(velocity, aim_direction, is_aiming() and not is_barrel_blocked(aim_direction), is_running(), input.interacting, inventory.active_slot, _reload_seconds())
+	skin.update_visual(velocity, aim_direction, is_aiming() and not is_barrel_blocked(aim_direction), is_running(), input.interacting, inventory.active_slot, _reload_seconds(), sneak_multiplier if is_sneaking() else 1.0)
 	var reloading : bool = inventory.is_reloading()
 	if reloading and not _was_reloading and inventory.active_item is Gun:
 		reload_started.emit(inventory.active_item)
@@ -194,7 +195,7 @@ func _rollback_tick(delta : float, _tick : int, _is_fresh : bool) -> void:
 		speed_now = max(speed_now - friction * delta, 0.0)
 		velocity = velocity.normalized() * speed_now
 
-	var top_speed : float = speed * (run_multiplier if is_running() else 1.0)
+	var top_speed : float = speed * (run_multiplier if is_running() else sneak_multiplier if is_sneaking() else 1.0)
 	var accel_step : Vector2 = input.movement * acceleration * delta
 	if (velocity + accel_step).length() <= top_speed:
 		velocity += accel_step
@@ -218,9 +219,14 @@ func _update_stamina(delta : float) -> void:
 			winded = false
 
 
-##Shift held while moving, with stamina to do it on. Running holsters the gun (Inventory), and it comes back out when the run stops.
+##Shift held while moving, with stamina to do it on. Running holsters the gun (Inventory), and it comes back out when the run stops. Sneaking wins over running.
 func is_running() -> bool:
-	return input.run and input.movement != Vector2.ZERO and not winded
+	return input.run and not input.sneak and input.movement != Vector2.ZERO and not winded
+
+
+##Ctrl held: the player walks slower (sneak_multiplier) and their footsteps make no sound (see Footsteps). Part of the synced input, so every peer agrees.
+func is_sneaking() -> bool:
+	return input.sneak
 
 
 ##The active item (the gun) is out in the hands: chosen in the inventory, H holsters or draws it. A holstered gun cannot fire.

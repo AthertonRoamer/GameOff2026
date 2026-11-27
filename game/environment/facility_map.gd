@@ -208,17 +208,48 @@ func is_in_exit(world : Vector2) -> bool:
 	return exit_cells.has(world_to_cell(world))
 
 
-##Bounding rectangles of a room in world pixels (a room can have several, like the corridor ring).
+##Whether the map has a room (not an exit zone) by this id. Rooms are named in the editor and can be renamed, split or deleted, so code that names a
+##room (a map option's spawn room, a test) should ask first, or use start_room().
+func has_room(room_id : String) -> bool:
+	return rooms.has(room_id)
+
+
+##Bounding rectangles of a room in world pixels (a room can have several, like an L-shaped room). Empty for a room the map does not have.
 func room_rects_px(room_id : String) -> Array[Rect2]:
 	var result : Array[Rect2] = []
+	if not rooms.has(room_id):
+		return result
 	for rect : Rect2i in rooms[room_id]["rects"]:
 		result.append(Rect2(Vector2(rect.position * TILE), Vector2(rect.size * TILE)))
 	return result
 
 
+##The middle of a room's first rectangle. For a room the map does not have: the middle of start_room() (so a stale room name never crashes the game).
 func room_center_px(room_id : String) -> Vector2:
 	var rects : Array[Rect2] = room_rects_px(room_id)
-	return rects[0].get_center()
+	if not rects.is_empty():
+		return rects[0].get_center()
+	var fallback : String = start_room()
+	return room_rects_px(fallback)[0].get_center() if fallback != "" else Vector2.ZERO
+
+
+##The room players start in: `preferred` if the map has it; otherwise the biggest corridor, then the biggest room that is not outdoors, then any room.
+##"" only for a map with no rooms at all. Whatever the rooms are called, and however many there are, this finds one.
+func start_room(preferred : String = "") -> String:
+	if rooms.has(preferred):
+		return preferred
+	var best : String = ""
+	var best_score : float = -1.0
+	for id : String in rooms:
+		var area : int = 0
+		for rect : Rect2i in rooms[id]["rects"]:
+			area += rect.get_area()
+		var rank : int = 2 if rooms[id]["kind"] == "corridor" else (1 if rooms[id]["kind"] != "outdoor" else 0)
+		var score : float = rank * 1.0e9 + area
+		if score > best_score:
+			best_score = score
+			best = id
+	return best
 
 
 ##A random point on the floor of the facility, inside a room (not outdoors), in world pixels, with room for a player to stand (not in a piece of furniture). Rooms count by
@@ -276,6 +307,8 @@ func spawn_rooms(spawn_kind : int) -> Array[String]:
 
 ##Where players of this kind who start in this room appear: its marker's position.
 func spawn_point(room_id : String, spawn_kind : int) -> Vector2:
+	if not rooms.has(room_id):
+		return room_center_px(room_id)
 	return rooms[room_id]["spawns"].get(spawn_kind, room_center_px(room_id))
 
 
@@ -456,6 +489,8 @@ func _collect_rooms() -> void:
 	exit_cells.clear()
 	for room : FacilityRoom in room_nodes():
 		var rects : Array[Rect2i] = room.cell_rects(self)
+		if rects.is_empty(): #a room just added in the editor, before it has a FacilityRoomRect: no floor yet, so it is not a room yet
+			continue
 		if room.is_exit(): #a zone, not floor: no tiles of its own. It sits outside a room's wall, joined to the room by a door
 			exits[room.room_id()] = rects
 			for rect : Rect2i in rects:

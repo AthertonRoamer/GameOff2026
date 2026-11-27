@@ -18,6 +18,11 @@ func map_click(_world : Vector2) -> bool:
 	return false
 
 
+##A right click on the map at this world position. Return true to take it (the layers below then don't get it).
+func map_right_click(_world : Vector2) -> bool:
+	return false
+
+
 ##The mouse moved over the map, at this world position.
 func map_hover(_world : Vector2) -> void:
 	pass

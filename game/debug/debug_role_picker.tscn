@@ -1,13 +1,13 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://5pnsc4qw1jhp"]
 
-[ext_resource type="Script" path="res://game/debug/debug_role_picker.gd" id="1_picker"]
+[ext_resource type="Script" uid="uid://ddwowjnglllgo" path="res://game/debug/debug_role_picker.gd" id="1_picker"]
 
-[node name="DebugRolePicker" type="CanvasLayer"]
+[node name="DebugRolePicker" type="CanvasLayer" unique_id=2109523421]
 layer = 70
 visible = false
 script = ExtResource("1_picker")
 
-[node name="Panel" type="PanelContainer" parent="."]
+[node name="Panel" type="PanelContainer" parent="." unique_id=298801377]
 anchors_preset = 4
 anchor_top = 0.5
 anchor_bottom = 0.5
@@ -17,16 +17,16 @@ offset_right = 200.0
 offset_bottom = 140.0
 grow_vertical = 2
 
-[node name="Box" type="VBoxContainer" parent="Panel"]
+[node name="Box" type="VBoxContainer" parent="Panel" unique_id=1249154392]
 layout_mode = 2
 
-[node name="Title" type="Label" parent="Panel/Box"]
+[node name="Title" type="Label" parent="Panel/Box" unique_id=185171814]
 layout_mode = 2
 text = "Debug: choose your role"
 
-[node name="Roles" type="VBoxContainer" parent="Panel/Box"]
+[node name="Roles" type="VBoxContainer" parent="Panel/Box" unique_id=1717649955]
 layout_mode = 2
 
-[node name="Status" type="Label" parent="Panel/Box"]
+[node name="Status" type="Label" parent="Panel/Box" unique_id=116449313]
 layout_mode = 2
 autowrap_mode = 3

@@ -51,7 +51,13 @@ func _on_frame_changed() -> void:
 	if now - _last_step < min_gap:
 		return
 	var walking : bool = legs.animation in WALKS
-	if walking and _silent_walk:
+	if walking and (_silent_walk or _is_sneaking()):
 		return
 	_last_step = now
 	stepped.emit(walk if walking else (_run_override if _run_override != null else run), (get_parent() as Node2D).global_position)
+
+
+## Ctrl held (synced with the player's input, so every peer hears the same silence).
+func _is_sneaking() -> bool:
+	var player : Player = get_parent() as Player
+	return player != null and player.is_sneaking()

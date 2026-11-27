@@ -106,7 +106,9 @@ func _ready() -> void:
 		var rect : Rect2i = map.exits[id][0]
 		var centre : Vector2 = Vector2(rect.position * FacilityTileSet.TILE) + Vector2(rect.size * FacilityTileSet.TILE) / 2.0
 		check(map.is_in_exit(centre) and map.exit_at(centre) == id, "the middle of exit %s is in it" % id)
-	check(not map.is_in_exit(map.room_center_px("ring")), "the middle of the ring is not an exit")
+	check(not map.is_in_exit(map.room_center_px(map.start_room())), "the middle of the main corridor is not an exit")
+	check(map.start_room() != "" and map.rooms[map.start_room()]["kind"] == "corridor", "start_room finds a corridor (%s)" % map.start_room())
+	check(map.start_room("no_such_room") == map.start_room() and map.room_rects_px("no_such_room").is_empty() and map.room_center_px("no_such_room") == map.room_center_px(map.start_room()), "a room the map does not have falls back to the start room instead of crashing")
 	#spawn rooms: each GuardSpawn / IntruderSpawn marker makes the room it stands on a spawn room of its kind
 	var markers : Array[SpawnRoomMarker] = map.spawn_markers()
 	check(markers.size() > 0, "the map has spawn markers (%d)" % markers.size())
