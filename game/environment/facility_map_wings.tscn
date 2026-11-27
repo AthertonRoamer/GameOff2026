@@ -1285,6 +1285,70 @@ script = ExtResource("11_region")
 display_name = "West Wing"
 colour = Color(0.43529412, 0.827451, 0.9098039, 1)
 
+[node name="exit_north" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "North Exit"
+kind = 6
+
+[node name="Rect1" type="Control" parent="Rooms/exit_north"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 3245.0
+offset_top = 0.0
+offset_right = 3685.0
+offset_bottom = 165.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="exit_east" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "East Exit"
+kind = 6
+
+[node name="Rect1" type="Control" parent="Rooms/exit_east"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 7304.0
+offset_top = 3047.0
+offset_right = 7469.0
+offset_bottom = 3487.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="exit_south" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "South Exit"
+kind = 6
+
+[node name="Rect1" type="Control" parent="Rooms/exit_south"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 2981.0
+offset_top = 6336.0
+offset_right = 3421.0
+offset_bottom = 6501.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
+[node name="exit_west" type="Node2D" parent="Rooms"]
+script = ExtResource("3_room")
+display_name = "West Exit"
+kind = 6
+
+[node name="Rect1" type="Control" parent="Rooms/exit_west"]
+custom_minimum_size = Vector2(11, 11)
+layout_mode = 3
+anchors_preset = 0
+offset_left = -176.0
+offset_top = 2629.0
+offset_right = -11.0
+offset_bottom = 3069.0
+mouse_filter = 2
+script = ExtResource("rect_script")
+
 [node name="Doors" type="Node2D" parent="." unique_id=2009482512]
 z_index = 1
 
@@ -1873,6 +1937,20 @@ horizontal = false
 
 [node name="Door_east_service_east_corridor_2" parent="Doors" unique_id=471646337 instance=ExtResource("4_door")]
 position = Vector2(6154.5, 3971)
+horizontal = false
+
+[node name="Door_pad_north_exit_north" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(3465, 170.5)
+
+[node name="Door_pad_east_exit_east" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(7298.5, 3267)
+horizontal = false
+
+[node name="Door_pad_south_exit_south" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(3201, 6330.5)
+
+[node name="Door_pad_west_exit_west" parent="Doors" instance=ExtResource("4_door")]
+position = Vector2(-5.5, 2849)
 horizontal = false
 
 [node name="Vents" type="Node2D" parent="." unique_id=1647744442]

@@ -3,7 +3,7 @@ extends RefCounted
 
 ##What the host chose for a match: the map, whether the debug tools are on, and the game mode. The host menu makes one (MatchSetupPanel), the lobby keeps it as a
 ##Dictionary (Lobby.match_settings) and sends it to every peer as the match begins, and the Game reads it while it loads.
-##The defaults are what a match is without the setup screen: the first map, debug on, the original mode.
+##The defaults are what a match is without the setup screen: the first map, debug off, the original mode.
 
 enum Mode { ORIGINAL, DEATHMATCH }
 
@@ -14,7 +14,7 @@ const MAPS : Array = [
 ]
 
 var map : int = 0 ## index into MAPS
-var debug : bool = true ## off: every debug setting is stripped (see DebugRemover)
+var debug : bool = false ## off: every debug setting is stripped (see DebugRemover)
 var mode : int = Mode.ORIGINAL
 
 
@@ -34,6 +34,6 @@ func to_dict() -> Dictionary:
 static func from_dict(data : Dictionary) -> MatchSettings:
 	var settings : MatchSettings = MatchSettings.new()
 	settings.map = clampi(int(data.get("map", 0)), 0, MAPS.size() - 1)
-	settings.debug = bool(data.get("debug", true))
+	settings.debug = bool(data.get("debug", false))
 	settings.mode = clampi(int(data.get("mode", Mode.ORIGINAL)), 0, MODE_NAMES.size() - 1)
 	return settings
