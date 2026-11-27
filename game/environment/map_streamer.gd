@@ -28,6 +28,11 @@ var _decor : Dictionary = {} #chunk -> Array of the Decor children in it
 var _decor_in : Dictionary = {} #chunk -> true while its children are in the tree
 var _decor_node : Node2D
 var _decor_ready : bool = false
+var _pieces : Dictionary = {} #chunk -> Array of the Furniture in it
+var _pieces_in : Dictionary = {} #chunk -> true while its pieces' pictures and shadows are in the tree
+var _furniture_ready : bool = false
+
+const FURNITURE_MARGIN_CELLS : int = 24 #furniture this far (cells) round the view has its picture and shadow: a shadow from further off falls outside the view too
 
 
 ##The map was rebuilt, nothing is painted: start over.
@@ -42,6 +47,8 @@ func _process(delta : float) -> void:
 		return
 	if not _decor_ready:
 		_setup_decor()
+	if not _furniture_ready and map.is_node_ready():
+		_setup_furniture()
 	if not map.stream_tiles:
 		if not _settled:
 			map.paint_all()
@@ -91,6 +98,11 @@ func _update() -> bool:
 	_wanted.sort_custom(func(a : Vector2i, b : Vector2i) -> bool: return Vector2(a).distance_squared_to(centre) > Vector2(b).distance_squared_to(centre)) #(farthest first: popped from the back)
 	if _decor_ready:
 		_update_decor(decor)
+	if _furniture_ready:
+		var furniture : Array[Rect2i] = [_chunk_range(view.grow(FURNITURE_MARGIN_CELLS))]
+		for rect : Rect2 in watched: #(a room on a camera feed shows its furniture too)
+			furniture.append(_chunk_range(_world_to_cells(rect).grow(WATCHED_MARGIN_CELLS)))
+		_update_furniture(furniture)
 	return true
 
 
@@ -163,6 +175,36 @@ func _setup_decor() -> void:
 			_decor[chunk] = []
 		(_decor[chunk] as Array).append(child)
 		_decor_node.remove_child(child)
+
+
+## Furniture (under Props) keeps its body always, but its picture and its shadow are only in the tree near the view, and in the rooms camera feeds show
+## (Furniture.set_shown): with the shadow of every piece on the big map in the tree, each shadowed light (the flashlight's four beams, every ceiling lamp that
+## is on) went through all of them every frame.
+func _setup_furniture() -> void:
+	_furniture_ready = true
+	if Engine.is_editor_hint() or map.props_node == null or not map.stream_tiles:
+		return
+	for node : Node in map.props_node.find_children("*", "StaticBody2D", true, false):
+		if node is Furniture:
+			var chunk : Vector2i = map.chunk_of_world((node as Furniture).global_position)
+			if not _pieces.has(chunk):
+				_pieces[chunk] = []
+			(_pieces[chunk] as Array).append(node)
+			(node as Furniture).set_shown(false)
+
+
+func _update_furniture(ranges : Array[Rect2i]) -> void:
+	for chunk : Vector2i in _pieces:
+		var inside : bool = _in_any(ranges, chunk)
+		if inside == _pieces_in.has(chunk):
+			continue
+		for piece : Furniture in _pieces[chunk]:
+			if is_instance_valid(piece):
+				piece.set_shown(inside)
+		if inside:
+			_pieces_in[chunk] = true
+		else:
+			_pieces_in.erase(chunk)
 
 
 func _update_decor(ranges : Array[Rect2i]) -> void:

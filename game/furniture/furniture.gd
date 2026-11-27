@@ -51,6 +51,9 @@ var _last_position : Vector2 = Vector2.ZERO
 var _problem : String = ""
 var _checked_for : float = 0.0
 var _signature : int = 0
+var _art : Sprite2D
+var _occluder : LightOccluder2D
+var _shown : bool = true #false while the picture and the shadow are out of the tree (set_shown)
 
 
 func _ready() -> void:
@@ -230,11 +233,14 @@ func _set_size(value : Vector2) -> void:
 func _rebuild() -> void:
 	if not is_node_ready():
 		return
-	for node_name : String in ["Art", "Footprint", "Occluder"]:
-		var old : Node = get_node_or_null(node_name)
-		if old != null:
-			remove_child(old)
+	for old : Node in [get_node_or_null("Footprint"), _art, _occluder]: #(the picture and the shadow may be out of the tree: see set_shown)
+		if is_instance_valid(old):
+			if old.get_parent() == self:
+				remove_child(old)
 			old.free()
+	_art = null
+	_occluder = null
+	_shown = true
 	collision_layer = FacilityTileSet.WORLD_LAYER | FacilityTileSet.PROP_LAYER if is_solid() else 0 #(PROP_LAYER: the ceiling lights reach over it, see RoomLightShapes.furniture)
 	z_index = 0 if is_solid() else FLAT_Z
 	var art : Sprite2D = Sprite2D.new() #(no owner: none of this is saved into the map scene)
@@ -247,6 +253,7 @@ func _rebuild() -> void:
 	if tier == LightLayers.Tier.TALL:
 		art.material = _tall_material()
 	add_child(art)
+	_art = art
 	if is_solid():
 		var key : String = "%d %s" % [footprint, footprint_size]
 		if not _shapes.has(key): #(a map has dozens of the same piece: they share one shape and one occluder)
@@ -278,7 +285,30 @@ func _rebuild() -> void:
 		occluder.occluder = _occluders[key]
 		occluder.occluder_light_mask = LightLayers.caster_layer(tier) #throws a shadow only in the lights for lower things
 		add_child(occluder)
+		_occluder = occluder
 	queue_redraw()
+
+
+## Streaming (MapStreamer): the picture and the shadow are in the tree only while the piece is near the view. Every shadowed light checks every occluder in the tree
+## each frame, so on the big map (about 1,900 of them) the ones far away would cost the frame for nothing. The body is always there: the game needs it everywhere.
+func set_shown(value : bool) -> void:
+	if value == _shown:
+		return
+	_shown = value
+	for node : Node in [_art, _occluder]:
+		if not is_instance_valid(node):
+			continue
+		if value and node.get_parent() == null:
+			add_child(node)
+		elif not value and node.get_parent() == self:
+			remove_child(node)
+
+
+func _notification(what : int) -> void:
+	if what == NOTIFICATION_PREDELETE: #what is out of the tree is nobody's child: it is freed by hand
+		for node : Node in [_art, _occluder]:
+			if is_instance_valid(node) and node.get_parent() == null:
+				node.free()
 
 
 func _draw() -> void: #the footprint, in the editor only: what is solid, and red when something is wrong with where it is

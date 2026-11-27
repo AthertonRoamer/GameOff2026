@@ -122,6 +122,59 @@ func demo_positions(game : Node) -> String:
 
 var _last_frame_usec : int = 0
 var _last_frame_tick : int = 0
+var _perf_frames : int = 0
+var _perf_time : float = 0.0
+var _net_time : float = 0.0
+var _net_peak : Vector2i = Vector2i.ZERO #the most sent and received in one frame since the last line
+
+
+## HARNESS_NET=1: once a second, what ENet really put on the wire (sent and received, with the biggest single frame of each), and each peer's round trip and loss.
+## For finding where a connection dies (through a relay with a traffic limit, say).
+var _net_total : Vector2i = Vector2i.ZERO
+var _net_wall : int = 0
+
+
+var _net_frames : int = 0
+func _report_net(delta : float) -> void:
+	var peer : ENetMultiplayerPeer = multiplayer.multiplayer_peer as ENetMultiplayerPeer
+	if peer == null or peer.host == null or peer.get_connection_status() != MultiplayerPeer.CONNECTION_CONNECTED:
+		return
+	var frame : Vector2i = Vector2i(int(peer.host.pop_statistic(ENetConnection.HOST_TOTAL_SENT_DATA)), int(peer.host.pop_statistic(ENetConnection.HOST_TOTAL_RECEIVED_DATA)))
+	_net_total += frame
+	_net_peak = _net_peak.max(frame)
+	_net_time += delta
+	if _net_time < 1.0:
+		return
+	var peers : PackedStringArray = []
+	for link : ENetPacketPeer in peer.host.get_peers():
+		peers.append("%s rtt %d ms loss %.1f%%" % [link.get_remote_address(), link.get_statistic(ENetPacketPeer.PEER_ROUND_TRIP_TIME), link.get_statistic(ENetPacketPeer.PEER_PACKET_LOSS) * 100.0 / ENetPacketPeer.PACKET_LOSS_SCALE])
+	var line : String = "NET unix %.1f sent %.1f kB/s (frame peak %d B) received %.1f kB/s (frame peak %d B) | %s" % [Time.get_unix_time_from_system(), _net_total.x / _net_time / 1000.0, _net_peak.x, _net_total.y / _net_time / 1000.0, _net_peak.y, "; ".join(peers)]
+	var wall_now : int = Time.get_ticks_msec()
+	var wall : float = (wall_now - _net_wall) / 1000.0 if _net_wall > 0 else _net_time
+	_net_wall = wall_now
+	var stale : PackedStringArray = [] #synchronizers whose newest state from their owner is old: netfox rolls back from there every frame
+	var synchronizers : Array = get_tree().root.find_children("*", "RollbackSynchronizer", true, false)
+	for sync : Node in synchronizers:
+		var transmitter : Variant = sync.get("_history_transmitter")
+		if transmitter != null and not sync.get_parent().is_multiplayer_authority() and NetworkTime.tick - transmitter.get_latest_state_tick() > 60:
+			stale.append("%s state %d ticks old" % [sync.get_parent().name, NetworkTime.tick - transmitter.get_latest_state_tick()])
+	line += " || wall %.1f s, %.0f fps, tick %d" % [wall, (Engine.get_process_frames() - _net_frames) / maxf(wall, 0.001), NetworkTime.tick]
+	_net_frames = Engine.get_process_frames()
+	if NetworkPerformance.is_enabled():
+		line += ", rollback %d ticks/frame %.1f ms, network loop %.1f ms" % [NetworkPerformance.get_rollback_ticks(), NetworkPerformance.get_rollback_loop_duration_ms(), NetworkPerformance.get_network_loop_duration_ms()]
+	line += " | sync %d %s" % [synchronizers.size(), "; ".join(stale)]
+	_net_time = 0.0
+	_net_total = Vector2i.ZERO
+	_net_peak = Vector2i.ZERO
+	if role == "lobby": #(the lobby's output is not captured)
+		var path : String = OS.get_environment("TEMP") + "/godot_smoke/lobby_net.log"
+		var file : FileAccess = FileAccess.open(path, FileAccess.READ_WRITE if FileAccess.file_exists(path) else FileAccess.WRITE)
+		if file != null:
+			file.seek_end()
+			file.store_line(line)
+	else:
+		print("[%s] %s" % [role.to_upper(), line])
+
 
 
 func _process(delta : float) -> void:
@@ -134,6 +187,15 @@ func _process(delta : float) -> void:
 	_last_frame_tick = NetworkTime.tick
 	if OS.has_environment("HARNESS_CLOCK") and ticks > 3 and ticks < 1000: #netfox ran several ticks in one frame to catch up (1000+: a clock reset)
 		print("[%s] TICKBURST %d ticks in one frame at tick %d unix %.3f" % [role.to_upper(), ticks, NetworkTime.tick, Time.get_unix_time_from_system()])
+	if OS.has_environment("HARNESS_PERF"): #a line every 2 s: average frame time and what the engine counts (compare maps with HARNESS_MATCH)
+		_perf_frames += 1
+		_perf_time += delta
+		if _perf_time >= 2.0:
+			print("[%s] PERF %.1f ms/frame (%.0f fps) process %.1f ms physics %.1f ms draw calls %d objects in frame %d canvas items %d nodes %d" % [role.to_upper(), _perf_time / _perf_frames * 1000.0, _perf_frames / _perf_time, Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0, Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0, Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME), Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME), get_tree().root.find_children("*", "CanvasItem", true, false).size(), Performance.get_monitor(Performance.OBJECT_NODE_COUNT)])
+			_perf_frames = 0
+			_perf_time = 0.0
+	if OS.has_environment("HARNESS_NET"):
+		_report_net(delta)
 	if delta > HITCH_SECONDS or wall > HITCH_SECONDS:
 		var line : String = "HITCH %.0f ms (wall %.0f ms) at unix %.3f" % [delta * 1000.0, wall * 1000.0, Time.get_unix_time_from_system()]
 		if role == "lobby": #the lobby instance's output is not captured, so it appends to a file the runner reads

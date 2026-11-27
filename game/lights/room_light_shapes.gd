@@ -16,7 +16,7 @@ extends Node2D
 
 const SETTLE_PHYSICS_FRAMES : int = 2 #a door's collision is in the physics space this many physics frames after it changed
 const WALL_SHADOWS : int = LightLayers.FLOOR #light-occluder mask of walls and doors (the default)
-const TEXTURE_STEP : float = 4.0 #world pixels per pixel of a lamp's texture (the light is soft, so it needs no more)
+const TEXTURE_STEP : float = 11.0 #world pixels per pixel of a lamp's texture (one map cell: the light is soft, so it needs no more, and the big map has 168 lamps to draw at load)
 
 @export var facility : FacilityMap
 @export var control : FacilityControl
@@ -30,6 +30,7 @@ var _stale_since : PackedInt64Array = [] #source -> the physics frame it went st
 var _watched : Dictionary = {} #door -> the bound callable connected to its state_changed
 var _furniture : Array[RID] = [] #see furniture()
 var _lamps : Array[PointLight2D] = [] #source -> its light
+var _textures : Dictionary = {} #rectangle size -> the texture its lamp uses (see _lamp_texture)
 
 
 func _ready() -> void:
@@ -44,6 +45,7 @@ func _ready() -> void:
 func rebuild() -> void:
 	_shapes.clear()
 	_furniture.clear()
+	_textures.clear()
 	_stale_since = PackedInt64Array()
 	for lamp : PointLight2D in _lamps:
 		lamp.queue_free()
@@ -78,14 +80,9 @@ func _make_lamp(source : int) -> PointLight2D:
 	var rect : Rect2 = facility.light_source_rect_px(source)
 	var reach : Rect2 = rect.grow(spill_px())
 	var size : Vector2i = Vector2i((reach.size / TEXTURE_STEP).ceil())
-	var data : PackedByteArray = PackedByteArray()
-	data.resize(size.x * size.y)
-	for y in size.y:
-		for x in size.x:
-			data[y * size.x + x] = roundi(255.0 * falloff(rect, reach.position + (Vector2(x, y) + Vector2(0.5, 0.5)) * TEXTURE_STEP))
 	var lamp : PointLight2D = PointLight2D.new()
 	lamp.name = "Lamp%d" % source
-	lamp.texture = ImageTexture.create_from_image(Image.create_from_data(size.x, size.y, false, Image.FORMAT_L8, data))
+	lamp.texture = _lamp_texture(rect, reach, size)
 	lamp.texture_scale = TEXTURE_STEP
 	lamp.shadow_enabled = true
 	lamp.shadow_filter = Light2D.SHADOW_FILTER_PCF5
@@ -94,6 +91,22 @@ func _make_lamp(source : int) -> PointLight2D:
 	add_child(lamp)
 	lamp.global_position = facility.to_global(reach.position + Vector2(size) * TEXTURE_STEP / 2.0)
 	return lamp
+
+
+## A lamp's texture. It only depends on the size of the rectangle (the falloff is measured from its middle), and the big map has many rectangles of the same size,
+## so each size is drawn once: drawing it pixel by pixel in script is slow (seconds for the whole big map).
+func _lamp_texture(rect : Rect2, reach : Rect2, size : Vector2i) -> ImageTexture:
+	var key : Vector2i = Vector2i(rect.size.round())
+	if _textures.has(key):
+		return _textures[key]
+	var data : PackedByteArray = PackedByteArray()
+	data.resize(size.x * size.y)
+	for y in size.y:
+		for x in size.x:
+			data[y * size.x + x] = roundi(255.0 * falloff(rect, reach.position + (Vector2(x, y) + Vector2(0.5, 0.5)) * TEXTURE_STEP))
+	var texture : ImageTexture = ImageTexture.create_from_image(Image.create_from_data(size.x, size.y, false, Image.FORMAT_L8, data))
+	_textures[key] = texture
+	return texture
 
 
 func spill_px() -> float:
