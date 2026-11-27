@@ -49,6 +49,7 @@ signal play_started #every peer: the phases are over and the players can move (t
 @onready var artifact_escape : ArtifactEscape = $ArtifactEscape
 @onready var phases : MatchPhases = $MatchPhases
 @onready var chat_relay : ChatRelay = $ChatRelay #the text chat: the lobby passes each message to the players on its channel only
+@onready var map_intel : MapIntel = $MapIntel #what every map shows, and the pings
 @onready var spectator : Spectator = $Spectator #once this peer's player is dead, its camera follows a living one
 
 var started : bool = false #play has begun: the phases are over. (The test harness waits for this)
@@ -130,6 +131,7 @@ func _ready() -> void:
 	player_hud.bind_relics(artifact_placer) #the treasure rooms the relics start in, on the full map
 	player_hud.bind_power(level.power)
 	chat_relay.game = self
+	_setup_map_intel()
 	spectator.players = func() -> Array: return spawner.players.values()
 	spectator.local_player = func() -> Player: return spawner.local_player
 	spectator.name_of = func(player : Player) -> String: return chat_relay._name_of(player.member_id()) if spawner.lobby != null else String(player.name)
@@ -151,6 +153,7 @@ func _ready() -> void:
 	player_hud.visible = false #shown when play begins, after the phases
 	phases.game = self
 	phases.finished.connect(_begin_play)
+	phases.phase_changed.connect(func(phase : MatchPhase) -> void: player_hud.show_chat_early(phase != null, phase is RoleRevealPhase)) #the chat is open from the role reveal on
 	_configure_role_assigner()
 	if debug_show_role_rings or debug_show_team_rings:
 		_add_debug_rings()
@@ -185,6 +188,7 @@ func start() -> void:
 ##from now, and only now can the match be won or lost.
 func _begin_play(tick : int) -> void:
 	started = true
+	player_hud.show_chat_early(false)
 	set_players_active(true)
 	player_hud.visible = true
 	if settings.is_deathmatch():
@@ -510,6 +514,28 @@ func _is_in_play(member_id : int) -> bool:
 	return is_instance_valid(player) and (debug_respawn_dead_players or player.is_alive() or player.debug_killed) #(a player killed with the debug K key still counts)
 
 
+## Every map is fed from MapIntel, and pings are shown from it.
+func _setup_map_intel() -> void:
+	map_intel.viewer = func() -> Player: return spawner.local_player if is_instance_valid(spawner.local_player) else null
+	map_intel.power = level.power
+	map_intel.control = level.control
+	map_intel.abilities = abilities
+	map_intel.exit_chooser = exit_chooser
+	artifact_placer.placed.connect(func(_positions : PackedVector2Array) -> void: map_intel.relic_rooms = player_hud.map_screen.relic_rooms_layer.rooms) #(after the full map has marked them: bind_relics came first)
+	player_hud.bind_pings(chat_relay, map_intel, map_intel.viewer)
+
+
+## Everyone in the match as every player may know them: name and role (roles are public). Teams are secret and are not in it: a secretly attacking guard is listed as the guard they appear to be.
+func public_roster() -> Array[Dictionary]:
+	var roster : Array[Dictionary] = []
+	for id : int in _roles:
+		var role : Role = role_assigner.role_at(_roles[id])
+		if role != null:
+			roster.append({"id": id, "name": _member_name(id), "role": role})
+	roster.sort_custom(func(a : Dictionary, b : Dictionary) -> bool: return String(a["name"]).naturalnocasecmp_to(String(b["name"])) < 0)
+	return roster
+
+
 ## Deathmatch only. The node that counts kills and time, and what every peer does with its result.
 func _setup_deathmatch() -> void:
 	deathmatch = DeathmatchMode.new()
@@ -576,5 +602,6 @@ func _on_network_unloader_cease_rpcs_request_received() -> void:
 	ammo_placer.quiesce()
 	artifact_escape.quiesce()
 	phases.quiesce()
+	player_hud.show_chat_early(false)
 	spawner.quiesce()
 	($NetworkUnloader as NetworkUnloader).register_as_ceased()

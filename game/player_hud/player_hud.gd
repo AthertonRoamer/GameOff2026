@@ -18,7 +18,12 @@ extends CanvasLayer
 @onready var map_screen : MapScreen = $MapScreen #the full map, on the map key
 @onready var power_readout : PowerReadout = $PowerReadout #guards: the power free in the region they are in
 @onready var hold_bar : ProgressBar = $HoldBar #fills while E is held on something that needs holding (starting a generator)
-@onready var chat : ChatWindow = $ChatWindow #the text chat: hidden until bind_chat (no chat in a deathmatch or the playground)
+@onready var chat : ChatWindow = $ChatLayer/ChatWindow #the text chat: hidden until bind_chat (no chat in a deathmatch or the playground)
+@onready var chat_layer : CanvasLayer = $ChatLayer #its own layer, over the phases' screens: the chat is there from the role reveal on
+@onready var ping_overlay : PingOverlay = $PingOverlay #pings, over where they are in the world
+@onready var ping_control : PingControl = $PingControl
+
+var _chat_early : bool = false #the chat shows although the HUD does not yet (the phases)
 
 var _player : Player
 var _slot_panels : Array[PanelContainer] = []
@@ -74,7 +79,6 @@ func bind_exit(exit_chooser : DesignatedExitChooser) -> void:
 ## The full map outlines the treasure rooms the relics are placed in at the start of the match, and keeps them outlined after a relic is taken.
 func bind_relics(placer : ArtifactPlacer) -> void:
 	placer.placed.connect(map_screen.mark_relic_rooms)
-	placer.placed.connect(func(_positions : PackedVector2Array) -> void: ($Minimap/RelicRooms as RelicRoomsLayer).rooms = map_screen.relic_rooms_layer.rooms) #(after the full map has marked them)
 
 
 ## Guards see the power: the readout of the region they stand in, and every region's power on the full map.
@@ -100,6 +104,7 @@ func bind_player(player : Player) -> void:
 
 
 func _process(_delta : float) -> void:
+	chat_layer.visible = (visible or _chat_early) and not map_screen.visible #(the full map covers the chat)
 	if not is_instance_valid(_player) or _inventory == null:
 		return
 	stamina_bar.value = _player.stamina
@@ -174,3 +179,23 @@ func _highlight_slot(slot : int) -> void:
 ## The text chat, for the local player, on the channels it is on (ChatRules.channels_for). Called again when its role or team changes.
 func bind_chat(relay : ChatRelay, player : Player, channels : Array[int]) -> void:
 	chat.bind(relay, player, channels)
+	ping_control.bind(relay, player)
+
+
+## While the phases run the HUD is hidden but the chat is not; held open, it does not fade (the role reveal).
+func show_chat_early(shown : bool, hold_open : bool = false) -> void:
+	_chat_early = shown
+	chat_layer.visible = visible or shown
+	if chat.held_open != hold_open:
+		chat.held_open = hold_open
+
+
+## Pings: shown in the world and on every map, and placed by middle clicking either.
+func bind_pings(relay : ChatRelay, intel : MapIntel, viewer : Callable) -> void:
+	ping_overlay.intel = intel
+	ping_overlay.viewer = viewer
+	ping_control.relay = relay
+	ping_control.listen_to(intel)
+	relay.ping_received.connect(func(channel : int, sender : String, at : Vector2, label : String, _own : bool) -> void:
+		intel.add_ping(channel, sender, at, label)
+		chat.chime())

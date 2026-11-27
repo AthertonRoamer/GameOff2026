@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="res://game/escape_menu/escape_menu.gd" id="1_menu"]
 
 [node name="EscapeMenu" type="CanvasLayer"]
+layer = 40
 script = ExtResource("1_menu")
 
 [node name="Panel" type="Panel" parent="."]

@@ -326,5 +326,24 @@ if ($Chat) {
 		if ($spamOwn -ge 8 -or $reports[$spammer].notices -lt 1) { "CHAT: the spam was not cut off"; $ok = $false }
 	}
 	if (@($sent).Count -eq 0) { "CHAT: nothing was sent"; $ok = $false }
+	# pings go by the same channels: each must reach exactly the players on its channel, with its place and name, and be on their maps
+	$pingGot = @{}; $onMaps = @{}
+	foreach ($m in (Select-String -Path (@($hostOut) + $clientOuts) -Pattern "PING_REPORT me=(\d+) got=(\S*) on_maps=(\d+)" | ForEach-Object { $_.Matches[0] })) {
+		$pingGot[$m.Groups[1].Value] = @($m.Groups[2].Value.Split('|', [StringSplitOptions]::RemoveEmptyEntries)); $onMaps[$m.Groups[1].Value] = [int]$m.Groups[3].Value
+	}
+	$pings = @(Select-String -Path (@($hostOut) + $clientOuts) -Pattern "PING_SENT me=(\d+) entry=(\S+)" | ForEach-Object { $_.Matches[0].Groups[2].Value })
+	foreach ($entry in $pings) {
+		foreach ($id in $reports.Keys) {
+			$should = $reports[$id].channels -contains $entry.Substring(0, 1)
+			$has = $pingGot[$id] -contains $entry
+			if ($should -ne $has) { "PING: $entry " + $(if ($should) { "did not reach" } else { "LEAKED to" }) + " player $id"; $ok = $false }
+		}
+	}
+	foreach ($id in $reports.Keys) {
+		if (@($pingGot[$id] | Where-Object { $_ -match 'forged_' }).Count -gt 0) { "PING: a forged ping reached player $id"; $ok = $false }
+		if ($onMaps[$id] -ne @($pingGot[$id]).Count) { "PING: player $id got $(@($pingGot[$id]).Count) pings but has $($onMaps[$id]) on its maps"; $ok = $false }
+		"PING: player $id got $(@($pingGot[$id]).Count)"
+	}
+	if ($pings.Count -eq 0) { "PING: nothing was sent"; $ok = $false }
 }
 if ($ok) { "SMOKE: PASS" } else { "SMOKE: FAIL" }

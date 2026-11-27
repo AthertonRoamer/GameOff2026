@@ -11,6 +11,7 @@ extends RefCounted
 enum Channel { GUARDS, INTRUDERS }
 
 const MAX_LENGTH : int = 200 ## characters in one message, after cleaning
+const MAX_PING_LABEL : int = 40 ## and in a ping's name
 const UNKNOWN_ALLY : String = "Unknown ally" ## an attacker's name on INTRUDERS, to a reader not allowed to know they are one
 
 

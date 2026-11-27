@@ -3,7 +3,7 @@ extends MapLayer
 
 ##The generators, as small squares coloured by state: grey off, amber running, red shot down. A whole-map generator has a ring round it. Needs `grid`.
 
-const SIZE_PX : float = 11.0
+@export var size_px : float = 11.0 ## a generator's square on screen
 
 var grid : PowerGrid
 
@@ -20,7 +20,7 @@ func _draw() -> void:
 		match generator.state:
 			Generator.State.RUNNING: colour = Palette.BACKUP
 			Generator.State.DESTROYED: colour = Palette.ALARM
-		var half : float = px(SIZE_PX) / 2.0
+		var half : float = px(size_px) / 2.0
 		draw_rect(Rect2(at - Vector2(half, half), Vector2(half, half) * 2.0).grow(px(1.5)), Palette.VOID)
 		draw_rect(Rect2(at - Vector2(half, half), Vector2(half, half) * 2.0), colour)
 		if generator.scope == Generator.Scope.WHOLE_MAP:

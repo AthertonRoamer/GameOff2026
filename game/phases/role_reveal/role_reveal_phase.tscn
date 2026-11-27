@@ -31,6 +31,22 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(0.02745098, 0.03529412, 0.047058824, 1)
 
+[node name="Roster" type="PanelContainer" parent="Screen"]
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 24.0
+offset_top = -130.0
+offset_right = 274.0
+offset_bottom = 130.0
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Rows" type="VBoxContainer" parent="Screen/Roster"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+
 [node name="Center" type="CenterContainer" parent="Screen"]
 anchors_preset = 15
 anchor_right = 1.0

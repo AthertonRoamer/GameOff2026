@@ -11,6 +11,15 @@
 [ext_resource type="PackedScene" path="res://game/ui/map_view/map_screen.tscn" id="6_mapscreen"]
 [ext_resource type="Script" path="res://game/player_hud/power_readout.gd" id="7_power"]
 [ext_resource type="PackedScene" path="res://game/chat/chat_window.tscn" id="8_chat"]
+[ext_resource type="Script" path="res://game/chat/ping_overlay.gd" id="23_ping_overlay"]
+[ext_resource type="PackedScene" path="res://game/chat/ping_control.tscn" id="24_ping_control"]
+[ext_resource type="Script" path="res://game/ui/map_view/layers/lights_layer.gd" id="map_lights"]
+[ext_resource type="Script" path="res://game/ui/map_view/layers/regions_layer.gd" id="map_regions"]
+[ext_resource type="Script" path="res://game/ui/map_view/layers/exits_layer.gd" id="map_exits"]
+[ext_resource type="Script" path="res://game/ui/map_view/layers/cameras_layer.gd" id="map_cameras"]
+[ext_resource type="Script" path="res://game/ui/map_view/layers/vents_layer.gd" id="map_vents"]
+[ext_resource type="Script" path="res://game/ui/map_view/layers/generators_layer.gd" id="map_generators"]
+[ext_resource type="Script" path="res://game/ui/map_view/layers/pings_layer.gd" id="map_pings"]
 
 [node name="PlayerHud" type="CanvasLayer"]
 script = ExtResource("1_hud")
@@ -269,24 +278,59 @@ grow_vertical = 0
 script = ExtResource("3_minimap")
 clip_contents = true
 default_zoom = 0.2
+redraw_hz = 10.0
 show_zoom_buttons = false
 
 [node name="Rooms" type="Node2D" parent="Minimap"]
 script = ExtResource("4_rooms")
 show_names = false
 
+[node name="Lights" type="Node2D" parent="Minimap"]
+script = ExtResource("map_lights")
+interactive = false
+
+[node name="Regions" type="Node2D" parent="Minimap"]
+script = ExtResource("map_regions")
+show_names = false
+
 [node name="RelicRooms" type="Node2D" parent="Minimap"]
 script = ExtResource("22_mini_relics")
 width_px = 1.5
+
+[node name="Exits" type="Node2D" parent="Minimap"]
+script = ExtResource("map_exits")
+show_all = false
+outline_only = true
+
+[node name="Cameras" type="Node2D" parent="Minimap"]
+script = ExtResource("map_cameras")
+interactive = false
+show_feeds = false
+show_tags = false
 
 [node name="Doors" type="Node2D" parent="Minimap"]
 script = ExtResource("20_mini_doors")
 interactive = false
 
+[node name="Vents" type="Node2D" parent="Minimap"]
+script = ExtResource("map_vents")
+interactive = false
+size_px = 8.0
+
 [node name="Consoles" type="Node2D" parent="Minimap"]
 script = ExtResource("21_mini_consoles")
 show_names = false
 size_px = 7.0
+
+[node name="Generators" type="Node2D" parent="Minimap"]
+script = ExtResource("map_generators")
+size_px = 7.0
+
+[node name="Pings" type="Node2D" parent="Minimap"]
+script = ExtResource("map_pings")
+clamp_to_view = true
+size_px = 5.0
+font_size = 10
 
 [node name="Player" type="Node2D" parent="Minimap"]
 script = ExtResource("5_dot")
@@ -303,7 +347,10 @@ border_color = Color(0.2, 0.25, 0.3, 1)
 border_width = 2.0
 editor_only = false
 
-[node name="ChatWindow" parent="." instance=ExtResource("8_chat")]
+[node name="ChatLayer" type="CanvasLayer" parent="."]
+layer = 12
+
+[node name="ChatWindow" parent="ChatLayer" instance=ExtResource("8_chat")]
 anchors_preset = 3
 anchor_left = 1.0
 anchor_top = 1.0
@@ -316,4 +363,17 @@ offset_bottom = -304.0
 grow_horizontal = 0
 grow_vertical = 0
 
+[node name="PingOverlay" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("23_ping_overlay")
+
 [node name="MapScreen" parent="." instance=ExtResource("6_mapscreen")]
+
+[node name="PingControl" parent="." node_paths=PackedStringArray("hud") instance=ExtResource("24_ping_control")]
+hud = NodePath("..")

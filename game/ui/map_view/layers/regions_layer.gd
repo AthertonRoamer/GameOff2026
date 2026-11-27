@@ -9,6 +9,7 @@ const LABEL_RISE_PX : float = 30.0 #the region's tag sits this far (on screen) a
 
 @export var show_power : bool = true ## the power numbers under the names (the map screen turns them on for guards only)
 @export var show_names : bool = true
+@export var power_for_everyone : bool = false ## the door console: whoever is using it sees the power (MapIntel leaves show_power alone)
 @export_range(0.0, 1.0, 0.01) var tint : float = 0.12 ## how strongly the rooms are tinted in their region's colour
 
 var grid : PowerGrid

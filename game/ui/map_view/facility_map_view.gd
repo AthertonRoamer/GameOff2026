@@ -1,7 +1,7 @@
 class_name FacilityMapView
 extends Control
 
-##A map of the facility that you can scroll and zoom: drag with the left or middle mouse button (or pan with a trackpad) to scroll, the mouse wheel
+##A map of the facility that you can scroll and zoom (a middle click that does not drag places a ping, see PingControl): drag with the left or middle mouse button (or pan with a trackpad) to scroll, the mouse wheel
 ##(or a trackpad pinch, or the + / - buttons) to zoom in and out. Every screen with a map uses one: the door console, the spawn choice, and later
 ##lights, cameras and the full map on Tab.
 ##
@@ -20,6 +20,7 @@ const PAN_GESTURE_SPEED : float = 24.0 #screen pixels a trackpad pan moves the m
 @export var scroll_margin_px : float = 60.0 #how far past the map's edge it can be scrolled, in screen pixels
 @export var live : bool = true #redraw every frame (moving dots, blinking doors). Off: only when the view or the layers ask
 @export var show_zoom_buttons : bool = true
+@export var redraw_hz : float = 0.0 ## how often a live map redraws. 0: every frame, and on every scroll (a map that only follows the player can redraw far less often)
 
 var facility : FacilityMap : set = set_facility
 var zoom : float = 1.0 #screen pixels per world pixel
@@ -30,6 +31,7 @@ var _dragging : bool = false
 var _press_at : Vector2 = Vector2.ZERO
 var _right_press_at : Vector2 = Vector2.ZERO
 var _zoom_buttons : HBoxContainer
+var _redraw_in : float = 0.0
 
 
 func _ready() -> void:
@@ -95,7 +97,7 @@ func fit_all() -> void:
 
 func center_on(world : Vector2) -> void:
 	_center = world
-	_apply()
+	_apply(redraw_hz <= 0.0) #(scrolling only moves what the layers have already drawn)
 
 
 func set_zoom(value : float) -> void:
@@ -134,12 +136,13 @@ func redraw_layers() -> void:
 		layer.queue_redraw()
 
 
-func _apply() -> void:
+func _apply(redraw : bool = true) -> void:
 	_clamp_center()
 	for layer : MapLayer in layers(): #every layer gets the same transform, so they all draw in world pixels
 		layer.scale = Vector2.ONE * zoom
 		layer.position = size / 2.0 - _center * zoom
-	redraw_layers()
+	if redraw:
+		redraw_layers()
 	view_changed.emit()
 
 
@@ -153,8 +156,17 @@ func _clamp_center() -> void:
 			_center[axis] = clampf(_center[axis], allowed.position[axis] + half[axis], allowed.end[axis] - half[axis])
 
 
-func _process(_delta : float) -> void:
-	if live and is_visible_in_tree():
+func _process(delta : float) -> void:
+	if not is_visible_in_tree():
+		return
+	var intel : Node = _intel()
+	if intel != null:
+		intel.apply(self) #the same icons on every map
+	if not live:
+		return
+	_redraw_in -= delta
+	if redraw_hz <= 0.0 or _redraw_in <= 0.0:
+		_redraw_in = 1.0 / redraw_hz if redraw_hz > 0.0 else 0.0
 		redraw_layers()
 
 
@@ -175,11 +187,13 @@ func _gui_input(event : InputEvent) -> void:
 		elif button.button_index == MOUSE_BUTTON_LEFT or button.button_index == MOUSE_BUTTON_MIDDLE:
 			if button.pressed:
 				_pressing = true
-				_dragging = button.button_index == MOUSE_BUTTON_MIDDLE #the middle button only ever drags
+				_dragging = false
 				_press_at = button.position
 			else:
 				if _pressing and not _dragging and button.button_index == MOUSE_BUTTON_LEFT:
 					click(button.position)
+				elif _pressing and not _dragging: #a middle click that did not drag places a ping
+					_ping(button.position)
 				_pressing = false
 				_dragging = false
 			accept_event()
@@ -207,6 +221,18 @@ func _gui_input(event : InputEvent) -> void:
 	elif event is InputEventMagnifyGesture:
 		zoom_at((event as InputEventMagnifyGesture).position, (event as InputEventMagnifyGesture).factor)
 		accept_event()
+
+
+## The game's MapIntel, if there is one. Found and called by group, not by its class: every scene with a map loads this script, and naming MapIntel here would
+## have each of them load most of the game with it, round in a circle.
+func _intel() -> Node:
+	return get_tree().get_first_node_in_group(&"map_intel")
+
+
+func _ping(screen_point : Vector2) -> void:
+	var intel : Node = _intel()
+	if intel != null:
+		intel.request_ping(facility.to_global(screen_to_world(screen_point)), get_global_transform() * screen_point)
 
 
 ##A click at a point in this control: offered to the layers from the top down until one takes it. Returns whether one did.

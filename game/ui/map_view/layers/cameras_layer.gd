@@ -16,6 +16,8 @@ const MAX_FEEDS : int = 6
 const MAX_FEED_PX : float = 512.0 #a feed's longest side, in pixels
 
 @export var interactive : bool = true
+@export var show_feeds : bool = true ## off (every map but the door console): only which cameras are on, no live pictures, and nothing is revealed
+@export var show_tags : bool = true ## the red dot and CAM in a watched room's corner
 
 var control : FacilityControl
 var _hover : int = -1
@@ -72,6 +74,10 @@ func _exit_tree() -> void:
 
 
 func _process(_delta : float) -> void:
+	if not show_feeds:
+		if view != null and view.redraw_hz <= 0.0:
+			queue_redraw()
+		return
 	if not is_visible_in_tree():
 		if not _feeds.is_empty():
 			stop_feeds()
@@ -158,6 +164,8 @@ func _free_feed(index : int) -> void:
 
 ## Tells PlayerSight and the map streamer which rooms the feeds show (in world space).
 func _report_watched() -> void:
+	if not show_feeds:
+		return #(only the console's feeds say what is watched)
 	var rects : Array[Rect2] = []
 	var map : FacilityMap = facility()
 	if map != null:
@@ -206,7 +214,8 @@ func _draw() -> void:
 				draw_rect(rect, Color(ON_COLOUR, alpha * 0.6), false, px(1.5))
 			var tag : Vector2 = bounds.position + Vector2(px(6.0), px(6.0)) #a recording light and CAM in the room's corner
 			draw_circle(tag + Vector2(px(4.0), px(4.0)), px(3.5), Color(Palette.ALARM, alpha))
-			draw_label(tag + Vector2(px(12.0), px(4.0)), "CAM", 10, Color(ON_COLOUR, alpha), 40.0, HORIZONTAL_ALIGNMENT_LEFT)
+			if show_tags:
+				draw_label(tag + Vector2(px(12.0), px(4.0)), "CAM", 10, Color(ON_COLOUR, alpha), 40.0, HORIZONTAL_ALIGNMENT_LEFT)
 		if index == _hover:
 			var no_power : bool = not on and control.power != null and not control.power.can_afford(control.light_region(index), control.power.camera_cost())
 			if no_power: #switching it on would be refused: say so before the click

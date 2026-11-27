@@ -1,0 +1,35 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://game/chat/ping_control.gd" id="1_pings"]
+
+[node name="PingControl" type="Node"]
+script = ExtResource("1_pings")
+
+[node name="Box" type="CanvasLayer" parent="."]
+layer = 30
+visible = false
+
+[node name="Panel" type="PanelContainer" parent="Box"]
+offset_right = 280.0
+offset_bottom = 78.0
+
+[node name="Rows" type="VBoxContainer" parent="Box/Panel"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="Box/Panel/Rows"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "PING TO GUARDS"
+
+[node name="Label" type="LineEdit" parent="Box/Panel/Rows"]
+custom_minimum_size = Vector2(264, 0)
+layout_mode = 2
+placeholder_text = "Label (optional)"
+context_menu_enabled = false
+caret_blink = true
+
+[node name="Hint" type="Label" parent="Box/Panel/Rows"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6627451, 0.6431373, 0.58431375, 1)
+theme_override_font_sizes/font_size = 11
+text = "Enter or middle click: place   -   Esc: cancel"

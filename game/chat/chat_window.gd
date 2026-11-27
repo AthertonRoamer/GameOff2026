@@ -9,6 +9,7 @@ extends PanelContainer
 ##and bright, the other small with a bubble counting the messages not seen there yet. C or a click on a tab switches.
 ##Every message that arrives dings, through a plain (not positional) AudioStreamPlayer: only peers the lobby sent the message to ever play it.
 ##HUD.bind_chat hands it the relay, the local player and the channels; until then (and in a deathmatch or the playground) it stays hidden.
+##After idle_hide_seconds with nothing happening it fades away (and takes no clicks); Enter brings it back, and so does a message arriving.
 
 @export_group("Colours")
 @export var guards_colour : Color = Color("#3ddc6a") ## the GUARDS tab
@@ -21,6 +22,9 @@ extends PanelContainer
 @export_group("Log")
 @export var history_lines : int = 100 ## kept per channel; older lines are dropped
 @export var log_font_size : int = 13
+@export_group("Auto hide")
+@export_range(0.0, 60.0, 0.5, "suffix:s") var idle_hide_seconds : float = 8.0 ## faded away after this long with no message and no typing. 0: never
+@export_range(0.0, 2.0, 0.05, "suffix:s") var fade_seconds : float = 0.4
 @export_group("Ding")
 @export var ding : AudioStream ## played when a message arrives. None: a short chime made in code
 @export var ding_volume_db : float = -8.0
@@ -44,6 +48,8 @@ var _mouse_held : bool = false #a click on (or off) the window is still held: th
 var _can_send : bool = true
 var _panel_style : StyleBoxFlat
 var _focus_style : StyleBoxFlat
+var _idle : float = 0.0 #seconds since anything happened
+var held_open : bool = false : set = set_held_open ## stays up whatever happens (the role reveal)
 
 
 func _ready() -> void:
@@ -96,6 +102,8 @@ func bind(new_relay : ChatRelay, player : Player, channels : Array[int]) -> void
 		_player = player
 		_player.died.connect(_refresh_can_send)
 		_player.health_changed.connect(_on_health_changed)
+	if _channels != channels:
+		wake()
 	_channels = channels.duplicate()
 	visible = not _channels.is_empty()
 	if not visible:
@@ -121,8 +129,39 @@ func is_typing() -> bool:
 	return _line_focused
 
 
+func set_held_open(value : bool) -> void:
+	held_open = value
+	wake()
+
+
+## Shows the window (again) and starts the idle time over.
+func wake() -> void:
+	_idle = 0.0
+	modulate.a = 1.0
+	mouse_behavior_recursive = Control.MOUSE_BEHAVIOR_INHERITED
+
+
+func is_faded() -> bool:
+	return idle_hide_seconds > 0.0 and _idle >= idle_hide_seconds
+
+
+func _process(delta : float) -> void:
+	if not visible or idle_hide_seconds <= 0.0:
+		return
+	if held_open or _line_focused or _mouse_held:
+		wake()
+		return
+	_idle += delta
+	if is_faded():
+		mouse_behavior_recursive = Control.MOUSE_BEHAVIOR_DISABLED #(what is not there takes no clicks)
+		modulate.a = clampf(1.0 - (_idle - idle_hide_seconds) / maxf(fade_seconds, 0.001), 0.0, 1.0)
+
+
 func start_typing() -> void:
-	if visible and _can_send and not _channels.is_empty():
+	if not visible or _channels.is_empty():
+		return
+	wake() #(a dead player can still open it to read)
+	if _can_send:
 		_line.grab_focus()
 
 
@@ -134,6 +173,7 @@ func stop_typing() -> void:
 func switch_to(channel : int) -> void:
 	if not _channels.has(channel):
 		return
+	wake()
 	_current = channel
 	_unread[channel] = 0
 	_refresh_header()
@@ -144,7 +184,7 @@ func _unhandled_input(event : InputEvent) -> void:
 	if not is_visible_in_tree() or _line_focused or event.is_echo():
 		return
 	if event.is_action_pressed("chat_open"):
-		if get_viewport().gui_get_focus_owner() == null and _can_send: #(another box being typed in keeps its Enter)
+		if get_viewport().gui_get_focus_owner() == null: #(another box being typed in keeps its Enter)
 			start_typing()
 			get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("chat_switch_channel") and _channels.size() > 1:
@@ -165,7 +205,7 @@ func _input(event : InputEvent) -> void:
 		return
 	if button.button_index != MOUSE_BUTTON_LEFT and button.button_index != MOUSE_BUTTON_RIGHT:
 		return
-	var inside : bool = get_global_rect().has_point(button.position)
+	var inside : bool = get_global_rect().has_point(button.position) and not is_faded()
 	if inside:
 		_mouse_held = true
 		_apply_typing()
@@ -207,10 +247,17 @@ func _on_message(channel : int, sender : String, text : String, is_own : bool) -
 	if channel != _current:
 		_unread[channel] += 1
 		_refresh_header()
+	wake()
+	_ding_player.play()
+
+
+## The message ding on its own (a ping arrived).
+func chime() -> void:
 	_ding_player.play()
 
 
 func _on_notice(text : String) -> void:
+	wake()
 	_add_line(_current, "[color=#%s][i]%s[/i][/color]" % [Palette.MUTED.to_html(false), ChatRules.escape_bbcode(text)])
 
 

@@ -6,16 +6,35 @@ extends Node2D
 
 @export var reach_m : float = 1.2
 
+const ART : Texture2D = preload("res://game/abilities/art/vent.png") #drawn by tools/art/make_vent.py
+
+const ART_Z : int = -12 #(Furniture.FLAT_Z)
+
 var index : int = -1 #the place in AbilityControl.vents, the same on every peer
 var control : AbilityControl
 
 
 func _ready() -> void:
 	add_to_group(PlayerInteractor.GROUP)
+	var art : Sprite2D = Sprite2D.new()
+	art.name = "Art"
+	art.texture = ART
+	art.scale = Vector2.ONE * FacilityTileSet.ART_SCALE
+	art.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	art.position = Vector2.ONE * FacilityTileSet.TILE #(the middle of the 2 x 2 cell grille)
+	art.z_as_relative = false
+	art.z_index = ART_Z #flat on the floor, like flat furniture: under players and fallen bodies
+	art.light_mask = LightLayers.receiver_layer(LightLayers.Tier.FLAT)
+	add_child(art)
 
 
 func can_interact(player : Player) -> bool:
 	return player.role != null and player.role.can_vent and player.is_alive() and control != null and control.vents.size() > 1
+
+
+## The middle of its grille (the node stands on the grille's top left corner, as the map's marker does).
+func centre() -> Vector2:
+	return global_position + Vector2.ONE * FacilityTileSet.TILE
 
 
 func is_in_reach(world_position : Vector2, slack : float = 1.0) -> bool:

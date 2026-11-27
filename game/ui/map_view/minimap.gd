@@ -26,6 +26,7 @@ func _process(delta : float) -> void:
 	if is_instance_valid(tracked):
 		center_on(tracked.global_position)
 	super(delta)
+	player_dot.queue_redraw() #(every frame, though the rest of the map is redrawn less often)
 
 
 func _draw() -> void:

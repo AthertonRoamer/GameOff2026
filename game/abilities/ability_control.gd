@@ -10,7 +10,7 @@ extends Node
 ## The vents are the Marker2D nodes under the map's `Vents` node: build() makes an interactable Vent of each.
 
 const SCREEN_LAYER : int = 20
-const VENT_SCREEN : PackedScene = preload("res://game/abilities/vent_screen.tscn")
+const VENT_SCREEN : String = "res://game/abilities/vent_screen.tscn" #(loaded when needed: the screen's map knows MapIntel, which knows this script, so a preload would go round in a circle)
 
 @export_group("Revive")
 @export_range(0.05, 1.0, 0.05) var revive_health_fraction : float = 0.5 ## the share of their health a revived player comes back with
@@ -48,7 +48,7 @@ func build(map : FacilityMap) -> void:
 	layer.name = "Screens"
 	layer.layer = SCREEN_LAYER
 	add_child(layer)
-	vent_screen = VENT_SCREEN.instantiate()
+	vent_screen = (load(VENT_SCREEN) as PackedScene).instantiate()
 	vent_screen.facility = map
 	vent_screen.control = self
 	layer.add_child(vent_screen)

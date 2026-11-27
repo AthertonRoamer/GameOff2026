@@ -8,6 +8,12 @@
 [ext_resource type="Script" path="res://game/ui/map_view/layers/regions_layer.gd" id="6_regions"]
 [ext_resource type="Script" path="res://game/ui/map_view/layers/lights_layer.gd" id="7_lights"]
 [ext_resource type="Script" path="res://game/ui/map_view/layers/cameras_layer.gd" id="8_cameras"]
+[ext_resource type="Script" path="res://game/ui/map_view/layers/relic_rooms_layer.gd" id="map_relic_rooms"]
+[ext_resource type="Script" path="res://game/ui/map_view/layers/exits_layer.gd" id="map_exits"]
+[ext_resource type="Script" path="res://game/ui/map_view/layers/vents_layer.gd" id="map_vents"]
+[ext_resource type="Script" path="res://game/ui/map_view/layers/consoles_layer.gd" id="map_consoles"]
+[ext_resource type="Script" path="res://game/ui/map_view/layers/generators_layer.gd" id="map_generators"]
+[ext_resource type="Script" path="res://game/ui/map_view/layers/pings_layer.gd" id="map_pings"]
 
 [node name="DoorMapScreen" type="Control"]
 visible = false
@@ -37,12 +43,34 @@ script = ExtResource("7_lights")
 [node name="Regions" type="Node2D" parent="Map"]
 script = ExtResource("6_regions")
 tint = 0.0
+power_for_everyone = true
+
+[node name="RelicRooms" type="Node2D" parent="Map"]
+script = ExtResource("map_relic_rooms")
+
+[node name="Exits" type="Node2D" parent="Map"]
+script = ExtResource("map_exits")
+show_all = false
+outline_only = true
 
 [node name="Cameras" type="Node2D" parent="Map"]
 script = ExtResource("8_cameras")
 
 [node name="Doors" type="Node2D" parent="Map"]
 script = ExtResource("4_doors")
+
+[node name="Vents" type="Node2D" parent="Map"]
+script = ExtResource("map_vents")
+interactive = false
+
+[node name="Consoles" type="Node2D" parent="Map"]
+script = ExtResource("map_consoles")
+
+[node name="Generators" type="Node2D" parent="Map"]
+script = ExtResource("map_generators")
+
+[node name="Pings" type="Node2D" parent="Map"]
+script = ExtResource("map_pings")
 
 [node name="Player" type="Node2D" parent="Map"]
 script = ExtResource("5_player")

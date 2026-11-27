@@ -788,7 +788,15 @@ func chat_run() -> void:
 	game.chat_relay.message_received.connect(func(channel : int, _sender : String, text : String, _own : bool) -> void: got.append("%d:%s" % [channel, text]))
 	game.chat_relay.notice.connect(func(text : String) -> void: notices.append(text))
 	var channels : Array[int] = ChatRules.channels_for(me, {"roles": game._roles, "teams": game._known_teams}, game.role_assigner)
+	var pinged : Array[String] = []
+	game.chat_relay.ping_received.connect(func(channel : int, _sender : String, at : Vector2, label : String, _own : bool) -> void: pinged.append("%d:%s@%d,%d" % [channel, label, roundi(at.x), roundi(at.y)]))
 	await get_tree().create_timer(1.0).timeout
+	for channel in channels:
+		var name_of_ping : String = "p_%d_%d" % [me, channel]
+		game.chat_relay.submit_ping(channel, Vector2(100 + channel, 200), name_of_ping)
+		log_line("PING_SENT me=%d entry=%d:%s@%d,200" % [me, channel, name_of_ping, 100 + channel])
+	if channels == [ChatRules.Channel.GUARDS]:
+		game.chat_relay._submit_ping.rpc_id(1, ChatRules.Channel.INTRUDERS, Vector2.ZERO, "forged_%d" % me)
 	for channel in channels:
 		var text : String = "m_%d_%d" % [me, channel]
 		game.chat_relay.submit(channel, text)
@@ -802,5 +810,6 @@ func chat_run() -> void:
 		log_line("CHAT_SPAMMED me=%d ch=%d" % [me, channels[0]])
 	await get_tree().create_timer(3.0).timeout
 	var window : ChatWindow = game.player_hud.chat
+	log_line("PING_REPORT me=%d got=%s on_maps=%d" % [me, "|".join(pinged), game.map_intel.pings.size()])
 	log_line("CHAT_REPORT me=%d channels=%s got=%s notices=%d window=%s header=%s" % [me, ",".join(channels.map(func(c : int) -> String: return str(c))),
 		"|".join(got), notices.size(), window.visible, window._header.visible])
