@@ -7,6 +7,7 @@
 [ext_resource type="Script" path="res://game/ui/map_view/layers/player_dot_layer.gd" id="5_dot"]
 [ext_resource type="PackedScene" path="res://game/ui/map_view/map_screen.tscn" id="6_mapscreen"]
 [ext_resource type="Script" path="res://game/player_hud/power_readout.gd" id="7_power"]
+[ext_resource type="PackedScene" path="res://game/chat/chat_window.tscn" id="8_chat"]
 
 [node name="PlayerHud" type="CanvasLayer"]
 script = ExtResource("1_hud")
@@ -284,5 +285,18 @@ mouse_filter = 2
 border_color = Color(0.2, 0.25, 0.3, 1)
 border_width = 2.0
 editor_only = false
+
+[node name="ChatWindow" parent="." instance=ExtResource("8_chat")]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -236.0
+offset_top = -520.0
+offset_right = -16.0
+offset_bottom = -304.0
+grow_horizontal = 0
+grow_vertical = 0
 
 [node name="MapScreen" parent="." instance=ExtResource("6_mapscreen")]

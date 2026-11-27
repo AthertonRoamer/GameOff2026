@@ -5,6 +5,7 @@ param(
 	[switch]$Rollback, #use RollbackGameManager and the probe game, and check every peer starts on the scheduled tick
 	[switch]$Demo, #run the rollback demo: the first client shoots and moves, then every peer's view of every player must agree
 	[switch]$NightShift, #the real game (game/game.tscn): the client works the door console from the lobby-checked spot; every peer must agree on doors (and the tick they changed on), flashlight and interact
+	[switch]$Chat, #the real game: every player chats on its channels; each message must reach exactly the players on its channel, a forged one nobody, and the host's spam must be cut off (use -Clients 3 so there is an imposter)
 	[switch]$Phases, #with the real game: run the phases before play (the role reveal). Without it every peer skips them (Game.debug_skip_phases), so play begins on the start tick
 	[switch]$KillKey, #the real game: the client taps the debug kill key (K) twice; the client and the host must both see the player die (and the fall play) and then come back
 	[switch]$Hold, #the client and then the host hold each weapon for 3 s; prints every shot event each saw (diagnostic, no pass/fail on cadence)
@@ -40,6 +41,7 @@ if ($Moving) { $common += "--moving" }
 if ($Combat) { $common += "--combat" }
 if ($Hold) { $common += "--hold" }
 if ($NightShift) { $common += "--night-shift" }
+if ($Chat) { $common += "--chat" }
 if ($Phases) { $common += "--phases" }
 if ($KillKey) { $common += @("--night-shift", "--killkey") }
 if ($Leave) { $common += "--leave" }
@@ -293,5 +295,36 @@ if ($Hold) {
 		}
 	}
 	Select-String -Path $clientOuts[0] -Pattern "LOCAL_RESPONSE" | ForEach-Object { $_.Line }
+}
+if ($Chat) {
+	# every player's report: its channels and what it got. A message on channel c must reach exactly the players on c; a forged one nobody
+	$reports = @{}
+	foreach ($m in (Select-String -Path (@($hostOut) + $clientOuts) -Pattern "CHAT_REPORT me=(\d+) channels=([\d,]*) got=(\S*) notices=(\d+) window=(\w+) header=(\w+)" | ForEach-Object { $_.Matches[0] })) {
+		$reports[$m.Groups[1].Value] = @{ channels = @($m.Groups[2].Value.Split(',', [StringSplitOptions]::RemoveEmptyEntries)); got = @($m.Groups[3].Value.Split('|', [StringSplitOptions]::RemoveEmptyEntries)); notices = [int]$m.Groups[4].Value; window = $m.Groups[5].Value; header = $m.Groups[6].Value }
+	}
+	if ($reports.Count -lt $Clients + 1) { "CHAT: expected $($Clients + 1) reports, found $($reports.Count)"; $ok = $false }
+	$sent = @(Select-String -Path (@($hostOut) + $clientOuts) -Pattern "CHAT_SENT me=(\d+) ch=(\d) text=(\S+)" | ForEach-Object { $_.Matches[0] })
+	foreach ($s in $sent) {
+		$entry = "$($s.Groups[2].Value):$($s.Groups[3].Value)"
+		foreach ($id in $reports.Keys) {
+			$should = $reports[$id].channels -contains $s.Groups[2].Value
+			$has = $reports[$id].got -contains $entry
+			if ($should -ne $has) { "CHAT: $entry " + $(if ($should) { "did not reach" } else { "LEAKED to" }) + " player $id"; $ok = $false }
+		}
+	}
+	foreach ($id in $reports.Keys) {
+		$r = $reports[$id]
+		if (@($r.got | Where-Object { $_ -match 'forged_' }).Count -gt 0) { "CHAT: a forged message reached player $id"; $ok = $false }
+		$wantHeader = if ($r.channels.Count -gt 1) { "true" } else { "false" }
+		if ($r.window -ne "true" -or $r.header -ne $wantHeader) { "CHAT: player $id window=$($r.window) header=$($r.header), expected window=true header=$wantHeader"; $ok = $false }
+		"CHAT: player $id on channels [$($r.channels -join ',')] got $($r.got.Count) messages, $($r.notices) notices, header=$($r.header)"
+	}
+	$spammer = Select-String -Path $hostOut -Pattern "CHAT_SPAMMED me=(\d+)" | ForEach-Object { $_.Matches[0].Groups[1].Value } | Select-Object -First 1
+	if ($null -ne $spammer) {
+		$spamOwn = @($reports[$spammer].got | Where-Object { $_ -match 'spam_' }).Count
+		"CHAT: the host spammed 8, $spamOwn went through, $($reports[$spammer].notices) refusals"
+		if ($spamOwn -ge 8 -or $reports[$spammer].notices -lt 1) { "CHAT: the spam was not cut off"; $ok = $false }
+	}
+	if (@($sent).Count -eq 0) { "CHAT: nothing was sent"; $ok = $false }
 }
 if ($ok) { "SMOKE: PASS" } else { "SMOKE: FAIL" }

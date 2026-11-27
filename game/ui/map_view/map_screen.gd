@@ -84,7 +84,7 @@ func close() -> void:
 
 
 func _input(event : InputEvent) -> void:
-	if event.is_action_pressed("player_map") and not event.is_echo():
+	if event.is_action_pressed("player_map") and not event.is_echo() and not get_viewport().gui_get_focus_owner() is LineEdit: #(not while typing in the chat)
 		get_viewport().set_input_as_handled()
 		toggle()
 	elif visible and event is InputEventKey and event.pressed and not event.echo and (event as InputEventKey).keycode == KEY_ESCAPE:

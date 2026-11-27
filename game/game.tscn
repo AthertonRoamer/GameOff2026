@@ -44,6 +44,7 @@
 [ext_resource type="Resource" path="res://game/roles/shade.tres" id="42_shade"]
 [ext_resource type="Script" uid="uid://1wufpkt65jw4" path="res://game/abilities/ability_control.gd" id="43_abilities"]
 [ext_resource type="PackedScene" path="res://game/debug/debug_role_picker.tscn" id="44_role_picker"]
+[ext_resource type="Script" path="res://game/chat/chat_relay.gd" id="45_chat"]
 
 [node name="Game" type="Node2D" unique_id=2090356720]
 script = ExtResource("1_game")
@@ -98,6 +99,9 @@ pickups = NodePath("../PickupControl")
 [node name="TargetArtifactChooser" type="Node" parent="." unique_id=1600048755 node_paths=PackedStringArray("placer")]
 script = ExtResource("30_chooser")
 placer = NodePath("../ArtifactPlacer")
+
+[node name="ChatRelay" type="Node" parent="." unique_id=1473920561]
+script = ExtResource("45_chat")
 
 [node name="DesignatedExitChooser" type="Node" parent="." unique_id=618788828]
 script = ExtResource("37_exit_chooser")
