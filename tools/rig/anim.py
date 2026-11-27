@@ -21,6 +21,12 @@ SHOULDERS = os.environ.get('SHOULDERS') == '1'  # no pictures: only write where 
 SHOULDER_POS = {}
 HEAD_POS = {}
 INK = os.environ.get('INK', '1') != '0'         # 3D ink hull; the pixel pass draws its own outline
+FRONT = os.environ.get('FRONT') == '1'          # not the sprite sheets: whole-body stills seen from the front (front_idle, front_aim), for the role reveal. Use with the state names as the third argument
+FRONT_FLAT = 0.75                               # in those stills the helmets, hoods and hats are this much as tall (a little lower: from the front they looked stretched)
+FRONT_HAT = 0.78                                # and this much as big (they were sized for the view from above)
+FRONT_HAT_BY_GEAR = dict(gunner=0.71, hood=0.71, electrician=0.71, nvg=0.71) #the helmets and hoods are narrower still, and sit a little lower on the head
+FRONT_HAT_DROP = 0.012
+FRONT_SMILE = -0.3                             # the head's mouthSmile shape key: below 0 is the corners of the mouth down, a stern calm face
 
 # ------------------------------------------------------------------ palette A
 PAL = dict(
@@ -63,6 +69,10 @@ STATES = [
     dict(name='legs_run', layer='legs', action='pack_run', n=12, mode='free', clip='locomotion_pack/running.fbx', loop=True, yaw_offset=5),
     dict(name='torso_walk', layer='torso', action='pack_walk', n=12, mode='holster', clip='locomotion_pack/walking.fbx', loop=True, yaw_offset=7, blend=0.6),
     dict(name='torso_run', layer='torso', action='pack_run', n=12, mode='holster', clip='locomotion_pack/running.fbx', loop=True, yaw_offset=5),
+    # FRONT=1 only: the whole body seen from the front (the camera is moved in build), standing relaxed, and with the gun up turned a little towards the camera
+    dict(name='front_idle', layer='full', action='idle', n=1, mode='holster', front=True),
+    dict(name='front_aim', layer='full', action='idle', n=1, mode='aim', front=True, yaw_offset=-58),
+    dict(name='front_hero', layer='full', action='idle', n=1, mode='hero', front=True),   # each role doing its job (hero_pose); keep it last, it adds the things they hold
 ]
 
 # ------------------------------------------------------------------ the locomotion kit: clips blended on the skeleton
@@ -366,6 +376,28 @@ def prim(kind, loc, size, m, tag, rot=(0, 0, 0)):
     return o
 
 
+def slab(points, y, depth, m, tag='gear'):
+    """a flat piece cut to an outline: points are (x, z) in the world, the front face is at y and it is `depth` thick towards the back. Used for the vest, which is not a block"""
+    import bmesh
+    n = len(points)
+    verts = [(x, y, z) for x, z in points] + [(x, y + depth, z) for x, z in points]
+    faces = [list(range(n)), list(range(2 * n - 1, n - 1, -1))] + [[i, (i + 1) % n, n + (i + 1) % n, n + i] for i in range(n)]
+    me = bpy.data.meshes.new('slab')
+    me.from_pydata(verts, [], faces)
+    me.update()
+    bm = bmesh.new()
+    bm.from_mesh(me)
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    bm.to_mesh(me)
+    bm.free()
+    o = bpy.data.objects.new('slab', me)
+    bpy.context.scene.collection.objects.link(o)
+    me.materials.append(m)
+    me.materials.append(ink())
+    PROPS.append((o, tag))
+    return o
+
+
 def wpos(arm, bone):
     return arm.matrix_world @ arm.pose.bones['mixamorig:' + bone].head
 
@@ -614,13 +646,15 @@ def helmet(hc, skull, band, rx, ry, rz, skirt=0.075, peak=0.0):
     and lying on its side, which a plain sphere does not (it looks like a mushroom)"""
     prim('sphere', hc + V(0, 0.01, 0.025), (rx, ry, rz), skull, 'gear')
     prim('cyl', hc + V(0, 0.01, -0.012), (rx * 0.99, ry * 0.99, skirt), skull, 'gear')
-    prim('cyl', hc + V(0, 0.01, -0.05), (rx * 1.06, ry * 1.06, 0.012), band, 'gear')
+    prim('cyl', hc + V(0, 0.01, -0.012 - skirt / 2.0 - 0.0005), (rx * 1.06, ry * 1.06, 0.012), band, 'gear') #(the lip is on the bottom edge of the sides, however tall they are)
     if peak:
         prim('sphere', hc + V(0, 0.01 - ry, -0.046), (rx * 0.75, peak, 0.01), band, 'gear', rot=(math.radians(-6), 0, 0))
 
 
 def chin_strap(hc, rx, m):
     """a chin strap: a strap down each side of the head from the helmet's lip, and a cup under the chin (tagged 'head' so they turn with the head, below the shoulders' height too)"""
+    if FRONT: #seen from the front the straps and the cup run across the face
+        return
     for x in (-1.0, 1.0):
         rod(hc + V(x * rx * 0.97, 0.01, -0.05), hc + V(x * 0.058, -0.045, -0.118), 0.008, m, 'head')
     prim('cube', hc + V(0, -0.05, -0.124), (0.116, 0.034, 0.014), m, 'head')
@@ -639,13 +673,19 @@ def gear_medic(c):
     grey = mat('medgrey', (tone(PAL['text'], 0.55), tone(PAL['text'], 0.72), tone(PAL['text'], 0.85)))
     red = mat('medred', PAL['medic'])
     gear_cap(c)                                                                                           # the guard's cap
-    prim('cube', lsh + V(0.03 * side(lsh), 0.0, 0.058), (0.05, 0.05, 0.008), white, 'gear')            # a shoulder patch
-    prim('cube', lsh + V(0.03 * side(lsh), 0.0, 0.064), (0.028, 0.009, 0.006), red, 'gear')
-    prim('cube', lsh + V(0.03 * side(lsh), 0.0, 0.064), (0.009, 0.028, 0.006), red, 'gear')
+    if not FRONT: #(from the front it floats off the shoulder: the chest badge says medic)
+        prim('cube', lsh + V(0.03 * side(lsh), 0.0, 0.058), (0.05, 0.05, 0.008), white, 'gear')            # a shoulder patch
+        prim('cube', lsh + V(0.03 * side(lsh), 0.0, 0.064), (0.028, 0.009, 0.006), red, 'gear')
+        prim('cube', lsh + V(0.03 * side(lsh), 0.0, 0.064), (0.009, 0.028, 0.006), red, 'gear')
     prim('cube', spine + V(0, 0.19, -0.05), (0.3, 0.16, 0.3), white, 'gear')                              # the medkit pack
     prim('cube', spine + V(0, 0.208, 0.103), (0.036, 0.1, 0.012), red, 'gear')                            # the cross, in the middle of the part of the lid that shows behind him
     prim('cube', spine + V(0, 0.208, 0.107), (0.1, 0.036, 0.012), red, 'gear')
     prim('cube', spine + V(0, 0.14, 0.1), (0.3, 0.01, 0.01), grey, 'gear')                                # a seam across its lid
+    if FRONT: #a little badge on the chest, seen from the front: a white disc with the red cross
+        badge = spine + V(0.085, -0.152, 0.035)
+        prim('cyl', badge, (0.034, 0.034, 0.008), white, 'gear', rot=(math.pi / 2, 0, 0))
+        prim('cube', badge + V(0, -0.006, 0), (0.038, 0.006, 0.011), red, 'gear')
+        prim('cube', badge + V(0, -0.006, 0), (0.011, 0.006, 0.038), red, 'gear')
 
 
 def gear_gunner(c):
@@ -654,17 +694,35 @@ def gear_gunner(c):
     armor_hi = mat('armorhi', (PAL['g1'], PAL['g2'], tone(PAL['g2'], 1.3)))
     navy = mat('navydark', (PAL['void'], PAL['g0'], PAL['g1']))
     olive = mat('olive', (ACCENT['olive_dark'], ACCENT['olive'], tone(ACCENT['olive'], 1.35)))
-    helmet(hc, armor, navy, 0.104, 0.113, 0.07, skirt=0.07)                                                # the helmet: a low dome on straight sides with a flared lip all round (no bill)
+    flat = FRONT_FLAT if FRONT else 1.0 #(from the front: a lower helmet, a little wider so it covers the forehead, and no mount on its front)
+    helmet(hc, armor, navy, 0.112 if FRONT else 0.104, 0.128 if FRONT else 0.113, 0.07 * flat, skirt=0.07 * flat)                    # the helmet: a low dome on straight sides with a flared lip all round (no bill)
     for x in (-0.027, 0.027):                                                                              # two rails along the top
-        prim('cube', hc + V(x, 0.01, 0.092), (0.012, 0.14, 0.012), navy, 'gear')
-    prim('cube', hc + V(0, -0.1, 0.04), (0.07, 0.03, 0.036), navy, 'gear')                                 # the night vision mount, on the front of the dome
-    for x in (-1.0, 1.0):                                                                                  # a rivet on each side
+        prim('cube', hc + V(x, 0.01, 0.025 + 0.07 * flat - 0.003), (0.012, 0.14, 0.012), navy, 'gear')
+    if not FRONT:
+        prim('cube', hc + V(0, -0.1, 0.04), (0.07, 0.03, 0.036), navy, 'gear')                             # the night vision mount, on the front of the dome
+    for x in (() if FRONT else (-1.0, 1.0)):                                                              # a rivet on each side
         prim('sphere', hc + V(0.104 * x, 0.01, 0.02), (0.011, 0.011, 0.011), armor_hi, 'gear')
     chin_strap(hc, 0.104, navy)                                                                            # and a chin strap
     prim('cube', spine + V(0, -0.03, 0.04) * k, V(0.34, 0.16, 0.12) * k, armor, 'gear')                    # the plate carrier over the chest
     prim('cube', spine + V(0, -0.05, 0.1) * k, V(0.22, 0.09, 0.02) * k, armor_hi, 'gear')                  # and its plate
     for x in (-0.07, 0.0, 0.07):                                                                           # a row of pouches below it
-        prim('cube', spine + V(x, -0.115, 0.07) * k, V(0.055, 0.04, 0.04) * k, navy, 'gear')
+        if not FRONT: #(from the front they are a row of black blocks, which read as a mess)
+            prim('cube', spine + V(x, -0.115, 0.07) * k, V(0.055, 0.04, 0.04) * k, navy, 'gear')
+    if FRONT: #a plate carrier vest seen from the front: shoulder straps with a lighter edge, a rounded chest panel with a raised plate, side panels that wrap round the ribs, a waist band with two magazine pouches
+        for sx in (-1.0, 1.0):
+            a = spine + V(0.075 * sx, -0.185, 0.085) * k
+            b = spine + V(0.135 * sx, -0.165, 0.155) * k
+            d = b - a
+            for width, m, dy in ((0.05, navy, 0.0), (0.012, armor_hi, -0.006)):
+                o = prim('cube', (a + b) / 2 + V(0, dy, 0), (width * k, 0.016, math.hypot(d.x, d.z)), m, 'gear')
+                o.rotation_euler = (0, math.atan2(d.x, d.z), 0)
+        def pts(*xz): #(a shape in metres from the middle of the chest: x across, z up, as the vest is cut)
+            return [(spine.x + x * k, spine.z + z * k) for x, z in xz]
+        slab(pts((-0.10, 0.105), (0.10, 0.105), (0.145, 0.03), (0.15, -0.07), (0.125, -0.125), (-0.125, -0.125), (-0.15, -0.07), (-0.145, 0.03)), spine.y - 0.185 * k, 0.045, armor, 'gear')   # the vest: narrow at the shoulders, wide at the ribs, cut in at the waist
+        slab(pts((-0.075, 0.085), (0.075, 0.085), (0.095, 0.02), (0.095, -0.04), (-0.095, -0.04), (-0.095, 0.02)), spine.y - 0.1875 * k - 0.012, 0.012, armor_hi, 'gear')          # the front plate in it
+        slab(pts((-0.14, -0.055), (0.14, -0.055), (0.145, -0.085), (-0.145, -0.085)), spine.y - 0.1875 * k - 0.006, 0.01, navy, 'gear')                                           # the cummerbund across the ribs
+        for x in (-0.055, 0.055):
+            slab(pts((x - 0.032, -0.095), (x + 0.032, -0.095), (x + 0.032, -0.138), (x - 0.032, -0.138)), spine.y - 0.1875 * k - 0.014, 0.014, armor_hi, 'gear')                    # a magazine pouch each side
     for x in (-1.0, 1.0):                                                                                  # side panels (the cummerbund)
         prim('cube', spine + V(0.19 * x, 0.0, 0.05) * k, V(0.04, 0.17, 0.07) * k, navy, 'gear')
     prim('sphere', spine + V(0, 0.07, 0.07) * k, V(0.13, 0.06, 0.05) * k, armor_hi, 'gear')                # a neck guard behind the helmet
@@ -672,9 +730,9 @@ def gear_gunner(c):
     for sd, s in (('Left', lsh), ('Right', rsh)):                                                          # shoulder armour: two plates riding on each upper arm, just out from the joint
         p = s + (wpos(arm, f'{sd}ForeArm') - s) * 0.2
         for i in range(3):                                                                                 # three overlapping plates, each trimmed with a dark edge
-            z = (0.046 + 0.017 * i) * k
+            z = (0.046 + 0.017 * i + (0.014 if FRONT else 0.0)) * k #(from the front the pads sit a little higher, so the jacket's shoulder does not come through them)
             q = p + (wpos(arm, f'{sd}ForeArm') - s) * 0.07 * i
-            o = prim('sphere', q + V(0, 0, z), V(0.08 - 0.012 * i, 0.092 - 0.013 * i, 0.028) * k, armor_hi if i == 2 else armor, 'bone')
+            o = prim('sphere', q + V(0, -0.04 if FRONT else 0.0, z), V(0.08 - 0.012 * i, 0.092 - 0.013 * i, 0.028 * (0.6 if FRONT else 1.0)) * k, armor_hi if i == 2 else armor, 'bone')
             attach(arm, o, f'{sd}Arm')
         strap(s + V(0, 0, 0.1 * k), spine + V(0, 0.08, 0.06) * k, 0.045 * k, navy)                          # the carrier's shoulder strap, over to the back panel
     prim('cube', spine + V(0, 0.09, 0.05) * k, V(0.3, 0.07, 0.1) * k, navy, 'gear')                         # the carrier's back panel
@@ -686,12 +744,18 @@ def gear_electrician(c):
     hc, spine, lsh, rsh = c['hc'], c['spine'], c['lsh'], c['rsh']
     hat = mat('hardhat', PAL['backup'])
     stripe = mat('reflect', PAL['flash'], emit=True)
+    if FRONT: #from the front: the shade's hat in yellow (a flat dome on straight sides, no brim)
+        yellow = mat('hardhat_front', (tone(PAL['backup'], 0.7), PAL['backup'], tone(PAL['backup'], 1.2)))
+        yellow_seam = mat('hardhat_seam', (tone(PAL['backup'], 0.55), tone(PAL['backup'], 0.8), tone(PAL['backup'], 1.0)))
+        helmet(hc, yellow, yellow_seam, 0.112, 0.128, 0.078 * FRONT_FLAT, skirt=0.075 * FRONT_FLAT)
+        prim('cube', hc + V(0, 0.01, 0.025 + 0.078 * FRONT_FLAT + 0.002), (0.009, 0.18, 0.009), yellow_seam, 'gear')
     wire = mat('wire', (tone(PAL['warm'], 0.8), PAL['warm'], tone(PAL['warm'], 1.3)))
     leather = mat('leather', (tone(ACCENT['leather'], 0.6), ACCENT['leather'], tone(ACCENT['leather'], 1.3)))
-    prim('sphere', hc + V(0, 0, 0.035), (0.106, 0.115, 0.088), hat, 'gear')                               # the hard hat
-    prim('cyl', hc + V(0, -0.01, 0.0), (0.14, 0.15, 0.011), mat('hatbrim', tone(PAL['backup'], 0.85)), 'gear')
-    for x in (-0.035, 0.035):                                                                             # two ribs over the top
-        prim('cube', hc + V(x, 0.0, 0.118), (0.011, 0.16, 0.011), mat('hatrib', tone(PAL['backup'], 0.9)), 'gear')
+    if not FRONT:
+        prim('sphere', hc + V(0, 0, 0.035), (0.106, 0.115, 0.088), hat, 'gear')                           # the hard hat
+        prim('cyl', hc + V(0, -0.01, 0.0), (0.14, 0.15, 0.011), mat('hatbrim', tone(PAL['backup'], 0.85)), 'gear')
+        for x in (-0.035, 0.035):                                                                         # two ribs over the top
+            prim('cube', hc + V(x, 0.0, 0.118), (0.011, 0.16, 0.011), mat('hatrib', tone(PAL['backup'], 0.9)), 'gear')
     sp = spine + V(0, 0.2, -0.05)
     plate = mat('reelplate', (PAL['void'], PAL['deep'], PAL['wall']))
     prim('cube', sp + V(0, -0.02, 0.0), (0.3, 0.1, 0.2), plate, 'gear')                                    # a frame the reel is carried in
@@ -709,8 +773,9 @@ def gear_hood(c):
     hc = c['hc']
     cloth = mat('hood', ('#121a28', '#26324a', '#3a4a66'))
     seam = mat('hoodseam', ('#1f2b42', '#34445f', '#4d6285'))
-    helmet(hc, cloth, seam, 0.112, 0.128, 0.078, skirt=0.075)                                              # the hood: a snug dome on straight sides, its hem flaring a little
-    prim('cube', hc + V(0, 0.01, 0.105), (0.009, 0.18, 0.009), seam, 'gear')                               # the seam over the top
+    flat = FRONT_FLAT if FRONT else 1.0 #(from the front: a little lower, or it looks stretched)
+    helmet(hc, cloth, seam, 0.112, 0.128, 0.078 * flat, skirt=0.075 * flat)                                # the hood: a snug dome on straight sides, its hem flaring a little
+    prim('cube', hc + V(0, 0.01, 0.025 + 0.078 * flat + 0.002), (0.009, 0.18, 0.009), seam, 'gear')        # the seam over the top
     chin_strap(hc, 0.112, mat('hoodstrap', ('#0a0f18', '#161f30', '#26324a')))                             # a chin strap
 
 
@@ -720,10 +785,11 @@ def gear_beanie(c):
     shell = mat('beanie', ACCENT['beanie'])
     seam = mat('beanierib', (tone(ACCENT['beanie'], 0.6), tone(ACCENT['beanie'], 0.8), ACCENT['beanie']))
     dark = mat('beaniedark', (PAL['void'], PAL['deep'], PAL['wall']))
-    prim('sphere', hc + V(0, 0.01, 0.022), (0.1, 0.103, 0.07), shell, 'gear')                              # the dome
-    prim('cyl', hc + V(0, 0.01, -0.012), (0.0995, 0.1025, 0.07), shell, 'gear')                            # straight sides down over the ears
-    prim('cyl', hc + V(0, 0.01, -0.046), (0.1015, 0.1045, 0.006), seam, 'gear')                            # a thin edge, flush with the sides
-    prim('cube', hc + V(0, 0.01, 0.092), (0.008, 0.15, 0.008), seam, 'gear')                               # the seam over the top
+    tall = FRONT_FLAT if FRONT else 1.0 #(from the front: a little lower, or it looks stretched)
+    prim('sphere', hc + V(0, 0.01, 0.022), (0.1, 0.103, 0.07 * tall), shell, 'gear')                       # the dome
+    prim('cyl', hc + V(0, 0.01, -0.012), (0.0995, 0.1025, 0.07 * tall), shell, 'gear')                     # straight sides down over the ears
+    prim('cyl', hc + V(0, 0.01, -0.012 - 0.035 * tall - 0.0005), (0.1015, 0.1045, 0.006), seam, 'gear')    # a thin edge, flush with the bottom of the sides
+    prim('cube', hc + V(0, 0.01, 0.022 + 0.07 * tall), (0.008, 0.15, 0.008), seam, 'gear')                 # the seam over the top
     prim('cyl', hc + V(0, 0.01, 0.03), (0.1015, 0.1045, 0.008), dark, 'gear')                              # the lamp's strap, as thin as can be
     prim('cube', hc + V(0, -0.0925, 0.03), (0.056, 0.01, 0.036), dark, 'gear')                             # the mounting plate, flat on the front
     prim('cyl', hc + V(0, -0.1, 0.03), (0.024, 0.024, 0.014), mat('lamp', (PAL['wall'], PAL['metal'], tone(PAL['metal'], 1.3))), 'gear', rot=(math.pi / 2, 0, 0))  # the lamp's housing, a short drum
@@ -740,11 +806,17 @@ def gear_beanie(c):
 def gear_nvg(c):
     hc, spine = c['hc'], c['spine']
     body = mat('nvgbody', PAL['i2'])
-    prim('sphere', hc + V(0, 0.005, 0.01), (0.115, 0.125, 0.11), mat('balaclava', (PAL['i0'], PAL['i1'], PAL['i2'])), 'gear')
-    prim('cube', hc + V(0, -0.1, 0.04), (0.1, 0.05, 0.04), body, 'gear')                                  # the goggles
-    for x in (-0.03, 0.03):
-        prim('cyl', hc + V(x, -0.135, 0.04), (0.019, 0.019, 0.04), body, 'gear', rot=(math.pi / 2, 0, 0))   # the tubes
-        prim('cyl', hc + V(x, -0.158, 0.04), (0.014, 0.014, 0.008), mat('nvglens', PAL['nv'], emit=True), 'gear', rot=(math.pi / 2, 0, 0))
+    cloth = mat('balaclava', (PAL['i0'], PAL['i1'], PAL['i2']))
+    ez, ex, ey, tube = 0.04, 0.03, 0.0, 0.04 #how high the goggles sit, how far apart the tubes are, how far the tubes stand out, how long they are
+    if FRONT: #from the front: the shade's hat in black (a flat dome on straight sides), and the goggles down on the eyes, wider apart and standing out less
+        helmet(hc, cloth, mat('balaclava_seam', (PAL['void'], PAL['i0'], PAL['i1'])), 0.112, 0.128, 0.078 * FRONT_FLAT, skirt=0.075 * FRONT_FLAT)
+        ez, ex, ey, tube = -0.052, 0.042, 0.02, 0.026
+    else:
+        prim('sphere', hc + V(0, 0.005, 0.01), (0.115, 0.125, 0.11), cloth, 'gear')
+    prim('cube', hc + V(0, -0.1, ez), (0.1 + (ex - 0.03) * 2.0, 0.05, 0.04), body, 'gear')                # the goggles
+    for x in (-ex, ex):
+        prim('cyl', hc + V(x, -0.135 + ey, ez), (0.019, 0.019, tube), body, 'gear', rot=(math.pi / 2, 0, 0))   # the tubes
+        prim('cyl', hc + V(x, -0.158 + ey + (0.0055 if FRONT else 0.0), ez), (0.014, 0.014, 0.008), mat('nvglens', PAL['nv'], emit=True), 'gear', rot=(math.pi / 2, 0, 0))
     bag = spine + V(0, 0.17, -0.06)
     prim('cube', bag, (0.36, 0.15, 0.2), mat('duffel', ACCENT['duffel']), 'gear')                          # the duffel
     for x in (-0.09, 0.09):
@@ -752,6 +824,194 @@ def gear_nvg(c):
 
 
 GEAR = dict(cap=gear_cap, medic=gear_medic, gunner=gear_gunner, electrician=gear_electrician, hood=gear_hood, beanie=gear_beanie, nvg=gear_nvg)
+
+
+# ------------------------------------------------------------------ hero poses (FRONT=1, state front_hero)
+# Each role doing its job, for the role reveal: the body is posed from the idle stance with IK (the hands to a place beside the shoulders, the feet kept where they
+# stand when the hips come down), the thing they work with is made in their hands and tied to a hand, and the whole figure is then turned a little.
+# turn: degrees about the hips. drop: how far the hips come down (a crouch). left / right: where each wrist goes, (x, y, z above the shoulders), in metres on a body of
+# scale 1; x is positive to the character's left (the right of the picture), y negative is towards the camera. *_dir: which way that fist points
+HERO = {
+    'guard': dict(turn=-14, drop=0.0, left=(0.27, -0.30, -0.27), right=(-0.29, -0.13, -0.47), left_dir=(0.03, -0.1, 0.0), right_dir=(0.0, -0.07, -0.07)),
+    'gunner': dict(turn=-16, drop=0.0, left=(0.13, -0.31, -0.14), right=(-0.15, -0.29, -0.37), left_dir=(-0.02, -0.06, 0.07), right_dir=(0.07, -0.06, 0.03)),
+    'shade': dict(turn=-18, drop=0.0, left=(0.29, -0.07, -0.54), right=(-0.05, -0.23, -0.1), left_dir=(0.0, -0.02, -0.1), right_dir=(0.04, 0.0, 0.1)),
+    'medic': dict(turn=12, drop=0.0, left=(0.30, -0.24, -0.38), right=(-0.28, -0.25, -0.10), left_dir=(0.0, -0.04, -0.09), right_dir=(0.01, -0.03, 0.09)),
+    'electrician': dict(turn=-12, drop=0.0, left=(0.15, -0.35, -0.30), right=(-0.15, -0.35, -0.30), left_dir=(-0.06, -0.07, 0.0), right_dir=(0.06, -0.07, 0.0)),
+    'ventrat': dict(turn=-16, drop=0.34, left=(0.33, -0.27, -0.30), right=(-0.24, -0.28, -0.46), left_dir=(0.04, -0.09, 0.0), right_dir=(0.0, -0.05, -0.09)),
+    'intruder': dict(turn=16, drop=0.07, left=(0.21, -0.36, -0.22), right=(-0.28, -0.19, -0.03), left_dir=(-0.02, -0.1, 0.02), right_dir=(0.0, -0.01, 0.1)),
+}
+
+
+def bar(a, b, width, thick, m, round_=False):
+    """a bar (a box, or with round_ a rod) from point a to point b, whatever the direction"""
+    d = b - a
+    rot = d.to_track_quat('Z', 'Y').to_euler()
+    size = (width / 2.0, width / 2.0, d.length) if round_ else (width, thick, d.length)
+    return prim('cyl' if round_ else 'cube', (a + b) / 2, size, m, 'hero', rot=rot)
+
+
+def ball(at, radius, m):
+    return prim('sphere', at, (radius, radius, radius), m, 'hero')
+
+
+def gem(at, r, h, m):
+    """an eight sided cut stone"""
+    verts = [at + V(r, 0, 0), at + V(0, r, 0), at + V(-r, 0, 0), at + V(0, -r, 0), at + V(0, 0, h), at + V(0, 0, -h)]
+    faces = [(i, (i + 1) % 4, 4) for i in range(4)] + [((i + 1) % 4, i, 5) for i in range(4)]
+    me = bpy.data.meshes.new('gem')
+    me.from_pydata(verts, [], faces)
+    me.update()
+    o = bpy.data.objects.new('gem', me)
+    bpy.context.scene.collection.objects.link(o)
+    me.materials.append(m)
+    me.materials.append(ink())
+    PROPS.append((o, 'hero'))
+    return o
+
+
+def hero_pose(role, arm, k, holster_gun):
+    h = HERO[role]
+    bpy.context.view_layer.update()
+    if h['drop']:  # a crouch: the hips come down and the legs are worked out again so the feet stay where they stood, each knee out to its own side
+        feet = {s: wpos(arm, f'{s}Foot').copy() for s in ('Left', 'Right')}
+        arm.location.z -= h['drop'] * k
+        bpy.context.view_layer.update()
+        for s, sx in (('Left', 1.0), ('Right', -1.0)):
+            pose_legs(arm, {s: feet[s] + V(0.04 * sx, 0, 0)}, (0.45 * sx, -1.0, 0.1))
+    shz = wpos(arm, 'LeftArm').z
+
+    def at(p):
+        return V(p[0] * k, p[1] * k, shz + p[2] * k)
+    pose_arms(arm, {'Left': at(h['left']), 'Right': at(h['right'])}, lambda s: (s * 1.0, 0.3, -0.45), lambda s: h['left_dir'] if s > 0 else h['right_dir'])
+    bpy.context.view_layer.update()
+    hand = {s: ((wpos(arm, f'{s}Hand') + wpos(arm, f'{s}HandMiddle1')) / 2).copy() for s in ('Left', 'Right')}
+    left, right = hand['Left'], hand['Right']
+    head, top = wpos(arm, 'Head'), wpos(arm, 'HeadTop_End')
+    hc = (head + top) / 2 + V(0, 0, 0.035 * (top - head).length / 0.177)
+    steel = mat('hero_steel', (PAL['wall'], PAL['metal'], tone(PAL['metal'], 1.45)))
+    dark = mat('hero_dark', ('#101216', '#22262e', '#3d434f'))
+    black = mat('hero_black', ('#07090c', '#14161a', '#2a2e36'))
+    white = mat('hero_white', (tone(PAL['text'], 0.75), PAL['text'], '#fbf9f3'))
+    red = mat('hero_red', PAL['medic'])
+    n0 = len(PROPS)
+    held = []  # (side, first prop index, end index): what each hand carries
+
+    def carry(side_name, start):
+        held.append((side_name, start, len(PROPS)))
+
+    def pistol(grip, along, suppressed):
+        along = along.normalized()
+        bar(grip - along * 0.02, grip + along * 0.17, 0.036, 0.046, mat('hero_gunmetal', ('#353b47', '#626c7e', '#98a1b3')))  # the slide (lighter than the real one, or it is lost against the uniform)
+        bar(grip - along * 0.01, grip + along * 0.02 + V(0, 0.03, -0.075), 0.036, 0.04, black)  # the grip under the fist
+        bar(grip + along * 0.158, grip + along * 0.182, 0.026, 0.03, black)          # the muzzle
+        if suppressed:
+            bar(grip + along * 0.17, grip + along * 0.32, 0.048, 0.048, black, round_=True)
+
+    if role == 'guard':  # on watch: a torch held out, the pistol low
+        s = len(PROPS)
+        aim = V(1.0, -0.22, 0.08).normalized()  # out to the side, so the length of the torch shows
+        bar(left - aim * 0.07, left + aim * 0.13, 0.052, 0.052, dark, round_=True)
+        bar(left + aim * 0.13, left + aim * 0.19, 0.082, 0.082, steel, round_=True)
+        bar(left + aim * 0.19, left + aim * 0.196, 0.07, 0.07, mat('hero_lamp', PAL['flash'], emit=True), round_=True)
+        carry('Left', s)
+        s = len(PROPS)
+        pistol(right + V(0, -0.045, -0.02), V(-0.5, -0.3, -0.8), False)
+        carry('Right', s)
+        holster_gun.hide_render = True
+    elif role == 'gunner':  # the shotgun held across the chest
+        s = len(PROPS)
+        u = (left - right).normalized()
+        out = V(0, -0.06, 0)
+        wood = mat('hero_wood', ('#241a14', '#3d2d22', '#5a4433'))
+        bar(right + out - u * 0.34 * k, right + out - u * 0.06, 0.1, 0.055, wood)          # the stock
+        bar(right + out - u * 0.07, left + out + u * 0.03, 0.095, 0.06, dark)              # the receiver
+        bar(left + out + u * 0.02, left + out + u * 0.42 * k, 0.046, 0.046, steel, round_=True)   # the barrel
+        side_v = u.cross(V(0, -1, 0)).normalized()
+        side_v = side_v if side_v.z < 0 else -side_v
+        bar(left + out + u * 0.03 + side_v * 0.045, left + out + u * 0.33 * k + side_v * 0.045, 0.036, 0.036, dark, round_=True)  # the tube magazine under it
+        bar(left + out - u * 0.06 + side_v * 0.04, left + out + u * 0.13 + side_v * 0.04, 0.07, 0.07, wood, round_=True)          # the pump, in the front hand
+        carry('Right', s)
+        for o, tag in PROPS:
+            if tag == 'holster':
+                o.hide_render = True
+    elif role == 'shade':  # a finger to the lips, the suppressed pistol held down
+        s = len(PROPS)
+        lips = hc + V(0.008, -0.114, -0.178)
+        skin = mat(f'{role}_hands', ROLES[role]['hands'])
+        base = right + V(0.012, -0.012, 0.03)
+        bar(base, lips + V(0, -0.012, 0.022), 0.025, 0.025, skin, round_=True)
+        ball(lips + V(0, -0.012, 0.022), 0.012, skin)
+        carry('Right', s)
+        s = len(PROPS)
+        pistol(left + V(0, -0.035, -0.03), V(0.08, -0.18, -1.0), True)
+        carry('Left', s)
+        holster_gun.hide_render = True
+    elif role == 'medic':  # the medical case in one hand, an injector ready in the other
+        s = len(PROPS)
+        c = left + V(0.0, -0.035, -0.17)
+        prim('cube', c, (0.27, 0.11, 0.2), white, 'hero')
+        prim('cube', c + V(0, -0.06, 0), (0.12, 0.01, 0.038), red, 'hero')
+        prim('cube', c + V(0, -0.06, 0), (0.038, 0.01, 0.12), red, 'hero')
+        for x in (-0.05, 0.05):
+            bar(c + V(x, 0, 0.1), c + V(x, 0, 0.16), 0.018, 0.018, dark, round_=True)
+        bar(c + V(-0.058, 0, 0.162), c + V(0.058, 0, 0.162), 0.026, 0.026, dark, round_=True)
+        carry('Left', s)
+        s = len(PROPS)
+        g = right + V(0, -0.045, 0.0)
+        up = V(-0.12, -0.12, 1.0).normalized()
+        bar(g - up * 0.05, g + up * 0.15, 0.052, 0.052, white, round_=True)
+        bar(g + up * 0.035, g + up * 0.125, 0.056, 0.056, mat('hero_serum', '#6fd3e8', emit=True), round_=True)
+        bar(g + up * 0.15, g + up * 0.165, 0.062, 0.062, steel, round_=True)
+        bar(g + up * 0.165, g + up * 0.25, 0.009, 0.009, steel, round_=True)
+        bar(g - up * 0.09, g - up * 0.05, 0.03, 0.03, red, round_=True)
+        carry('Right', s)
+    elif role == 'electrician':  # a battery held out in both hands
+        s = len(PROPS)
+        c = (left + right) / 2 + V(0, -0.03, 0.025)
+        w = max((left - right).length - 0.07, 0.2)
+        prim('cube', c, (w, 0.14, 0.18), dark, 'hero')
+        prim('cube', c + V(0, 0, 0.1), (w + 0.012, 0.152, 0.026), mat('hero_band', PAL['backup']), 'hero')
+        for x, m in ((-0.3, red), (0.3, steel)):
+            bar(c + V(x * w, 0, 0.11), c + V(x * w, 0, 0.165), 0.042, 0.042, m, round_=True)
+        charge = mat('hero_charge', PAL['nv'], emit=True)
+        prim('cube', c + V(0, -0.072, -0.008), (w * 0.74, 0.006, 0.07), black, 'hero')
+        for i in range(4):
+            prim('cube', c + V((i - 1.5) * w * 0.165, -0.077, -0.008), (w * 0.125, 0.006, 0.048), charge, 'hero')
+        carry('Right', s)
+    elif role == 'ventrat':  # crouched, the cover of a vent pulled off and held beside them
+        s = len(PROPS)
+        c = left + V(0.13, -0.025, -0.02)
+        side_len = 0.40
+        prim('cube', c + V(0, 0.02, 0), (side_len - 0.04, 0.012, side_len - 0.04), black, 'hero')
+        for sx, sz, wx, wz in ((0, 0.5, 1.0, 0.0), (0, -0.5, 1.0, 0.0), (0.5, 0, 0.0, 1.0), (-0.5, 0, 0.0, 1.0)):
+            prim('cube', c + V(sx * (side_len - 0.035), 0, sz * (side_len - 0.035)), (side_len if wx else 0.036, 0.03, side_len if wz else 0.036), steel, 'hero')
+        for i in range(5):
+            prim('cube', c + V(0, -0.004, (i - 2) * 0.062), (side_len - 0.06, 0.022, 0.026), steel, 'hero', rot=(math.radians(28), 0, 0))
+        for sx in (-1.0, 1.0):
+            for sz in (-1.0, 1.0):
+                ball(c + V(sx * 0.18, -0.018, sz * 0.18), 0.011, dark)
+        carry('Left', s)
+    elif role == 'intruder':  # the artifact taken, the suppressed pistol raised
+        s = len(PROPS)
+        c = left + V(0.0, -0.03, 0.14)
+        gem(c, 0.075, 0.11, mat('hero_relic', ('#2b7f96', '#6fd3e8', '#d6f6ff')))
+        gem(c, 0.034, 0.05, mat('hero_relic_core', '#e8fbff', emit=True))
+        for dx, dz in ((-0.12, 0.07), (0.12, 0.04), (-0.095, -0.075), (0.1, -0.09), (0.02, 0.165)):
+            gem(c + V(dx, 0, dz), 0.011, 0.019, mat('hero_spark', '#a8ecfa', emit=True))
+        carry('Left', s)
+        s = len(PROPS)
+        pistol(right + V(0.0, -0.045, 0.035), V(0.03, -0.12, 1.0), True)
+        carry('Right', s)
+        holster_gun.hide_render = True
+    if INK:
+        for o, _ in PROPS[n0:]:
+            if 'spark' not in o.data.materials[0].name:
+                outline(o, 0.006, 1, even=False)
+    for side_name, first, end in held:
+        for o, _ in PROPS[first:end]:
+            attach(arm, o, f'{side_name}Hand')
+    arm.rotation_euler = (0, 0, math.radians(h['turn']))  # the whole figure, and what it holds, turned a little
+    bpy.context.view_layer.update()
 
 
 # ------------------------------------------------------------------ build one role
@@ -830,6 +1090,15 @@ def build(role):
         elif 'Wolf3D_Head' in o.name:
             force = 'head'
         paint_regions(o, cfg, True, force)
+    if FRONT: #a sterner, calmer face: the mouth's smile shape key pushed the other way, the mouth shut
+        for o in BODY:
+            keys = o.data.shape_keys
+            if 'Head' in o.name and keys:
+                if 'mouthSmile' in keys.key_blocks:
+                    keys.key_blocks['mouthSmile'].slider_min = -1.0
+                    keys.key_blocks['mouthSmile'].value = FRONT_SMILE
+                if 'mouthOpen' in keys.key_blocks:
+                    keys.key_blocks['mouthOpen'].value = 0.0
     idle_rot = {pb.name: pb.rotation_quaternion.copy() for pb in arm.pose.bones}
     idle_loc = {pb.name: pb.location.copy() for pb in arm.pose.bones}
     fingers_to_fists(arm)
@@ -901,8 +1170,12 @@ def build(role):
             continue #(already on its bone)
         on_head = tag == 'head' or o.matrix_world.translation.z > lsh.z + 0.08
         if on_head:
-            o.location = hc + (o.location - hc) * hk
-            o.scale = (hk, hk, hk)
+            #(seen from the front the caps are smaller: they were sized for the view from above. The helmets and hoods have to stay as wide as the head, so they are only made flatter)
+            hat_k = hk * (FRONT_HAT_BY_GEAR.get(cfg['gear'], FRONT_HAT) if FRONT else 1.0)
+            o.location = hc + (o.location - hc) * hat_k
+            if FRONT and cfg['gear'] in FRONT_HAT_BY_GEAR:
+                o.location.z -= FRONT_HAT_DROP
+            o.scale = (hat_k, hat_k, hat_k)
         attach(arm, o, 'Head' if on_head else 'Spine2')
 
     # ---- fists ----
@@ -1067,6 +1340,8 @@ def build(role):
     os.makedirs(os.path.join(OUT, role), exist_ok=True)
     meta = {}
     for st in STATES:
+        if bool(st.get('front')) != FRONT: #the front stills are for FRONT=1 only, and the sheets are not rendered then
+            continue
         if ONLY and not any(st['name'] == o or (o.endswith('*') and st['name'].startswith(o[:-1])) for o in ONLY):
             continue
         set_layer(st['layer'], st['mode'])
@@ -1086,6 +1361,13 @@ def build(role):
             cam.ortho_scale = st.get('ortho', layered_scale)
         sc.render.resolution_x = sc.render.resolution_y = int(round(cam.ortho_scale * PPU))
         co.location = (0, -0.12, 6)
+        if st.get('front'): #seen from the front: the character faces -y, so the camera stands at -y and looks along +y (the sheets' camera looks down)
+            co.rotation_euler = (math.pi / 2, 0, 0)
+            co.location = (0, -5.0, 1.0 * ROLE_K)
+            cam.ortho_scale = 2.3 * ROLE_K
+            sc.render.resolution_x, sc.render.resolution_y = 640, 960
+        else:
+            co.rotation_euler = (0, 0, math.pi)
         travel_base = None
         for i in range(n):
             arm.rotation_euler = (0, 0, 0)
@@ -1157,6 +1439,8 @@ def build(role):
                 holster_gun.hide_render = p2 > 0.0
             elif mode == 'reload':
                 reload_arms(st, i, n, dl)
+            elif mode == 'hero':
+                hero_pose(role, arm, ROLE_K, holster_gun)
             bpy.context.view_layer.update()
             if SHOULDERS:  # offsets from the sprite's pivot, in sprite pixels (x right, y down), for the left and right shoulder joints
                 k = sc.render.resolution_x / cam.ortho_scale

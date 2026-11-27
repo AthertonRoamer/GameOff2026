@@ -1,5 +1,15 @@
 [gd_scene format=3 uid="uid://bq6ro63p8oq1b"]
 
+[ext_resource type="Script" uid="uid://cbd2ruuswtvvn" path="res://game/environment/facility_map.gd" id="1_map"]
+[ext_resource type="Script" uid="uid://dc3o76s1verd5" path="res://game/environment/facility_room.gd" id="3_j40us"]
+[ext_resource type="PackedScene" path="res://game/environment/facility_door.tscn" id="4_yd85k"]
+[ext_resource type="PackedScene" path="res://game/utility/door_control_panel.tscn" id="6_ieksj"]
+[ext_resource type="Script" uid="uid://b7r08rbd5msb8" path="res://game/pickups/artifact_location.gd" id="7_artifact_location"]
+[ext_resource type="Script" uid="uid://bj3o6xoh76qn0" path="res://game/environment/guard_spawn.gd" id="9_guard_spawn"]
+[ext_resource type="Script" uid="uid://ck27vjswqmbtn" path="res://game/environment/intruder_spawn.gd" id="10_intruder_spawn"]
+[ext_resource type="Script" uid="uid://m1dpyh5we8w5" path="res://game/environment/facility_region.gd" id="11_region"]
+[ext_resource type="PackedScene" path="res://game/power/generator.tscn" id="12_generator"]
+[ext_resource type="Script" uid="uid://nshrcs0f36ea" path="res://game/pickups/ammo_location.gd" id="99_ammo_location"]
 [ext_resource type="PackedScene" path="res://game/furniture/items/barrel_navy.tscn" id="furn_barrel_navy"]
 [ext_resource type="PackedScene" path="res://game/furniture/items/barrel_olive.tscn" id="furn_barrel_olive"]
 [ext_resource type="PackedScene" path="res://game/furniture/items/barrel_rust.tscn" id="furn_barrel_rust"]
@@ -52,16 +62,6 @@
 [ext_resource type="PackedScene" path="res://game/furniture/items/workbench_e.tscn" id="furn_workbench_e"]
 [ext_resource type="PackedScene" path="res://game/furniture/items/workbench_n.tscn" id="furn_workbench_n"]
 [ext_resource type="PackedScene" path="res://game/furniture/items/workbench_w.tscn" id="furn_workbench_w"]
-[ext_resource type="Script" uid="uid://cbd2ruuswtvvn" path="res://game/environment/facility_map.gd" id="1_map"]
-[ext_resource type="Script" uid="uid://dc3o76s1verd5" path="res://game/environment/facility_room.gd" id="3_j40us"]
-[ext_resource type="PackedScene" path="res://game/environment/facility_door.tscn" id="4_yd85k"]
-[ext_resource type="PackedScene" path="res://game/utility/door_control_panel.tscn" id="6_ieksj"]
-[ext_resource type="Script" uid="uid://b7r08rbd5msb8" path="res://game/pickups/artifact_location.gd" id="7_artifact_location"]
-[ext_resource type="Script" uid="uid://bj3o6xoh76qn0" path="res://game/environment/guard_spawn.gd" id="9_guard_spawn"]
-[ext_resource type="Script" uid="uid://ck27vjswqmbtn" path="res://game/environment/intruder_spawn.gd" id="10_intruder_spawn"]
-[ext_resource type="Script" uid="uid://m1dpyh5we8w5" path="res://game/environment/facility_region.gd" id="11_region"]
-[ext_resource type="PackedScene" path="res://game/power/generator.tscn" id="12_generator"]
-[ext_resource type="Script" uid="uid://nshrcs0f36ea" path="res://game/pickups/ammo_location.gd" id="99_ammo_location"]
 [ext_resource type="Script" uid="uid://cwn71j7krn0x6" path="res://game/environment/facility_room_rect.gd" id="rect_script"]
 
 [node name="FacilityMap" type="Node2D" unique_id=577932594]
@@ -810,521 +810,847 @@ y_sort_enabled = true
 [node name="DoorControlPanel" parent="Props" unique_id=219723147 instance=ExtResource("6_ieksj")]
 position = Vector2(997, 429)
 
-[node name="Furnishing" type="Node2D" parent="Props"]
+[node name="Furnishing" type="Node2D" parent="Props" unique_id=1949398784]
 
-[node name="Archive" type="Node2D" parent="Props/Furnishing"]
+[node name="Archive" type="Node2D" parent="Props/Furnishing" unique_id=317586203]
 
-[node name="RackDouble1" parent="Props/Furnishing/Archive" instance=ExtResource("furn_rack_double_s")]
+[node name="RackDouble1" parent="Props/Furnishing/Archive" unique_id=211895012 instance=ExtResource("furn_rack_double_s")]
 position = Vector2(380, 420.38)
+collision_layer = 2
+collision_mask = 0
 
-[node name="RackSingle1" parent="Props/Furnishing/Archive" instance=ExtResource("furn_rack_single_s")]
+[node name="RackSingle1" parent="Props/Furnishing/Archive" unique_id=1301415637 instance=ExtResource("furn_rack_single_s")]
 position = Vector2(580, 420.38)
+collision_layer = 2
+collision_mask = 0
 
-[node name="RackDouble2" parent="Props/Furnishing/Archive" instance=ExtResource("furn_rack_double_n")]
+[node name="RackDouble2" parent="Props/Furnishing/Archive" unique_id=1513807122 instance=ExtResource("furn_rack_double_n")]
 position = Vector2(380, 602.62)
+collision_layer = 2
+collision_mask = 0
 
-[node name="RackSingle2" parent="Props/Furnishing/Archive" instance=ExtResource("furn_rack_single_n")]
+[node name="RackSingle2" parent="Props/Furnishing/Archive" unique_id=1543176412 instance=ExtResource("furn_rack_single_n")]
 position = Vector2(580, 602.62)
+collision_layer = 2
+collision_mask = 0
 
-[node name="BoxCardboard1" parent="Props/Furnishing/Archive" instance=ExtResource("furn_box_cardboard")]
+[node name="BoxCardboard1" parent="Props/Furnishing/Archive" unique_id=1792595675 instance=ExtResource("furn_box_cardboard")]
 position = Vector2(341.5, 490.5)
+collision_layer = 2
+collision_mask = 0
 
-[node name="BoxStack1" parent="Props/Furnishing/Archive" instance=ExtResource("furn_box_stack")]
-position = Vector2(338.0, 542.62)
+[node name="BoxStack1" parent="Props/Furnishing/Archive" unique_id=1665832895 instance=ExtResource("furn_box_stack")]
+position = Vector2(338, 542.62)
+collision_layer = 2
+collision_mask = 0
 
-[node name="CrateWood1" parent="Props/Furnishing/Archive" instance=ExtResource("furn_crate_wood")]
+[node name="CrateWood1" parent="Props/Furnishing/Archive" unique_id=1349598939 instance=ExtResource("furn_crate_wood")]
 position = Vector2(609.62, 505.12)
+collision_layer = 2
+collision_mask = 0
 
-[node name="CameraRoom" type="Node2D" parent="Props/Furnishing"]
+[node name="CameraRoom" type="Node2D" parent="Props/Furnishing" unique_id=836703323]
 
-[node name="DeskMonitors1" parent="Props/Furnishing/CameraRoom" instance=ExtResource("furn_desk_monitors_s")]
+[node name="DeskMonitors1" parent="Props/Furnishing/CameraRoom" unique_id=1418127252 instance=ExtResource("furn_desk_monitors_s")]
 position = Vector2(705, 423.5)
+collision_layer = 2
+collision_mask = 0
 
-[node name="ChairOffice1" parent="Props/Furnishing/CameraRoom" instance=ExtResource("furn_chair_office_n")]
+[node name="ChairOffice1" parent="Props/Furnishing/CameraRoom" unique_id=876383223 instance=ExtResource("furn_chair_office_n")]
 position = Vector2(705, 458)
+collision_layer = 2
+collision_mask = 0
 
-[node name="FilingCabinet1" parent="Props/Furnishing/CameraRoom" instance=ExtResource("furn_filing_cabinet_e")]
+[node name="FilingCabinet1" parent="Props/Furnishing/CameraRoom" unique_id=1975914854 instance=ExtResource("furn_filing_cabinet_e")]
 position = Vector2(662.25, 520)
+collision_layer = 2
+collision_mask = 0
 
-[node name="FilingCabinet2" parent="Props/Furnishing/CameraRoom" instance=ExtResource("furn_filing_cabinet_e")]
+[node name="FilingCabinet2" parent="Props/Furnishing/CameraRoom" unique_id=1444741766 instance=ExtResource("furn_filing_cabinet_e")]
 position = Vector2(662.25, 546)
+collision_layer = 2
+collision_mask = 0
 
-[node name="ElectricalCabinet1" parent="Props/Furnishing/CameraRoom" instance=ExtResource("furn_electrical_cabinet_n")]
+[node name="ElectricalCabinet1" parent="Props/Furnishing/CameraRoom" unique_id=689852843 instance=ExtResource("furn_electrical_cabinet_n")]
 position = Vector2(700, 607.25)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Bin1" parent="Props/Furnishing/CameraRoom" instance=ExtResource("furn_bin")]
+[node name="Bin1" parent="Props/Furnishing/CameraRoom" unique_id=933347618 instance=ExtResource("furn_bin")]
 position = Vector2(915.12, 590)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Plant1" parent="Props/Furnishing/CameraRoom" instance=ExtResource("furn_plant")]
+[node name="Plant1" parent="Props/Furnishing/CameraRoom" unique_id=1811079889 instance=ExtResource("furn_plant")]
 position = Vector2(905.62, 427.12)
+collision_layer = 2
+collision_mask = 0
 
-[node name="DoorControl" type="Node2D" parent="Props/Furnishing"]
+[node name="DoorControl" type="Node2D" parent="Props/Furnishing" unique_id=1415515569]
 
-[node name="ElectricalCabinet1" parent="Props/Furnishing/DoorControl" instance=ExtResource("furn_electrical_cabinet_w")]
+[node name="ElectricalCabinet1" parent="Props/Furnishing/DoorControl" unique_id=1740337215 instance=ExtResource("furn_electrical_cabinet_w")]
 position = Vector2(1157.25, 520)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Bench1" parent="Props/Furnishing/DoorControl" instance=ExtResource("furn_bench_n")]
+[node name="Bench1" parent="Props/Furnishing/DoorControl" unique_id=1101920415 instance=ExtResource("furn_bench_n")]
 position = Vector2(985, 607.25)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Plant1" parent="Props/Furnishing/DoorControl" instance=ExtResource("furn_plant")]
+[node name="Plant1" parent="Props/Furnishing/DoorControl" unique_id=1599971713 instance=ExtResource("furn_plant")]
 position = Vector2(1147.62, 597.62)
+collision_layer = 2
+collision_mask = 0
 
-[node name="FilingCabinet1" parent="Props/Furnishing/DoorControl" instance=ExtResource("furn_filing_cabinet_s")]
+[node name="FilingCabinet1" parent="Props/Furnishing/DoorControl" unique_id=877674289 instance=ExtResource("furn_filing_cabinet_s")]
 position = Vector2(1140, 420.25)
+collision_layer = 2
+collision_mask = 0
 
-[node name="LightControl" type="Node2D" parent="Props/Furnishing"]
+[node name="LightControl" type="Node2D" parent="Props/Furnishing" unique_id=1891804137]
 
-[node name="Desk1" parent="Props/Furnishing/LightControl" instance=ExtResource("furn_desk_s")]
+[node name="Desk1" parent="Props/Furnishing/LightControl" unique_id=1755514707 instance=ExtResource("furn_desk_s")]
 position = Vector2(1230, 423.5)
+collision_layer = 2
+collision_mask = 0
 
-[node name="ChairOffice1" parent="Props/Furnishing/LightControl" instance=ExtResource("furn_chair_office_n")]
+[node name="ChairOffice1" parent="Props/Furnishing/LightControl" unique_id=1931026502 instance=ExtResource("furn_chair_office_n")]
 position = Vector2(1230, 458)
+collision_layer = 2
+collision_mask = 0
 
-[node name="ElectricalCabinet1" parent="Props/Furnishing/LightControl" instance=ExtResource("furn_electrical_cabinet_w")]
+[node name="ElectricalCabinet1" parent="Props/Furnishing/LightControl" unique_id=873778148 instance=ExtResource("furn_electrical_cabinet_w")]
 position = Vector2(1421.25, 505)
+collision_layer = 2
+collision_mask = 0
 
-[node name="ElectricalCabinet2" parent="Props/Furnishing/LightControl" instance=ExtResource("furn_electrical_cabinet_w")]
+[node name="ElectricalCabinet2" parent="Props/Furnishing/LightControl" unique_id=486967185 instance=ExtResource("furn_electrical_cabinet_w")]
 position = Vector2(1421.25, 550)
+collision_layer = 2
+collision_mask = 0
 
-[node name="FilingCabinet1" parent="Props/Furnishing/LightControl" instance=ExtResource("furn_filing_cabinet_e")]
+[node name="FilingCabinet1" parent="Props/Furnishing/LightControl" unique_id=1008178419 instance=ExtResource("furn_filing_cabinet_e")]
 position = Vector2(1190.25, 560)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Bin1" parent="Props/Furnishing/LightControl" instance=ExtResource("furn_bin")]
+[node name="Bin1" parent="Props/Furnishing/LightControl" unique_id=1870623519 instance=ExtResource("furn_bin")]
 position = Vector2(1215, 607.12)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Vault" type="Node2D" parent="Props/Furnishing"]
+[node name="Vault" type="Node2D" parent="Props/Furnishing" unique_id=1042391182]
 
-[node name="Safe1" parent="Props/Furnishing/Vault" instance=ExtResource("furn_safe_n")]
+[node name="Safe1" parent="Props/Furnishing/Vault" unique_id=572224865 instance=ExtResource("furn_safe_n")]
 position = Vector2(430, 798.62)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Safe2" parent="Props/Furnishing/Vault" instance=ExtResource("furn_safe_n")]
+[node name="Safe2" parent="Props/Furnishing/Vault" unique_id=1499945406 instance=ExtResource("furn_safe_n")]
 position = Vector2(580, 798.62)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Safe3" parent="Props/Furnishing/Vault" instance=ExtResource("furn_safe_w")]
+[node name="Safe3" parent="Props/Furnishing/Vault" unique_id=1479722528 instance=ExtResource("furn_safe_w")]
 position = Vector2(622.62, 700)
+collision_layer = 2
+collision_mask = 0
 
-[node name="ChestSteel1" parent="Props/Furnishing/Vault" instance=ExtResource("furn_chest_steel")]
+[node name="ChestSteel1" parent="Props/Furnishing/Vault" unique_id=2099591778 instance=ExtResource("furn_chest_steel")]
 position = Vector2(590, 638.62)
+collision_layer = 2
+collision_mask = 0
 
-[node name="ChestSteel2" parent="Props/Furnishing/Vault" instance=ExtResource("furn_chest_steel")]
-position = Vector2(336.0, 660)
+[node name="ChestSteel2" parent="Props/Furnishing/Vault" unique_id=1958484503 instance=ExtResource("furn_chest_steel")]
+position = Vector2(336, 660)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Pallet1" parent="Props/Furnishing/Vault" instance=ExtResource("furn_pallet")]
+[node name="Pallet1" parent="Props/Furnishing/Vault" unique_id=181378919 instance=ExtResource("furn_pallet")]
+z_index = -12
 position = Vector2(560.12, 741.62)
+collision_layer = 0
+collision_mask = 0
 
-[node name="CrateWood1" parent="Props/Furnishing/Vault" instance=ExtResource("furn_crate_wood")]
+[node name="CrateWood1" parent="Props/Furnishing/Vault" unique_id=1736040200 instance=ExtResource("furn_crate_wood")]
 position = Vector2(560, 740)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Generator" type="Node2D" parent="Props/Furnishing"]
+[node name="Generator" type="Node2D" parent="Props/Furnishing" unique_id=1740862091]
 
-[node name="Generator1" parent="Props/Furnishing/Generator" instance=ExtResource("furn_generator_s")]
+[node name="Generator1" parent="Props/Furnishing/Generator" unique_id=1936270943 instance=ExtResource("furn_generator_s")]
 position = Vector2(866, 651.25)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Generator2" parent="Props/Furnishing/Generator" instance=ExtResource("furn_generator_s")]
+[node name="Generator2" parent="Props/Furnishing/Generator" unique_id=421167817 instance=ExtResource("furn_generator_s")]
 position = Vector2(934, 651.25)
+collision_layer = 2
+collision_mask = 0
 
-[node name="BarrelOlive1" parent="Props/Furnishing/Generator" instance=ExtResource("furn_barrel_olive")]
+[node name="BarrelOlive1" parent="Props/Furnishing/Generator" unique_id=1146510474 instance=ExtResource("furn_barrel_olive")]
 position = Vector2(669.62, 647.62)
+collision_layer = 2
+collision_mask = 0
 
-[node name="BarrelNavy1" parent="Props/Furnishing/Generator" instance=ExtResource("furn_barrel_navy")]
+[node name="BarrelNavy1" parent="Props/Furnishing/Generator" unique_id=473344005 instance=ExtResource("furn_barrel_navy")]
 position = Vector2(669.62, 686.12)
+collision_layer = 2
+collision_mask = 0
 
-[node name="DrumPlastic1" parent="Props/Furnishing/Generator" instance=ExtResource("furn_drum_plastic")]
+[node name="DrumPlastic1" parent="Props/Furnishing/Generator" unique_id=1621021396 instance=ExtResource("furn_drum_plastic")]
 position = Vector2(702.62, 669.62)
+collision_layer = 2
+collision_mask = 0
 
-[node name="GasBottleSteel1" parent="Props/Furnishing/Generator" instance=ExtResource("furn_gas_bottle_steel")]
+[node name="GasBottleSteel1" parent="Props/Furnishing/Generator" unique_id=1661703583 instance=ExtResource("furn_gas_bottle_steel")]
 position = Vector2(669.62, 724.62)
+collision_layer = 2
+collision_mask = 0
 
-[node name="GasBottleOlive1" parent="Props/Furnishing/Generator" instance=ExtResource("furn_gas_bottle_olive")]
+[node name="GasBottleOlive1" parent="Props/Furnishing/Generator" unique_id=1927930610 instance=ExtResource("furn_gas_bottle_olive")]
 position = Vector2(691.62, 724.62)
+collision_layer = 2
+collision_mask = 0
 
-[node name="ToteBlack1" parent="Props/Furnishing/Generator" instance=ExtResource("furn_tote_black")]
-position = Vector2(948.0, 730)
+[node name="ToteBlack1" parent="Props/Furnishing/Generator" unique_id=1361065267 instance=ExtResource("furn_tote_black")]
+position = Vector2(948, 730)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Workbench1" parent="Props/Furnishing/Generator" instance=ExtResource("furn_workbench_n")]
+[node name="Workbench1" parent="Props/Furnishing/Generator" unique_id=1550852564 instance=ExtResource("furn_workbench_n")]
 position = Vector2(905, 798.62)
+collision_layer = 2
+collision_mask = 0
 
-[node name="TurretControl" type="Node2D" parent="Props/Furnishing"]
+[node name="TurretControl" type="Node2D" parent="Props/Furnishing" unique_id=804774200]
 
-[node name="DeskMonitors1" parent="Props/Furnishing/TurretControl" instance=ExtResource("furn_desk_monitors_s")]
+[node name="DeskMonitors1" parent="Props/Furnishing/TurretControl" unique_id=433376721 instance=ExtResource("furn_desk_monitors_s")]
 position = Vector2(1158, 643.5)
+collision_layer = 2
+collision_mask = 0
 
-[node name="ChairOffice1" parent="Props/Furnishing/TurretControl" instance=ExtResource("furn_chair_office_n")]
+[node name="ChairOffice1" parent="Props/Furnishing/TurretControl" unique_id=1333395915 instance=ExtResource("furn_chair_office_n")]
 position = Vector2(1158, 674)
+collision_layer = 2
+collision_mask = 0
 
-[node name="FilingCabinet1" parent="Props/Furnishing/TurretControl" instance=ExtResource("furn_filing_cabinet_e")]
+[node name="FilingCabinet1" parent="Props/Furnishing/TurretControl" unique_id=59382451 instance=ExtResource("furn_filing_cabinet_e")]
 position = Vector2(992.25, 700)
+collision_layer = 2
+collision_mask = 0
 
-[node name="FilingCabinet2" parent="Props/Furnishing/TurretControl" instance=ExtResource("furn_filing_cabinet_e")]
+[node name="FilingCabinet2" parent="Props/Furnishing/TurretControl" unique_id=211271302 instance=ExtResource("furn_filing_cabinet_e")]
 position = Vector2(992.25, 726)
+collision_layer = 2
+collision_mask = 0
 
-[node name="ElectricalCabinet1" parent="Props/Furnishing/TurretControl" instance=ExtResource("furn_electrical_cabinet_w")]
+[node name="ElectricalCabinet1" parent="Props/Furnishing/TurretControl" unique_id=1065237875 instance=ExtResource("furn_electrical_cabinet_w")]
 position = Vector2(1201.25, 740)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Bin1" parent="Props/Furnishing/TurretControl" instance=ExtResource("furn_bin")]
+[node name="Bin1" parent="Props/Furnishing/TurretControl" unique_id=2145871051 instance=ExtResource("furn_bin")]
 position = Vector2(1180, 805.12)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Breaker" type="Node2D" parent="Props/Furnishing"]
+[node name="Breaker" type="Node2D" parent="Props/Furnishing" unique_id=216661063]
 
-[node name="ElectricalCabinet1" parent="Props/Furnishing/Breaker" instance=ExtResource("furn_electrical_cabinet_e")]
+[node name="ElectricalCabinet1" parent="Props/Furnishing/Breaker" unique_id=974076373 instance=ExtResource("furn_electrical_cabinet_e")]
 position = Vector2(1229.75, 665)
+collision_layer = 2
+collision_mask = 0
 
-[node name="ElectricalCabinet2" parent="Props/Furnishing/Breaker" instance=ExtResource("furn_electrical_cabinet_e")]
+[node name="ElectricalCabinet2" parent="Props/Furnishing/Breaker" unique_id=1286274926 instance=ExtResource("furn_electrical_cabinet_e")]
 position = Vector2(1229.75, 710)
+collision_layer = 2
+collision_mask = 0
 
-[node name="ElectricalCabinet3" parent="Props/Furnishing/Breaker" instance=ExtResource("furn_electrical_cabinet_e")]
+[node name="ElectricalCabinet3" parent="Props/Furnishing/Breaker" unique_id=514792390 instance=ExtResource("furn_electrical_cabinet_e")]
 position = Vector2(1229.75, 755)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Workbench1" parent="Props/Furnishing/Breaker" instance=ExtResource("furn_workbench_w")]
+[node name="Workbench1" parent="Props/Furnishing/Breaker" unique_id=2085381692 instance=ExtResource("furn_workbench_w")]
 position = Vector2(1414.62, 690)
+collision_layer = 2
+collision_mask = 0
 
-[node name="ToteBlack1" parent="Props/Furnishing/Breaker" instance=ExtResource("furn_tote_black")]
-position = Vector2(1262, 641.0)
+[node name="ToteBlack1" parent="Props/Furnishing/Breaker" unique_id=776034384 instance=ExtResource("furn_tote_black")]
+position = Vector2(1262, 641)
+collision_layer = 2
+collision_mask = 0
 
-[node name="ChestSteel1" parent="Props/Furnishing/Breaker" instance=ExtResource("furn_chest_steel")]
-position = Vector2(1413.0, 750)
+[node name="ChestSteel1" parent="Props/Furnishing/Breaker" unique_id=1559875581 instance=ExtResource("furn_chest_steel")]
+position = Vector2(1413, 750)
+collision_layer = 2
+collision_mask = 0
 
-[node name="BreakRoom" type="Node2D" parent="Props/Furnishing"]
+[node name="BreakRoom" type="Node2D" parent="Props/Furnishing" unique_id=1218254696]
 
-[node name="CounterSink1" parent="Props/Furnishing/BreakRoom" instance=ExtResource("furn_counter_sink_s")]
+[node name="CounterSink1" parent="Props/Furnishing/BreakRoom" unique_id=1247837814 instance=ExtResource("furn_counter_sink_s")]
 position = Vector2(159.62, 68.25)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Fridge1" parent="Props/Furnishing/BreakRoom" instance=ExtResource("furn_fridge_s")]
+[node name="Fridge1" parent="Props/Furnishing/BreakRoom" unique_id=1015349956 instance=ExtResource("furn_fridge_s")]
 position = Vector2(216.88, 71.5)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Vending1" parent="Props/Furnishing/BreakRoom" instance=ExtResource("furn_vending_s")]
+[node name="Vending1" parent="Props/Furnishing/BreakRoom" unique_id=1942070042 instance=ExtResource("furn_vending_s")]
 position = Vector2(254.25, 72.62)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Couch1" parent="Props/Furnishing/BreakRoom" instance=ExtResource("furn_couch_e")]
-position = Vector2(72.0, 200)
+[node name="Couch1" parent="Props/Furnishing/BreakRoom" unique_id=1965305545 instance=ExtResource("furn_couch_e")]
+position = Vector2(72, 200)
+collision_layer = 2
+collision_mask = 0
 
-[node name="TableRound1" parent="Props/Furnishing/BreakRoom" instance=ExtResource("furn_table_round")]
+[node name="TableRound1" parent="Props/Furnishing/BreakRoom" unique_id=2072138844 instance=ExtResource("furn_table_round")]
 position = Vector2(377.5, 135.5)
+collision_layer = 2
+collision_mask = 0
 
-[node name="ChairPlain1" parent="Props/Furnishing/BreakRoom" instance=ExtResource("furn_chair_plain_n")]
+[node name="ChairPlain1" parent="Props/Furnishing/BreakRoom" unique_id=1841246237 instance=ExtResource("furn_chair_plain_n")]
 position = Vector2(377.5, 164.35)
+collision_layer = 2
+collision_mask = 0
 
-[node name="ChairPlain2" parent="Props/Furnishing/BreakRoom" instance=ExtResource("furn_chair_plain_s")]
+[node name="ChairPlain2" parent="Props/Furnishing/BreakRoom" unique_id=1494520641 instance=ExtResource("furn_chair_plain_s")]
 position = Vector2(377.5, 106.65)
+collision_layer = 2
+collision_mask = 0
 
-[node name="ChairPlain3" parent="Props/Furnishing/BreakRoom" instance=ExtResource("furn_chair_plain_e")]
+[node name="ChairPlain3" parent="Props/Furnishing/BreakRoom" unique_id=1162088805 instance=ExtResource("furn_chair_plain_e")]
 position = Vector2(348.65, 135.5)
+collision_layer = 2
+collision_mask = 0
 
-[node name="ChairPlain4" parent="Props/Furnishing/BreakRoom" instance=ExtResource("furn_chair_plain_w")]
+[node name="ChairPlain4" parent="Props/Furnishing/BreakRoom" unique_id=1249975142 instance=ExtResource("furn_chair_plain_w")]
 position = Vector2(406.35, 135.5)
+collision_layer = 2
+collision_mask = 0
 
-[node name="TableRect1" parent="Props/Furnishing/BreakRoom" instance=ExtResource("furn_table_rect")]
+[node name="TableRect1" parent="Props/Furnishing/BreakRoom" unique_id=162936561 instance=ExtResource("furn_table_rect")]
 position = Vector2(172.75, 232.12)
+collision_layer = 2
+collision_mask = 0
 
-[node name="ChairPlain5" parent="Props/Furnishing/BreakRoom" instance=ExtResource("furn_chair_plain_n")]
+[node name="ChairPlain5" parent="Props/Furnishing/BreakRoom" unique_id=1370613023 instance=ExtResource("furn_chair_plain_n")]
 position = Vector2(172.75, 258.6)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Bin1" parent="Props/Furnishing/BreakRoom" instance=ExtResource("furn_bin")]
+[node name="Bin1" parent="Props/Furnishing/BreakRoom" unique_id=40955167 instance=ExtResource("furn_bin")]
 position = Vector2(440, 277.12)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Plant1" parent="Props/Furnishing/BreakRoom" instance=ExtResource("furn_plant")]
+[node name="Plant1" parent="Props/Furnishing/BreakRoom" unique_id=1953642162 instance=ExtResource("furn_plant")]
 position = Vector2(443.62, 80.62)
+collision_layer = 2
+collision_mask = 0
 
-[node name="LockerRoom" type="Node2D" parent="Props/Furnishing"]
+[node name="LockerRoom" type="Node2D" parent="Props/Furnishing" unique_id=366317473]
 
-[node name="LockerBank1" parent="Props/Furnishing/LockerRoom" instance=ExtResource("furn_locker_bank_s")]
-position = Vector2(1314.0, 133.38)
+[node name="LockerBank1" parent="Props/Furnishing/LockerRoom" unique_id=1654027339 instance=ExtResource("furn_locker_bank_s")]
+position = Vector2(1314, 133.38)
+collision_layer = 2
+collision_mask = 0
 
-[node name="LockerBank2" parent="Props/Furnishing/LockerRoom" instance=ExtResource("furn_locker_bank_s")]
-position = Vector2(1362.0, 133.38)
+[node name="LockerBank2" parent="Props/Furnishing/LockerRoom" unique_id=1062852085 instance=ExtResource("furn_locker_bank_s")]
+position = Vector2(1362, 133.38)
+collision_layer = 2
+collision_mask = 0
 
-[node name="LockerBank3" parent="Props/Furnishing/LockerRoom" instance=ExtResource("furn_locker_bank_s")]
-position = Vector2(1410.0, 133.38)
+[node name="LockerBank3" parent="Props/Furnishing/LockerRoom" unique_id=921214227 instance=ExtResource("furn_locker_bank_s")]
+position = Vector2(1410, 133.38)
+collision_layer = 2
+collision_mask = 0
 
-[node name="LockerBank4" parent="Props/Furnishing/LockerRoom" instance=ExtResource("furn_locker_bank_s")]
-position = Vector2(1458.0, 133.38)
+[node name="LockerBank4" parent="Props/Furnishing/LockerRoom" unique_id=388663214 instance=ExtResource("furn_locker_bank_s")]
+position = Vector2(1458, 133.38)
+collision_layer = 2
+collision_mask = 0
 
-[node name="LockerBank5" parent="Props/Furnishing/LockerRoom" instance=ExtResource("furn_locker_bank_s")]
-position = Vector2(1506.0, 133.38)
+[node name="LockerBank5" parent="Props/Furnishing/LockerRoom" unique_id=1920787671 instance=ExtResource("furn_locker_bank_s")]
+position = Vector2(1506, 133.38)
+collision_layer = 2
+collision_mask = 0
 
-[node name="LockerBank6" parent="Props/Furnishing/LockerRoom" instance=ExtResource("furn_locker_bank_s")]
-position = Vector2(1554.0, 133.38)
+[node name="LockerBank6" parent="Props/Furnishing/LockerRoom" unique_id=424803100 instance=ExtResource("furn_locker_bank_s")]
+position = Vector2(1554, 133.38)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Bench1" parent="Props/Furnishing/LockerRoom" instance=ExtResource("furn_bench_n")]
+[node name="Bench1" parent="Props/Furnishing/LockerRoom" unique_id=152091252 instance=ExtResource("furn_bench_n")]
 position = Vector2(1344.5, 206.75)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Bench2" parent="Props/Furnishing/LockerRoom" instance=ExtResource("furn_bench_n")]
+[node name="Bench2" parent="Props/Furnishing/LockerRoom" unique_id=2028410997 instance=ExtResource("furn_bench_n")]
 position = Vector2(1564.5, 190.25)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Bin1" parent="Props/Furnishing/LockerRoom" instance=ExtResource("furn_bin")]
+[node name="Bin1" parent="Props/Furnishing/LockerRoom" unique_id=1759575236 instance=ExtResource("furn_bin")]
 position = Vector2(1305, 277.12)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Plant1" parent="Props/Furnishing/LockerRoom" instance=ExtResource("furn_plant")]
+[node name="Plant1" parent="Props/Furnishing/LockerRoom" unique_id=1472170231 instance=ExtResource("furn_plant")]
 position = Vector2(1598.62, 267.62)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Office" type="Node2D" parent="Props/Furnishing"]
+[node name="Office" type="Node2D" parent="Props/Furnishing" unique_id=1409606283]
 
-[node name="Desk1" parent="Props/Furnishing/Office" instance=ExtResource("furn_desk_s")]
+[node name="Desk1" parent="Props/Furnishing/Office" unique_id=762040423 instance=ExtResource("furn_desk_s")]
 position = Vector2(110, 951.5)
+collision_layer = 2
+collision_mask = 0
 
-[node name="ChairOffice1" parent="Props/Furnishing/Office" instance=ExtResource("furn_chair_office_n")]
+[node name="ChairOffice1" parent="Props/Furnishing/Office" unique_id=1706461632 instance=ExtResource("furn_chair_office_n")]
 position = Vector2(110, 982)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Desk2" parent="Props/Furnishing/Office" instance=ExtResource("furn_desk_s")]
+[node name="Desk2" parent="Props/Furnishing/Office" unique_id=1839146563 instance=ExtResource("furn_desk_s")]
 position = Vector2(186, 951.5)
+collision_layer = 2
+collision_mask = 0
 
-[node name="ChairOffice2" parent="Props/Furnishing/Office" instance=ExtResource("furn_chair_office_n")]
+[node name="ChairOffice2" parent="Props/Furnishing/Office" unique_id=1526063986 instance=ExtResource("furn_chair_office_n")]
 position = Vector2(186, 982)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Desk3" parent="Props/Furnishing/Office" instance=ExtResource("furn_desk_s")]
+[node name="Desk3" parent="Props/Furnishing/Office" unique_id=107130242 instance=ExtResource("furn_desk_s")]
 position = Vector2(422, 951.5)
+collision_layer = 2
+collision_mask = 0
 
-[node name="ChairOffice3" parent="Props/Furnishing/Office" instance=ExtResource("furn_chair_office_n")]
+[node name="ChairOffice3" parent="Props/Furnishing/Office" unique_id=597361282 instance=ExtResource("furn_chair_office_n")]
 position = Vector2(422, 982)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Desk4" parent="Props/Furnishing/Office" instance=ExtResource("furn_desk_s")]
+[node name="Desk4" parent="Props/Furnishing/Office" unique_id=1272750137 instance=ExtResource("furn_desk_s")]
 position = Vector2(498, 951.5)
+collision_layer = 2
+collision_mask = 0
 
-[node name="ChairOffice4" parent="Props/Furnishing/Office" instance=ExtResource("furn_chair_office_n")]
+[node name="ChairOffice4" parent="Props/Furnishing/Office" unique_id=1059087102 instance=ExtResource("furn_chair_office_n")]
 position = Vector2(498, 982)
+collision_layer = 2
+collision_mask = 0
 
-[node name="FilingCabinet1" parent="Props/Furnishing/Office" instance=ExtResource("furn_filing_cabinet_e")]
+[node name="FilingCabinet1" parent="Props/Furnishing/Office" unique_id=1302803092 instance=ExtResource("furn_filing_cabinet_e")]
 position = Vector2(68.25, 1021.25)
+collision_layer = 2
+collision_mask = 0
 
-[node name="FilingCabinet2" parent="Props/Furnishing/Office" instance=ExtResource("furn_filing_cabinet_e")]
+[node name="FilingCabinet2" parent="Props/Furnishing/Office" unique_id=1289041491 instance=ExtResource("furn_filing_cabinet_e")]
 position = Vector2(68.25, 1043.75)
+collision_layer = 2
+collision_mask = 0
 
-[node name="FilingCabinet3" parent="Props/Furnishing/Office" instance=ExtResource("furn_filing_cabinet_e")]
+[node name="FilingCabinet3" parent="Props/Furnishing/Office" unique_id=474929076 instance=ExtResource("furn_filing_cabinet_e")]
 position = Vector2(68.25, 1066.25)
+collision_layer = 2
+collision_mask = 0
 
-[node name="TableRect1" parent="Props/Furnishing/Office" instance=ExtResource("furn_table_rect")]
+[node name="TableRect1" parent="Props/Furnishing/Office" unique_id=1852587725 instance=ExtResource("furn_table_rect")]
 position = Vector2(469.75, 1035.12)
+collision_layer = 2
+collision_mask = 0
 
-[node name="ChairPlain1" parent="Props/Furnishing/Office" instance=ExtResource("furn_chair_plain_n")]
+[node name="ChairPlain1" parent="Props/Furnishing/Office" unique_id=1338065326 instance=ExtResource("furn_chair_plain_n")]
 position = Vector2(469.75, 1061.59)
+collision_layer = 2
+collision_mask = 0
 
-[node name="ChairPlain2" parent="Props/Furnishing/Office" instance=ExtResource("furn_chair_plain_s")]
+[node name="ChairPlain2" parent="Props/Furnishing/Office" unique_id=204440951 instance=ExtResource("furn_chair_plain_s")]
 position = Vector2(469.75, 1008.64)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Couch1" parent="Props/Furnishing/Office" instance=ExtResource("furn_couch_n")]
-position = Vector2(215, 1149.0)
+[node name="Couch1" parent="Props/Furnishing/Office" unique_id=452562765 instance=ExtResource("furn_couch_n")]
+position = Vector2(215, 1149)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Bin1" parent="Props/Furnishing/Office" instance=ExtResource("furn_bin")]
+[node name="Bin1" parent="Props/Furnishing/Office" unique_id=387872624 instance=ExtResource("furn_bin")]
 position = Vector2(330, 1157.12)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Plant1" parent="Props/Furnishing/Office" instance=ExtResource("furn_plant")]
+[node name="Plant1" parent="Props/Furnishing/Office" unique_id=1343672319 instance=ExtResource("furn_plant")]
 position = Vector2(575.62, 1147.62)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Records" type="Node2D" parent="Props/Furnishing"]
+[node name="Records" type="Node2D" parent="Props/Furnishing" unique_id=59925180]
 
-[node name="FilingCabinet1" parent="Props/Furnishing/Records" instance=ExtResource("furn_filing_cabinet_s")]
+[node name="FilingCabinet1" parent="Props/Furnishing/Records" unique_id=462547458 instance=ExtResource("furn_filing_cabinet_s")]
 position = Vector2(1178.25, 948.25)
+collision_layer = 2
+collision_mask = 0
 
-[node name="FilingCabinet2" parent="Props/Furnishing/Records" instance=ExtResource("furn_filing_cabinet_s")]
+[node name="FilingCabinet2" parent="Props/Furnishing/Records" unique_id=1381909066 instance=ExtResource("furn_filing_cabinet_s")]
 position = Vector2(1200.75, 948.25)
+collision_layer = 2
+collision_mask = 0
 
-[node name="FilingCabinet3" parent="Props/Furnishing/Records" instance=ExtResource("furn_filing_cabinet_s")]
+[node name="FilingCabinet3" parent="Props/Furnishing/Records" unique_id=506273078 instance=ExtResource("furn_filing_cabinet_s")]
 position = Vector2(1223.25, 948.25)
+collision_layer = 2
+collision_mask = 0
 
-[node name="FilingCabinet4" parent="Props/Furnishing/Records" instance=ExtResource("furn_filing_cabinet_s")]
+[node name="FilingCabinet4" parent="Props/Furnishing/Records" unique_id=1120527591 instance=ExtResource("furn_filing_cabinet_s")]
 position = Vector2(1443.25, 948.25)
+collision_layer = 2
+collision_mask = 0
 
-[node name="FilingCabinet5" parent="Props/Furnishing/Records" instance=ExtResource("furn_filing_cabinet_s")]
+[node name="FilingCabinet5" parent="Props/Furnishing/Records" unique_id=1768867051 instance=ExtResource("furn_filing_cabinet_s")]
 position = Vector2(1465.75, 948.25)
+collision_layer = 2
+collision_mask = 0
 
-[node name="FilingCabinet6" parent="Props/Furnishing/Records" instance=ExtResource("furn_filing_cabinet_s")]
+[node name="FilingCabinet6" parent="Props/Furnishing/Records" unique_id=985540418 instance=ExtResource("furn_filing_cabinet_s")]
 position = Vector2(1488.25, 948.25)
+collision_layer = 2
+collision_mask = 0
 
-[node name="FilingCabinet7" parent="Props/Furnishing/Records" instance=ExtResource("furn_filing_cabinet_s")]
+[node name="FilingCabinet7" parent="Props/Furnishing/Records" unique_id=14946411 instance=ExtResource("furn_filing_cabinet_s")]
 position = Vector2(1510.75, 948.25)
+collision_layer = 2
+collision_mask = 0
 
-[node name="RackDouble1" parent="Props/Furnishing/Records" instance=ExtResource("furn_rack_double_n")]
+[node name="RackDouble1" parent="Props/Furnishing/Records" unique_id=1447929439 instance=ExtResource("furn_rack_double_n")]
 position = Vector2(1240, 1152.62)
+collision_layer = 2
+collision_mask = 0
 
-[node name="RackDouble2" parent="Props/Furnishing/Records" instance=ExtResource("furn_rack_double_n")]
+[node name="RackDouble2" parent="Props/Furnishing/Records" unique_id=1808413000 instance=ExtResource("furn_rack_double_n")]
 position = Vector2(1400, 1152.62)
+collision_layer = 2
+collision_mask = 0
 
-[node name="RackSingle1" parent="Props/Furnishing/Records" instance=ExtResource("furn_rack_single_n")]
+[node name="RackSingle1" parent="Props/Furnishing/Records" unique_id=517903927 instance=ExtResource("furn_rack_single_n")]
 position = Vector2(1540, 1152.62)
+collision_layer = 2
+collision_mask = 0
 
-[node name="TableRect1" parent="Props/Furnishing/Records" instance=ExtResource("furn_table_rect")]
+[node name="TableRect1" parent="Props/Furnishing/Records" unique_id=1431388028 instance=ExtResource("furn_table_rect")]
 position = Vector2(1278.25, 1040.62)
+collision_layer = 2
+collision_mask = 0
 
-[node name="ChairPlain1" parent="Props/Furnishing/Records" instance=ExtResource("furn_chair_plain_n")]
+[node name="ChairPlain1" parent="Props/Furnishing/Records" unique_id=1520375320 instance=ExtResource("furn_chair_plain_n")]
 position = Vector2(1278.25, 1067.09)
+collision_layer = 2
+collision_mask = 0
 
-[node name="ChairPlain2" parent="Props/Furnishing/Records" instance=ExtResource("furn_chair_plain_s")]
+[node name="ChairPlain2" parent="Props/Furnishing/Records" unique_id=1265112786 instance=ExtResource("furn_chair_plain_s")]
 position = Vector2(1278.25, 1014.14)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Bin1" parent="Props/Furnishing/Records" instance=ExtResource("furn_bin")]
+[node name="Bin1" parent="Props/Furnishing/Records" unique_id=207390745 instance=ExtResource("furn_bin")]
 position = Vector2(1685.12, 1010)
+collision_layer = 2
+collision_mask = 0
 
-[node name="BoxStack1" parent="Props/Furnishing/Records" instance=ExtResource("furn_box_stack")]
+[node name="BoxStack1" parent="Props/Furnishing/Records" unique_id=1754294222 instance=ExtResource("furn_box_stack")]
 position = Vector2(1608.5, 999.12)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Stairwell" type="Node2D" parent="Props/Furnishing"]
+[node name="Stairwell" type="Node2D" parent="Props/Furnishing" unique_id=182852229]
 
-[node name="CrateWood1" parent="Props/Furnishing/Stairwell" instance=ExtResource("furn_crate_wood")]
+[node name="CrateWood1" parent="Props/Furnishing/Stairwell" unique_id=636759061 instance=ExtResource("furn_crate_wood")]
 position = Vector2(736.12, 263.12)
+collision_layer = 2
+collision_mask = 0
 
-[node name="BoxStack1" parent="Props/Furnishing/Stairwell" instance=ExtResource("furn_box_stack")]
-position = Vector2(1009.0, 262.12)
+[node name="BoxStack1" parent="Props/Furnishing/Stairwell" unique_id=1563719279 instance=ExtResource("furn_box_stack")]
+position = Vector2(1009, 262.12)
+collision_layer = 2
+collision_mask = 0
 
-[node name="BarrelNavy1" parent="Props/Furnishing/Stairwell" instance=ExtResource("furn_barrel_navy")]
+[node name="BarrelNavy1" parent="Props/Furnishing/Stairwell" unique_id=1571295851 instance=ExtResource("furn_barrel_navy")]
 position = Vector2(1010.62, 97.62)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Bench1" parent="Props/Furnishing/Stairwell" instance=ExtResource("furn_bench_e")]
+[node name="Bench1" parent="Props/Furnishing/Stairwell" unique_id=1939187744 instance=ExtResource("furn_bench_e")]
 position = Vector2(723.75, 195)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Bin1" parent="Props/Furnishing/Stairwell" instance=ExtResource("furn_bin")]
+[node name="Bin1" parent="Props/Furnishing/Stairwell" unique_id=1375163126 instance=ExtResource("furn_bin")]
 position = Vector2(784.38, 261.88)
+collision_layer = 2
+collision_mask = 0
 
-[node name="LoadingDock" type="Node2D" parent="Props/Furnishing"]
+[node name="LoadingDock" type="Node2D" parent="Props/Furnishing" unique_id=478359495]
 
-[node name="Pallet1" parent="Props/Furnishing/LoadingDock" instance=ExtResource("furn_pallet")]
+[node name="Pallet1" parent="Props/Furnishing/LoadingDock" unique_id=84111833 instance=ExtResource("furn_pallet")]
+z_index = -12
 position = Vector2(692.12, 1022.12)
+collision_layer = 0
+collision_mask = 0
 
-[node name="CrateWood1" parent="Props/Furnishing/LoadingDock" instance=ExtResource("furn_crate_wood")]
+[node name="CrateWood1" parent="Props/Furnishing/LoadingDock" unique_id=288773106 instance=ExtResource("furn_crate_wood")]
 position = Vector2(690, 1020)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Pallet2" parent="Props/Furnishing/LoadingDock" instance=ExtResource("furn_pallet")]
+[node name="Pallet2" parent="Props/Furnishing/LoadingDock" unique_id=887538316 instance=ExtResource("furn_pallet")]
+z_index = -12
 position = Vector2(752.62, 1022.12)
+collision_layer = 0
+collision_mask = 0
 
-[node name="BoxStack1" parent="Props/Furnishing/LoadingDock" instance=ExtResource("furn_box_stack")]
+[node name="BoxStack1" parent="Props/Furnishing/LoadingDock" unique_id=1722660213 instance=ExtResource("furn_box_stack")]
 position = Vector2(752, 1022)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Pallet3" parent="Props/Furnishing/LoadingDock" instance=ExtResource("furn_pallet")]
+[node name="Pallet3" parent="Props/Furnishing/LoadingDock" unique_id=583527810 instance=ExtResource("furn_pallet")]
+z_index = -12
 position = Vector2(1049.62, 1022.12)
+collision_layer = 0
+collision_mask = 0
 
-[node name="BoxCardboard1" parent="Props/Furnishing/LoadingDock" instance=ExtResource("furn_box_cardboard")]
-position = Vector2(1040.0, 1013.0)
+[node name="BoxCardboard1" parent="Props/Furnishing/LoadingDock" unique_id=688430079 instance=ExtResource("furn_box_cardboard")]
+position = Vector2(1040, 1013)
+collision_layer = 2
+collision_mask = 0
 
-[node name="BoxCardboard2" parent="Props/Furnishing/LoadingDock" instance=ExtResource("furn_box_cardboard")]
+[node name="BoxCardboard2" parent="Props/Furnishing/LoadingDock" unique_id=1863884604 instance=ExtResource("furn_box_cardboard")]
 position = Vector2(1067.5, 1040.5)
+collision_layer = 2
+collision_mask = 0
 
-[node name="PalletJack1" parent="Props/Furnishing/LoadingDock" instance=ExtResource("furn_pallet_jack_e")]
-position = Vector2(932.0, 1121.38)
+[node name="PalletJack1" parent="Props/Furnishing/LoadingDock" unique_id=1080372897 instance=ExtResource("furn_pallet_jack_e")]
+z_index = -12
+position = Vector2(932, 1121.38)
+collision_layer = 0
+collision_mask = 0
 
-[node name="BarrelRust1" parent="Props/Furnishing/LoadingDock" instance=ExtResource("furn_barrel_rust")]
+[node name="BarrelRust1" parent="Props/Furnishing/LoadingDock" unique_id=766500819 instance=ExtResource("furn_barrel_rust")]
 position = Vector2(1126.12, 961.12)
+collision_layer = 2
+collision_mask = 0
 
-[node name="BarrelOlive1" parent="Props/Furnishing/LoadingDock" instance=ExtResource("furn_barrel_olive")]
+[node name="BarrelOlive1" parent="Props/Furnishing/LoadingDock" unique_id=1830686698 instance=ExtResource("furn_barrel_olive")]
 position = Vector2(1126.12, 994.12)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Tyre1" parent="Props/Furnishing/LoadingDock" instance=ExtResource("furn_tyre")]
+[node name="Tyre1" parent="Props/Furnishing/LoadingDock" unique_id=1483876113 instance=ExtResource("furn_tyre")]
 position = Vector2(625.62, 999.62)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Tyre2" parent="Props/Furnishing/LoadingDock" instance=ExtResource("furn_tyre")]
+[node name="Tyre2" parent="Props/Furnishing/LoadingDock" unique_id=1921712223 instance=ExtResource("furn_tyre")]
 position = Vector2(625.62, 1032.62)
+collision_layer = 2
+collision_mask = 0
 
-[node name="RackDouble1" parent="Props/Furnishing/LoadingDock" instance=ExtResource("furn_rack_double_s")]
+[node name="RackDouble1" parent="Props/Furnishing/LoadingDock" unique_id=1319350399 instance=ExtResource("furn_rack_double_s")]
 position = Vector2(1000, 948.38)
+collision_layer = 2
+collision_mask = 0
 
-[node name="MaintenanceBay" type="Node2D" parent="Props/Furnishing"]
+[node name="MaintenanceBay" type="Node2D" parent="Props/Furnishing" unique_id=536769110]
 
-[node name="Workbench1" parent="Props/Furnishing/MaintenanceBay" instance=ExtResource("furn_workbench_e")]
+[node name="Workbench1" parent="Props/Furnishing/MaintenanceBay" unique_id=1779503153 instance=ExtResource("furn_workbench_e")]
 position = Vector2(48.38, 500)
+collision_layer = 2
+collision_mask = 0
 
-[node name="GasBottleSteel1" parent="Props/Furnishing/MaintenanceBay" instance=ExtResource("furn_gas_bottle_steel")]
+[node name="GasBottleSteel1" parent="Props/Furnishing/MaintenanceBay" unique_id=1164454329 instance=ExtResource("furn_gas_bottle_steel")]
 position = Vector2(64.62, 444.12)
+collision_layer = 2
+collision_mask = 0
 
-[node name="GasBottleOlive1" parent="Props/Furnishing/MaintenanceBay" instance=ExtResource("furn_gas_bottle_olive")]
+[node name="GasBottleOlive1" parent="Props/Furnishing/MaintenanceBay" unique_id=71812044 instance=ExtResource("furn_gas_bottle_olive")]
 position = Vector2(86.62, 444.12)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Tyre1" parent="Props/Furnishing/MaintenanceBay" instance=ExtResource("furn_tyre")]
+[node name="Tyre1" parent="Props/Furnishing/MaintenanceBay" unique_id=599194867 instance=ExtResource("furn_tyre")]
 position = Vector2(169.12, 471.62)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Tyre2" parent="Props/Furnishing/MaintenanceBay" instance=ExtResource("furn_tyre")]
+[node name="Tyre2" parent="Props/Furnishing/MaintenanceBay" unique_id=825729783 instance=ExtResource("furn_tyre")]
 position = Vector2(169.12, 504.62)
+collision_layer = 2
+collision_mask = 0
 
-[node name="BarrelOlive1" parent="Props/Furnishing/MaintenanceBay" instance=ExtResource("furn_barrel_olive")]
+[node name="BarrelOlive1" parent="Props/Furnishing/MaintenanceBay" unique_id=172717729 instance=ExtResource("furn_barrel_olive")]
 position = Vector2(59.12, 691.62)
+collision_layer = 2
+collision_mask = 0
 
-[node name="BarrelRust1" parent="Props/Furnishing/MaintenanceBay" instance=ExtResource("furn_barrel_rust")]
+[node name="BarrelRust1" parent="Props/Furnishing/MaintenanceBay" unique_id=1862641532 instance=ExtResource("furn_barrel_rust")]
 position = Vector2(92.12, 691.62)
+collision_layer = 2
+collision_mask = 0
 
-[node name="RackSingle1" parent="Props/Furnishing/MaintenanceBay" instance=ExtResource("furn_rack_single_w")]
+[node name="RackSingle1" parent="Props/Furnishing/MaintenanceBay" unique_id=799613930 instance=ExtResource("furn_rack_single_w")]
 position = Vector2(184.62, 730)
+collision_layer = 2
+collision_mask = 0
 
-[node name="ChestSteel1" parent="Props/Furnishing/MaintenanceBay" instance=ExtResource("furn_chest_steel")]
-position = Vector2(50.0, 760)
+[node name="ChestSteel1" parent="Props/Furnishing/MaintenanceBay" unique_id=2027028184 instance=ExtResource("furn_chest_steel")]
+position = Vector2(50, 760)
+collision_layer = 2
+collision_mask = 0
 
-[node name="ToteBlack1" parent="Props/Furnishing/MaintenanceBay" instance=ExtResource("furn_tote_black")]
-position = Vector2(119.0, 652.0)
+[node name="ToteBlack1" parent="Props/Furnishing/MaintenanceBay" unique_id=1150822446 instance=ExtResource("furn_tote_black")]
+position = Vector2(119, 652)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Cafeteria" type="Node2D" parent="Props/Furnishing"]
+[node name="Cafeteria" type="Node2D" parent="Props/Furnishing" unique_id=2125357669]
 
-[node name="CounterSink1" parent="Props/Furnishing/Cafeteria" instance=ExtResource("furn_counter_sink_s")]
+[node name="CounterSink1" parent="Props/Furnishing/Cafeteria" unique_id=1841852311 instance=ExtResource("furn_counter_sink_s")]
 position = Vector2(1634, 442.25)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Vending1" parent="Props/Furnishing/Cafeteria" instance=ExtResource("furn_vending_n")]
+[node name="Vending1" parent="Props/Furnishing/Cafeteria" unique_id=1766554457 instance=ExtResource("furn_vending_n")]
 position = Vector2(1590, 774.38)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Fridge1" parent="Props/Furnishing/Cafeteria" instance=ExtResource("furn_fridge_n")]
+[node name="Fridge1" parent="Props/Furnishing/Cafeteria" unique_id=370383177 instance=ExtResource("furn_fridge_n")]
 position = Vector2(1660, 775.5)
+collision_layer = 2
+collision_mask = 0
 
-[node name="TableRound1" parent="Props/Furnishing/Cafeteria" instance=ExtResource("furn_table_round")]
-position = Vector2(1593.0, 520.5)
+[node name="TableRound1" parent="Props/Furnishing/Cafeteria" unique_id=332430584 instance=ExtResource("furn_table_round")]
+position = Vector2(1593, 520.5)
+collision_layer = 2
+collision_mask = 0
 
-[node name="ChairPlain1" parent="Props/Furnishing/Cafeteria" instance=ExtResource("furn_chair_plain_n")]
-position = Vector2(1593.0, 549.35)
+[node name="ChairPlain1" parent="Props/Furnishing/Cafeteria" unique_id=1483374957 instance=ExtResource("furn_chair_plain_n")]
+position = Vector2(1593, 549.35)
+collision_layer = 2
+collision_mask = 0
 
-[node name="ChairPlain2" parent="Props/Furnishing/Cafeteria" instance=ExtResource("furn_chair_plain_s")]
-position = Vector2(1593.0, 491.65)
+[node name="ChairPlain2" parent="Props/Furnishing/Cafeteria" unique_id=1273346703 instance=ExtResource("furn_chair_plain_s")]
+position = Vector2(1593, 491.65)
+collision_layer = 2
+collision_mask = 0
 
-[node name="TableRound2" parent="Props/Furnishing/Cafeteria" instance=ExtResource("furn_table_round")]
-position = Vector2(1670.0, 520.5)
+[node name="TableRound2" parent="Props/Furnishing/Cafeteria" unique_id=1464506802 instance=ExtResource("furn_table_round")]
+position = Vector2(1670, 520.5)
+collision_layer = 2
+collision_mask = 0
 
-[node name="ChairPlain3" parent="Props/Furnishing/Cafeteria" instance=ExtResource("furn_chair_plain_n")]
-position = Vector2(1670.0, 549.35)
+[node name="ChairPlain3" parent="Props/Furnishing/Cafeteria" unique_id=987046740 instance=ExtResource("furn_chair_plain_n")]
+position = Vector2(1670, 549.35)
+collision_layer = 2
+collision_mask = 0
 
-[node name="ChairPlain4" parent="Props/Furnishing/Cafeteria" instance=ExtResource("furn_chair_plain_s")]
-position = Vector2(1670.0, 491.65)
+[node name="ChairPlain4" parent="Props/Furnishing/Cafeteria" unique_id=914735699 instance=ExtResource("furn_chair_plain_s")]
+position = Vector2(1670, 491.65)
+collision_layer = 2
+collision_mask = 0
 
-[node name="TableRound3" parent="Props/Furnishing/Cafeteria" instance=ExtResource("furn_table_round")]
-position = Vector2(1593.0, 680.0)
+[node name="TableRound3" parent="Props/Furnishing/Cafeteria" unique_id=2110985861 instance=ExtResource("furn_table_round")]
+position = Vector2(1593, 680)
+collision_layer = 2
+collision_mask = 0
 
-[node name="ChairPlain5" parent="Props/Furnishing/Cafeteria" instance=ExtResource("furn_chair_plain_n")]
-position = Vector2(1593.0, 708.85)
+[node name="ChairPlain5" parent="Props/Furnishing/Cafeteria" unique_id=1007078262 instance=ExtResource("furn_chair_plain_n")]
+position = Vector2(1593, 708.85)
+collision_layer = 2
+collision_mask = 0
 
-[node name="ChairPlain6" parent="Props/Furnishing/Cafeteria" instance=ExtResource("furn_chair_plain_s")]
-position = Vector2(1593.0, 651.15)
+[node name="ChairPlain6" parent="Props/Furnishing/Cafeteria" unique_id=1902715898 instance=ExtResource("furn_chair_plain_s")]
+position = Vector2(1593, 651.15)
+collision_layer = 2
+collision_mask = 0
 
-[node name="TableRound4" parent="Props/Furnishing/Cafeteria" instance=ExtResource("furn_table_round")]
-position = Vector2(1670.0, 680.0)
+[node name="TableRound4" parent="Props/Furnishing/Cafeteria" unique_id=1337822246 instance=ExtResource("furn_table_round")]
+position = Vector2(1670, 680)
+collision_layer = 2
+collision_mask = 0
 
-[node name="ChairPlain7" parent="Props/Furnishing/Cafeteria" instance=ExtResource("furn_chair_plain_n")]
-position = Vector2(1670.0, 708.85)
+[node name="ChairPlain7" parent="Props/Furnishing/Cafeteria" unique_id=616913467 instance=ExtResource("furn_chair_plain_n")]
+position = Vector2(1670, 708.85)
+collision_layer = 2
+collision_mask = 0
 
-[node name="ChairPlain8" parent="Props/Furnishing/Cafeteria" instance=ExtResource("furn_chair_plain_s")]
-position = Vector2(1670.0, 651.15)
+[node name="ChairPlain8" parent="Props/Furnishing/Cafeteria" unique_id=1398548795 instance=ExtResource("furn_chair_plain_s")]
+position = Vector2(1670, 651.15)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Plant1" parent="Props/Furnishing/Cafeteria" instance=ExtResource("furn_plant")]
+[node name="Plant1" parent="Props/Furnishing/Cafeteria" unique_id=1977171459 instance=ExtResource("furn_plant")]
 position = Vector2(1697.62, 443.62)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Bin1" parent="Props/Furnishing/Cafeteria" instance=ExtResource("furn_bin")]
+[node name="Bin1" parent="Props/Furnishing/Cafeteria" unique_id=51327057 instance=ExtResource("furn_bin")]
 position = Vector2(1707.12, 700)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Corridor" type="Node2D" parent="Props/Furnishing"]
+[node name="Corridor" type="Node2D" parent="Props/Furnishing" unique_id=381117178]
 
-[node name="Bench1" parent="Props/Furnishing/Corridor" instance=ExtResource("furn_bench_s")]
+[node name="Bench1" parent="Props/Furnishing/Corridor" unique_id=441042779 instance=ExtResource("furn_bench_s")]
 position = Vector2(600, 305.75)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Bench2" parent="Props/Furnishing/Corridor" instance=ExtResource("furn_bench_n")]
+[node name="Bench2" parent="Props/Furnishing/Corridor" unique_id=54849461 instance=ExtResource("furn_bench_n")]
 position = Vector2(1170, 387.25)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Bin1" parent="Props/Furnishing/Corridor" instance=ExtResource("furn_bin")]
+[node name="Bin1" parent="Props/Furnishing/Corridor" unique_id=1109775464 instance=ExtResource("furn_bin")]
 position = Vector2(400, 387.12)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Bin2" parent="Props/Furnishing/Corridor" instance=ExtResource("furn_bin")]
+[node name="Bin2" parent="Props/Furnishing/Corridor" unique_id=540699682 instance=ExtResource("furn_bin")]
 position = Vector2(1250, 833.88)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Plant1" parent="Props/Furnishing/Corridor" instance=ExtResource("furn_plant")]
+[node name="Plant1" parent="Props/Furnishing/Corridor" unique_id=1207659997 instance=ExtResource("furn_plant")]
 position = Vector2(223.62, 311.62)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Plant2" parent="Props/Furnishing/Corridor" instance=ExtResource("furn_plant")]
+[node name="Plant2" parent="Props/Furnishing/Corridor" unique_id=1654986941 instance=ExtResource("furn_plant")]
 position = Vector2(1527.12, 311.62)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Plant3" parent="Props/Furnishing/Corridor" instance=ExtResource("furn_plant")]
+[node name="Plant3" parent="Props/Furnishing/Corridor" unique_id=375141575 instance=ExtResource("furn_plant")]
 position = Vector2(223.62, 905.62)
+collision_layer = 2
+collision_mask = 0
 
-[node name="Plant4" parent="Props/Furnishing/Corridor" instance=ExtResource("furn_plant")]
+[node name="Plant4" parent="Props/Furnishing/Corridor" unique_id=140078747 instance=ExtResource("furn_plant")]
 position = Vector2(1527.12, 905.62)
+collision_layer = 2
+collision_mask = 0
+
 [node name="WestGenerator" parent="Props" unique_id=1241425255 instance=ExtResource("12_generator")]
 position = Vector2(115, 520)
 

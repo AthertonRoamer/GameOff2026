@@ -46,6 +46,9 @@ beam does. A light of your own (a lamp, a screen's glow) should call `LightLayer
 - Flashlight shadows are what costs: one set of occluders per beam. The four height beams each take only the occluders taller than what they light, so the work is not four
   times one beam's. `tools/preview/furniture_preview.tscn` with `bench` times it (frames at five spots with no furniture, with furniture and one beam, with furniture and the real
   four beams).
+- Streaming: `MapStreamer` keeps a piece's picture and shadow (`Furniture.set_shown`) in the tree only within 24 cells of the view. Its body is always there. Every shadowed light
+  goes through every occluder in the tree each frame, so on the big map this took a match from about 30 to about 24 ms a frame (measure with `HARNESS_PERF=1` and
+  `HARNESS_MATCH='{"map": 1}'` on `tests/harness/run_smoke.ps1 -SoakSeconds 30`).
 - Only the local player's flashlight is a scene light (other players' beams are drawn by `PlayerSight`), so there are four beams in the scene, not four per player.
 ## Making a new piece
 

@@ -31,6 +31,7 @@ NetworkPerformance="*uid://cqgf7aqmjfoa3"
 Network="*uid://bicdyfsswgj06"
 PixelArt="*res://game/effects/pixel_art.gd"
 WarmUp="*res://game/warm_up.gd"
+ConnectionStatus="*res://game/net/connection_status.tscn"
 
 [display]
 

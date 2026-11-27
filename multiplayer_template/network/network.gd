@@ -138,8 +138,27 @@ func _on_connection_failed() -> void:
 	connection_failed.emit()
 	
 	
+##How long ENet waits for a silent peer before it drops it. Its own default drops one after as little as 5 s (30 s at most), which a weak connection's
+##dropout at the start of a match was enough for: the lobby removed the joining player, who heard nothing more and ended up back at the join screen
+##(reproduced with tests/harness/latency_proxy.py --stall 12). Now nobody is dropped before TIMEOUT_MIN_MSEC of silence, and everybody is by TIMEOUT_MAX_MSEC.
+const TIMEOUT_LIMIT : int = 64 #ENet's retry factor (its default is 32)
+const TIMEOUT_MIN_MSEC : int = 25000
+const TIMEOUT_MAX_MSEC : int = 60000
+
+
+##Only for a direct ENet link: the server has one to every client, a client only to the server (peer 1; the other clients are reached through it).
+func _be_patient_with(id : int) -> void:
+	var enet : ENetMultiplayerPeer = multiplayer.multiplayer_peer as ENetMultiplayerPeer
+	if enet == null or not (is_server or id == 1):
+		return
+	var link : ENetPacketPeer = enet.get_peer(id)
+	if link != null:
+		link.set_timeout(TIMEOUT_LIMIT, TIMEOUT_MIN_MSEC, TIMEOUT_MAX_MSEC)
+
+
 func _on_peer_connected(id) -> void:
 	Main.output("Peer connected with id: " + str(id))
+	_be_patient_with(id)
 	if is_server:
 		client_count += 1
 	peer_connected.emit(id)

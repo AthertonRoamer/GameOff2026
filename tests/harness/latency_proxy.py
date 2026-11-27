@@ -22,7 +22,13 @@ def main() -> None:
     parser.add_argument("--delay-ms", type=float, default=0.0, help="one-way delay")
     parser.add_argument("--jitter-ms", type=float, default=0.0, help="random extra one-way delay, 0 to this value")
     parser.add_argument("--loss", type=float, default=0.0, help="packet loss in percent, each direction")
+    parser.add_argument("--kbps", type=float, default=0.0, help="bandwidth cap in kB/s, each direction (0: none)")
+    parser.add_argument("--queue-kb", type=float, default=64.0, help="with --kbps: what waits for the link before packets are dropped")
+    parser.add_argument("--stall", type=float, default=0.0, help="seconds in which nothing gets through, starting when the match's traffic begins")
+    parser.add_argument("--stall-trigger-kbps", type=float, default=8.0, help="with --stall: the server's traffic (kB in one second) that starts it")
     args = parser.parse_args()
+    link_free = {}            # socket -> when the capped link in that direction is free again
+    stall = {"from": None, "recent": []}
 
     front = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     front.bind((args.host, args.listen))
@@ -39,9 +45,26 @@ def main() -> None:
         if random.random() * 100.0 < args.loss:
             return
         delay = (args.delay_ms + random.random() * args.jitter_ms) / 1000.0
+        now = time.monotonic()
         with cond:
+            if args.stall > 0:
+                if stall["from"] is None and sock is front:  # (sock is where it goes: `front` is towards the client)
+                    stall["recent"] = [(t, n) for t, n in stall["recent"] if now - t < 1.0] + [(now, len(data))]
+                    if sum(n for _, n in stall["recent"]) > args.stall_trigger_kbps * 1000.0:
+                        stall["from"] = now
+                        print(f"stall of {args.stall}s starts", flush=True)
+                if stall["from"] is not None and now - stall["from"] < args.stall:
+                    return
+            leaves = now
+            if args.kbps > 0:
+                rate = args.kbps * 1000.0
+                free = max(now, link_free.get(sock, now))
+                if (free - now) * rate > args.queue_kb * 1000.0:
+                    return  # the queue is full
+                leaves = free + len(data) / rate
+                link_free[sock] = leaves
             counter[0] += 1
-            heapq.heappush(queue, (time.monotonic() + delay, counter[0], sock, data, addr))
+            heapq.heappush(queue, (leaves + delay, counter[0], sock, data, addr))
             cond.notify()
 
     def sender() -> None:

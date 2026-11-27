@@ -18,6 +18,8 @@ param(
 	[int]$SoakSeconds = 0, #the real game runs this long with nothing scripted (see run_soak.ps1). Set -TimeoutSeconds well above it
 	[switch]$SoakMove, #with -SoakSeconds: every player walks a square instead of standing still
 	[double]$LatencyMs = 0, #one-way delay added to the first client's connection through tests/harness/latency_proxy.py
+	[double]$BandwidthKBps = 0, #the same proxy: cap each direction to this many kB/s
+	[double]$StallSeconds = 0, #the same proxy: nothing gets through for this long, from the moment the match's traffic begins
 	[double]$JitterMs = 0,
 	[double]$LossPercent = 0
 )
@@ -56,10 +58,10 @@ while ((Get-Date) -lt $deadline -and -not ((Test-Path $hostOut) -and (Select-Str
 }
 
 $proxyProc = $null
-if ($LatencyMs -gt 0 -or $JitterMs -gt 0 -or $LossPercent -gt 0) {
+if ($LatencyMs -gt 0 -or $JitterMs -gt 0 -or $LossPercent -gt 0 -or $BandwidthKBps -gt 0 -or $StallSeconds -gt 0) {
 	$proxyOut = Join-Path $logDir "proxy.out"; $proxyErr = Join-Path $logDir "proxy.err"
 	$proxyProc = Start-Process py -PassThru -NoNewWindow `
-		-ArgumentList "-3", "`"$PSScriptRoot\latency_proxy.py`"", "--listen", "5100", "--target", "5000", "--delay-ms", $LatencyMs, "--jitter-ms", $JitterMs, "--loss", $LossPercent `
+		-ArgumentList "-3", "`"$PSScriptRoot\latency_proxy.py`"", "--listen", "5100", "--target", "5000", "--delay-ms", $LatencyMs, "--jitter-ms", $JitterMs, "--loss", $LossPercent, "--kbps", $BandwidthKBps, "--stall", $StallSeconds `
 		-RedirectStandardOutput $proxyOut -RedirectStandardError $proxyErr
 	Start-Sleep -Seconds 1
 }
