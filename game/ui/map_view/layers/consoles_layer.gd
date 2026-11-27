@@ -7,6 +7,7 @@ const COLOUR : Color = Palette.ITEM
 
 @export var show_names : bool = true
 @export var size_px : float = 9.0 ## the symbol's size on screen
+@export var names_from_zoom : float = 0.3 ## no names further out than this: they pile up on each other
 
 var _found : Array[ControlPanel] = []
 var _found_in : FacilityMap
@@ -30,6 +31,6 @@ func _draw() -> void:
 		draw_rect(Rect2(at - Vector2(half, half), Vector2(half, half) * 2.0).grow(px(1.5)), Palette.VOID)
 		draw_rect(Rect2(at - Vector2(half, half), Vector2(half, half) * 2.0), COLOUR)
 		draw_rect(Rect2(at - Vector2(half * 0.5, half * 0.5), Vector2(half, half * 0.7)), Palette.VOID)
-		if show_names:
+		if show_names and view.zoom >= names_from_zoom:
 			var what : String = panel.function if panel.function != "" else "console"
 			draw_label(at + Vector2(0.0, px(size_px + 4.0)), what.to_upper() + " PANEL", 10, COLOUR, 120.0)

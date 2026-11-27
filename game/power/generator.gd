@@ -16,6 +16,12 @@ enum State { OFF, RUNNING, DESTROYED }
 
 const SIZE : Vector2 = Vector2(52.0, 34.0) #the cabinet, in world pixels (44 per metre)
 const LAMP_OFF : Color = Color("#2a313d")
+const ART : Texture2D = preload("res://game/power/art/generator.png") #drawn by tools/art/make_generator.py
+const ART_BROKEN : Texture2D = preload("res://game/power/art/generator_broken.png")
+const LAMP_AT : Vector2 = Vector2(20.0, -10.0) #where the art has its lamp socket, gauge, fan and a clear corner, in world pixels from the middle
+const GAUGE_AT : Vector2 = Vector2(11.5, 7.5)
+const FAN_AT : Vector2 = Vector2(-0.25, 0.0)
+const MARK_AT : Vector2 = Vector2(20.5, 10.0)
 
 @export var scope : Scope = Scope.REGION : set = _set_scope ## REGION: powers the region of the room it stands in. WHOLE_MAP: powers the shared pool every region draws on
 @export var starts_running : bool = false : set = _set_starts_running ## running when the match starts, without anyone holding E on it
@@ -39,6 +45,7 @@ var _time : float = 0.0
 
 
 func _ready() -> void:
+	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	collision_layer = FacilityTileSet.WORLD_LAYER | FacilityTileSet.PROP_LAYER #solid like a wall: stops players and shots; and furniture: shadows in flashlight beams (its Occluder), none in room lights
 	collision_mask = 0
 	var tier : LightLayers.Tier = LightLayers.tier_of(height)
@@ -147,36 +154,40 @@ func take_damage(damage : float, _direction : Vector2 = Vector2.ZERO) -> void:
 
 # ------------------------------------------------------------------ drawing
 func _draw() -> void:
-	var rect : Rect2 = Rect2(-SIZE / 2.0, SIZE)
-	draw_rect(Rect2(rect.position + Vector2(3.0, 4.0), rect.size), Color(0.0, 0.0, 0.0, 0.35)) #soft shadow toward the bottom right, like the walls'
-	draw_rect(rect, Palette.WALL)
-	draw_rect(rect.grow(-3.0), Palette.WALL_TOP)
-	for i in 5: #the cooling grille
-		var x : float = rect.position.x + 8.0 + i * 5.0
-		draw_line(Vector2(x, rect.position.y + 7.0), Vector2(x, rect.end.y - 7.0), Palette.DEEP, 2.0)
-	draw_rect(rect, Palette.VOID, false, 1.5)
 	var running : bool = state == State.RUNNING or (Engine.is_editor_hint() and starts_running)
+	var art : Texture2D = ART_BROKEN if state == State.DESTROYED else ART
+	var art_size : Vector2 = art.get_size() * FacilityTileSet.ART_SCALE
+	draw_texture_rect(art, Rect2(-art_size / 2.0, art_size), false) #(its soft shadow is in the picture)
+	if running: #the fan turns
+		for i in 3:
+			var blade : Vector2 = Vector2.from_angle(_time * 14.0 + i * TAU / 3.0)
+			draw_line(FAN_AT + blade * 2.2, FAN_AT + blade * 6.2, Color(0.75, 0.8, 0.88, 0.55), 1.3, true)
+	var swing : float = 150.0 #the gauge's needle, in degrees: at rest, up when running, twitching when broken
+	if running:
+		swing = 315.0 + 7.0 * sin(_time * 11.0)
+	elif state == State.DESTROYED:
+		swing = 165.0 + 12.0 * maxf(sin(_time * 3.0), 0.0)
+	draw_line(GAUGE_AT, GAUGE_AT + Vector2.from_angle(deg_to_rad(swing)) * 2.6, Palette.ALARM, 0.7, true)
 	var lamp : Color = LAMP_OFF
 	if running:
 		lamp = Palette.BACKUP.lerp(Palette.FLASH, 0.25 + 0.25 * sin(_time * 9.0))
 	elif state == State.DESTROYED:
 		lamp = Palette.ALARM if fmod(_time, 0.8) < 0.4 else Palette.ALARM.darkened(0.6)
-	var lamp_at : Vector2 = Vector2(rect.end.x - 11.0, rect.position.y + 11.0)
-	draw_circle(lamp_at, 5.5, Palette.VOID)
-	draw_circle(lamp_at, 4.0, lamp)
-	var mark : Color = Palette.ITEM if scope == Scope.WHOLE_MAP else Palette.MUTED #the scope, on the cabinet: a ring for the whole map, a dot for a region
-	var mark_at : Vector2 = Vector2(rect.end.x - 11.0, rect.end.y - 10.0)
+	if lamp != LAMP_OFF:
+		draw_circle(LAMP_AT, 3.2, Color(lamp, 0.28))
+	draw_circle(LAMP_AT, 1.6, lamp)
+	var mark : Color = Palette.ITEM #the scope, on the cabinet: a ring for the whole map, a dot for a region
 	if scope == Scope.WHOLE_MAP:
-		draw_arc(mark_at, 4.0, 0.0, TAU, 16, mark, 2.0)
+		draw_arc(MARK_AT, 2.8, 0.0, TAU, 16, mark, 1.3, true)
 	else:
-		draw_circle(mark_at, 2.5, mark)
+		draw_circle(MARK_AT, 1.1, Palette.VOID) #(small and dark, so it is not taken for a second lamp)
 	if not Engine.is_editor_hint() and state != State.OFF and health < max_health(): #damage: a bar over it
-		var bar : Rect2 = Rect2(rect.position + Vector2(0.0, -9.0), Vector2(rect.size.x, 4.0))
+		var bar : Rect2 = Rect2(-SIZE / 2.0 + Vector2(0.0, -9.0), Vector2(SIZE.x, 4.0))
 		draw_rect(bar, Palette.VOID)
 		draw_rect(Rect2(bar.position, Vector2(bar.size.x * clampf(health / max_health(), 0.0, 1.0), bar.size.y)), Palette.ALARM if health < max_health() * 0.35 else Palette.BACKUP)
 	if Engine.is_editor_hint():
 		var text : String = ("MAP" if scope == Scope.WHOLE_MAP else "REGION") + (" - ON" if starts_running else "")
-		draw_string(ThemeDB.fallback_font, Vector2(rect.position.x, rect.end.y + 14.0), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Palette.BACKUP if starts_running else Palette.MUTED)
+		draw_string(ThemeDB.fallback_font, Vector2(-SIZE.x / 2.0, SIZE.y / 2.0 + 14.0), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Palette.BACKUP if starts_running else Palette.MUTED)
 
 
 func _get_configuration_warnings() -> PackedStringArray:

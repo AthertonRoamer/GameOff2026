@@ -3,8 +3,8 @@ extends Node
 
 ##What every map shows, in one place, so the minimap, the full map, the door console, the vent map and the spawn map never disagree. Game holds one (the
 ##MapIntel node in game.tscn) and fills in where to look; each FacilityMapView that is on screen asks it to feed its layers (apply). To give a map another
-##kind of icon, add the layer to that map's scene: it is fed from here. Who may see what is decided here too: the generators and the power numbers are for
-##guards, the target exit for intruders. It also keeps the pings (ChatRelay brings them) and passes on a map's request to place one (PingControl).
+##kind of icon, add the layer to that map's scene: it is fed from here. What the door panel runs (which doors are open, the lights, the cameras) is on its map
+##only. Who may see what is decided here too: the power numbers are for guards, the target exit for intruders. It also keeps the pings (ChatRelay brings them) and passes on a map's request to place one (PingControl).
 
 signal ping_requested(at : Vector2, screen_position : Vector2) #a map was middle clicked: a world position, and where on the screen the click was
 
@@ -57,8 +57,7 @@ func apply(view : FacilityMapView) -> void:
 			if not regions.power_for_everyone:
 				regions.show_power = guard
 		elif layer is GeneratorsLayer:
-			(layer as GeneratorsLayer).grid = power
-			layer.visible = guard
+			(layer as GeneratorsLayer).grid = power #(where they are is everyone's to see: only the power numbers are the guards')
 		elif layer is ExitsLayer:
 			var exits : ExitsLayer = layer
 			if not exits.show_all: #(the spawn map shows every exit and picks out the target itself)
@@ -68,15 +67,6 @@ func apply(view : FacilityMapView) -> void:
 		elif layer is RelicRoomsLayer:
 			if (layer as RelicRoomsLayer).rooms != relic_rooms:
 				(layer as RelicRoomsLayer).rooms = relic_rooms
-		elif layer is DoorsLayer:
-			if not (layer as DoorsLayer).interactive:
-				(layer as DoorsLayer).control = control
-		elif layer is LightsLayer:
-			if not (layer as LightsLayer).interactive:
-				(layer as LightsLayer).control = control
-		elif layer is CamerasLayer:
-			if not (layer as CamerasLayer).show_feeds:
-				(layer as CamerasLayer).control = control
 		elif layer is VentsLayer:
 			if not (layer as VentsLayer).interactive and abilities != null:
 				(layer as VentsLayer).vents = abilities.vents

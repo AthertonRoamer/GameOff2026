@@ -53,7 +53,6 @@ func open() -> void:
 	regions_layer.grid = power
 	regions_layer.show_power = guard
 	generators_layer.grid = power
-	generators_layer.visible = guard
 	exits_layer.highlighted = exit_chooser.designated if exit_chooser != null and shows_exit_to(player) else "" #(checked on every open: a role can change)
 	if is_instance_valid(player):
 		map.center_on(player.global_position)

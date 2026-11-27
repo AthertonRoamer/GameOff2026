@@ -13,10 +13,8 @@
 [ext_resource type="PackedScene" path="res://game/chat/chat_window.tscn" id="8_chat"]
 [ext_resource type="Script" path="res://game/chat/ping_overlay.gd" id="23_ping_overlay"]
 [ext_resource type="PackedScene" path="res://game/chat/ping_control.tscn" id="24_ping_control"]
-[ext_resource type="Script" path="res://game/ui/map_view/layers/lights_layer.gd" id="map_lights"]
 [ext_resource type="Script" path="res://game/ui/map_view/layers/regions_layer.gd" id="map_regions"]
 [ext_resource type="Script" path="res://game/ui/map_view/layers/exits_layer.gd" id="map_exits"]
-[ext_resource type="Script" path="res://game/ui/map_view/layers/cameras_layer.gd" id="map_cameras"]
 [ext_resource type="Script" path="res://game/ui/map_view/layers/vents_layer.gd" id="map_vents"]
 [ext_resource type="Script" path="res://game/ui/map_view/layers/generators_layer.gd" id="map_generators"]
 [ext_resource type="Script" path="res://game/ui/map_view/layers/pings_layer.gd" id="map_pings"]
@@ -285,10 +283,6 @@ show_zoom_buttons = false
 script = ExtResource("4_rooms")
 show_names = false
 
-[node name="Lights" type="Node2D" parent="Minimap"]
-script = ExtResource("map_lights")
-interactive = false
-
 [node name="Regions" type="Node2D" parent="Minimap"]
 script = ExtResource("map_regions")
 show_names = false
@@ -302,15 +296,13 @@ script = ExtResource("map_exits")
 show_all = false
 outline_only = true
 
-[node name="Cameras" type="Node2D" parent="Minimap"]
-script = ExtResource("map_cameras")
-interactive = false
-show_feeds = false
-show_tags = false
-
 [node name="Doors" type="Node2D" parent="Minimap"]
 script = ExtResource("20_mini_doors")
 interactive = false
+show_state = false
+fade_full_zoom = 0.2
+fade_out_zoom = 0.08
+faded_alpha = 0.2
 
 [node name="Vents" type="Node2D" parent="Minimap"]
 script = ExtResource("map_vents")

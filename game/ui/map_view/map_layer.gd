@@ -6,7 +6,19 @@ extends Node2D
 ##should stay the same size on screen at any zoom (line widths, dots) and draw_label() for text. Override map_click() to take clicks and
 ##map_hover() to follow the mouse. The view redraws its layers when it moves, and every frame while it is `live`.
 
+@export_group("Zoomed out")
+@export var fade_full_zoom : float = 0.0 ## drawn in full at this zoom and closer. 0: never fades
+@export var fade_out_zoom : float = 0.0 ## faded as far as it goes at this zoom and further out
+@export_range(0.0, 1.0, 0.05) var faded_alpha : float = 0.0 ## how strongly it is still drawn then
+
 var view : FacilityMapView #set by the view
+
+
+## How strongly the layer is drawn at a zoom (the view sets it), so the small things make way for the rooms as the map zooms out.
+func zoom_alpha(zoom : float) -> float:
+	if fade_full_zoom <= fade_out_zoom:
+		return 1.0
+	return lerpf(faded_alpha, 1.0, clampf(inverse_lerp(fade_out_zoom, fade_full_zoom, zoom), 0.0, 1.0))
 
 
 func facility() -> FacilityMap:

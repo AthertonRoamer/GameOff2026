@@ -10,10 +10,9 @@
 [ext_resource type="Script" path="res://game/ui/map_view/layers/exits_layer.gd" id="8_exits"]
 [ext_resource type="Script" path="res://game/ui/map_view/layers/doors_layer.gd" id="9_doors"]
 [ext_resource type="Script" path="res://game/ui/map_view/layers/consoles_layer.gd" id="10_consoles"]
-[ext_resource type="Script" path="res://game/ui/map_view/layers/lights_layer.gd" id="map_lights"]
-[ext_resource type="Script" path="res://game/ui/map_view/layers/cameras_layer.gd" id="map_cameras"]
 [ext_resource type="Script" path="res://game/ui/map_view/layers/vents_layer.gd" id="map_vents"]
 [ext_resource type="Script" path="res://game/ui/map_view/layers/pings_layer.gd" id="map_pings"]
+[ext_resource type="Script" path="res://game/ui/map_view/layers/region_names_layer.gd" id="map_region_names"]
 
 [node name="MapScreen" type="Control"]
 visible = false
@@ -36,10 +35,6 @@ script = ExtResource("2_view")
 [node name="Rooms" type="Node2D" parent="Map"]
 script = ExtResource("3_rooms")
 
-[node name="Lights" type="Node2D" parent="Map"]
-script = ExtResource("map_lights")
-interactive = false
-
 [node name="Regions" type="Node2D" parent="Map"]
 script = ExtResource("5_regions")
 
@@ -51,24 +46,30 @@ script = ExtResource("8_exits")
 show_all = false
 outline_only = true
 
-[node name="Cameras" type="Node2D" parent="Map"]
-script = ExtResource("map_cameras")
-interactive = false
-show_feeds = false
-
 [node name="Doors" type="Node2D" parent="Map"]
 script = ExtResource("9_doors")
 interactive = false
+show_state = false
+fade_full_zoom = 0.3
+fade_out_zoom = 0.12
+faded_alpha = 0.15
 
 [node name="Vents" type="Node2D" parent="Map"]
 script = ExtResource("map_vents")
 interactive = false
+fade_full_zoom = 0.22
+fade_out_zoom = 0.1
+faded_alpha = 0.35
 
 [node name="Consoles" type="Node2D" parent="Map"]
 script = ExtResource("10_consoles")
 
 [node name="Generators" type="Node2D" parent="Map"]
 script = ExtResource("6_generators")
+
+[node name="RegionNames" type="Node2D" parent="Map" node_paths=PackedStringArray("source")]
+script = ExtResource("map_region_names")
+source = NodePath("../Regions")
 
 [node name="Pings" type="Node2D" parent="Map"]
 script = ExtResource("map_pings")

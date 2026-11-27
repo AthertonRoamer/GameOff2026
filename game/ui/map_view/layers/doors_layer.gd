@@ -8,6 +8,7 @@ extends MapLayer
 const OPEN_COLOUR : Color = Palette.OK
 const CLOSED_COLOUR : Color = Palette.ALARM
 const LOCKED_COLOUR : Color = Palette.BACKUP
+const PLAIN_COLOUR : Color = Palette.MUTED
 const MIN_THICKNESS_PX : float = 5.0 #doors are a wall thick, too thin to see or click when zoomed out
 const MIN_LENGTH_PX : float = 12.0
 const CLICK_SLACK_PX : float = 7.0
@@ -15,6 +16,7 @@ const CLICK_SLACK_PX : float = 7.0
 signal door_toggled(door : FacilityDoor) #a click asked for this door to flip
 
 @export var interactive : bool = true
+@export var show_state : bool = true ## off (every map but the door panel's): only where the doors are, not whether they are open, closed or locked
 
 var control : FacilityControl
 var _hover : FacilityDoor
@@ -83,6 +85,10 @@ func _draw() -> void:
 		return
 	for door in map.doors:
 		var rect : Rect2 = door_rect(door)
+		if not show_state: #a plain mark, no bigger than the doorway when zoomed out
+			var plain : Vector2 = Vector2(FacilityDoor.LENGTH_PX, maxf(FacilityTileSet.TILE * 2.0, px(2.0)))
+			draw_rect(Rect2(door.position - (plain if door.horizontal else Vector2(plain.y, plain.x)) / 2.0, plain if door.horizontal else Vector2(plain.y, plain.x)), PLAIN_COLOUR)
+			continue
 		var colour : Color = [OPEN_COLOUR, CLOSED_COLOUR, LOCKED_COLOUR][door.state]
 		if control != null and control.is_pending(door): #switching: blink while the change is on its way
 			colour = colour.lerp(Palette.TEXT, 0.5 + 0.5 * sin(Time.get_ticks_msec() / 60.0))

@@ -141,6 +141,7 @@ func _apply(redraw : bool = true) -> void:
 	for layer : MapLayer in layers(): #every layer gets the same transform, so they all draw in world pixels
 		layer.scale = Vector2.ONE * zoom
 		layer.position = size / 2.0 - _center * zoom
+		layer.modulate.a = layer.zoom_alpha(zoom)
 	if redraw:
 		redraw_layers()
 	view_changed.emit()

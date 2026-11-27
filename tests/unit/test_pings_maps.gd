@@ -10,7 +10,8 @@ const MAPS : Dictionary = { #scene -> where its FacilityMapView is
 	"res://game/phases/spawn_select/spawn_select_phase.tscn": "Screen/Margin/Box/Map",
 	"res://game/player_hud/player_hud.tscn": "Minimap",
 }
-const ICONS : Array[String] = ["Rooms", "Lights", "Regions", "RelicRooms", "Exits", "Cameras", "Doors", "Vents", "Consoles", "Generators", "Pings"]
+const ICONS : Array[String] = ["Rooms", "Regions", "RelicRooms", "Exits", "Doors", "Vents", "Consoles", "Generators", "Pings"]
+const PANEL : String = "res://game/utility/door_map_screen.tscn" #the only map with the lights, the cameras and the doors' state
 
 var _failures : int = 0
 
@@ -22,12 +23,14 @@ func check(ok : bool, what : String) -> void:
 
 
 func _ready() -> void:
-	print("every map has the same icons")
+	print("every map has the same icons, and only the panel has the panel's")
 	for path : String in MAPS:
 		var scene : Node = (load(path) as PackedScene).instantiate()
 		var view : Node = scene.get_node(MAPS[path])
 		var missing : Array = ICONS.filter(func(n : String) -> bool: return not view.has_node(n))
 		check(missing.is_empty(), "%s %s" % [path.get_file(), "" if missing.is_empty() else "lacks %s" % [missing]])
+		var panel : bool = path == PANEL
+		check(view.has_node("Lights") == panel and view.has_node("Cameras") == panel and (view.get_node("Doors") as DoorsLayer).show_state == panel, "%s: lights, cameras and door states %s" % [path.get_file(), "shown" if panel else "not shown"])
 		scene.free()
 
 	var facility : FacilityMap = (load("res://game/environment/facility_map_wings.tscn") as PackedScene).instantiate()
@@ -59,7 +62,19 @@ func _ready() -> void:
 	player.role = load("res://game/roles/infiltrator.tres")
 	await get_tree().process_frame
 	await get_tree().process_frame
-	check(not generators.visible and exits.highlighted == chooser.designated, "an intruder: the target exit, no generators")
+	check(generators.visible and exits.highlighted == chooser.designated, "an intruder: generators too, and the target exit")
+	var doors : DoorsLayer = screen.map.get_node("Doors")
+	check(doors.zoom_alpha(0.8) == 1.0 and is_equal_approx(doors.zoom_alpha(0.05), doors.faded_alpha) and doors.faded_alpha < 0.3, "zoomed out, the doors fade")
+	screen.map.fit_all()
+	await get_tree().process_frame
+	var names : RegionNamesLayer = screen.map.get_node("RegionNames")
+	var tags : Array = (screen.map.get_node("Regions") as RegionsLayer).name_tags(names).values()
+	var apart : bool = true
+	for i in tags.size():
+		for j in range(i + 1, tags.size()):
+			apart = apart and not (tags[i] as Rect2).intersects(tags[j])
+	check(tags.size() == facility.regions.size() and apart, "zoomed out, no zone name covers another (%d)" % tags.size())
+	check(names.get_index() > screen.map.get_node("Generators").get_index() and names.get_index() > doors.get_index(), "zone names are drawn over the icons")
 	check((screen.map.get_node("Doors") as DoorsLayer).interactive == false and (screen.map.get_node("Vents") as VentsLayer).interactive == false, "the full map's icons take no clicks")
 
 	print("pings from a map")

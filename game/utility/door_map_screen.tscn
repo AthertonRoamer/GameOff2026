@@ -14,6 +14,7 @@
 [ext_resource type="Script" path="res://game/ui/map_view/layers/consoles_layer.gd" id="map_consoles"]
 [ext_resource type="Script" path="res://game/ui/map_view/layers/generators_layer.gd" id="map_generators"]
 [ext_resource type="Script" path="res://game/ui/map_view/layers/pings_layer.gd" id="map_pings"]
+[ext_resource type="Script" path="res://game/ui/map_view/layers/region_names_layer.gd" id="map_region_names"]
 
 [node name="DoorMapScreen" type="Control"]
 visible = false
@@ -58,16 +59,26 @@ script = ExtResource("8_cameras")
 
 [node name="Doors" type="Node2D" parent="Map"]
 script = ExtResource("4_doors")
+fade_full_zoom = 0.25
+fade_out_zoom = 0.1
+faded_alpha = 0.65
 
 [node name="Vents" type="Node2D" parent="Map"]
 script = ExtResource("map_vents")
 interactive = false
+fade_full_zoom = 0.22
+fade_out_zoom = 0.1
+faded_alpha = 0.35
 
 [node name="Consoles" type="Node2D" parent="Map"]
 script = ExtResource("map_consoles")
 
 [node name="Generators" type="Node2D" parent="Map"]
 script = ExtResource("map_generators")
+
+[node name="RegionNames" type="Node2D" parent="Map" node_paths=PackedStringArray("source")]
+script = ExtResource("map_region_names")
+source = NodePath("../Regions")
 
 [node name="Pings" type="Node2D" parent="Map"]
 script = ExtResource("map_pings")

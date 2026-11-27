@@ -49,7 +49,7 @@ func map_click(world : Vector2) -> bool:
 
 
 func _process(_delta : float) -> void:
-	if visible and view != null and view.redraw_hz <= 0.0:
+	if visible:
 		queue_redraw() #(lights change, and a switching one blinks)
 
 
