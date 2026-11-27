@@ -49,7 +49,7 @@ func _process(delta : float) -> void:
 	if text != _prompt:
 		_prompt = text
 		prompt_changed.emit(text)
-	if Input.is_action_just_pressed("player_interact"):
+	if Input.is_action_just_pressed("player_interact") and not player.input.typing: #(an e typed in the chat is not a press)
 		if screen != null:
 			screen.close()
 		elif target != null and target.has_method("hold_seconds"):

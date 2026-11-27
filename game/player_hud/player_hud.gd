@@ -18,6 +18,7 @@ extends CanvasLayer
 @onready var map_screen : MapScreen = $MapScreen #the full map, on the map key
 @onready var power_readout : PowerReadout = $PowerReadout #guards: the power free in the region they are in
 @onready var hold_bar : ProgressBar = $HoldBar #fills while E is held on something that needs holding (starting a generator)
+@onready var chat : ChatWindow = $ChatWindow #the text chat: hidden until bind_chat (no chat in a deathmatch or the playground)
 
 var _player : Player
 var _slot_panels : Array[PanelContainer] = []
@@ -167,3 +168,8 @@ func _highlight_slot(slot : int) -> void:
 	_refresh_icons()
 	for i in _slot_panels.size():
 		_slot_panels[i].add_theme_stylebox_override("panel", _active_style if i == slot else _normal_style)
+
+
+## The text chat, for the local player, on the channels it is on (ChatRules.channels_for). Called again when its role or team changes.
+func bind_chat(relay : ChatRelay, player : Player, channels : Array[int]) -> void:
+	chat.bind(relay, player, channels)

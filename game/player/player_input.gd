@@ -21,6 +21,7 @@ var movement : Vector2 = Vector2.ZERO
 var aim : Vector2 = Vector2.ZERO
 var buttons : int = FLASHLIGHT | (1 << DELTA_SHIFT) #the flashlight starts on, no slot chosen, no wheel turn
 var active : bool = false #not sent: only this peer's own player is gathered
+var typing : bool = false #not sent: this peer is typing in the chat (ChatWindow). Nothing is gathered while it is, without touching `active`, which the phases and consoles own
 var at_console : bool = false #not sent: this player has a console's screen up (set by PlayerInteractor). It is gathered into `interacting` every frame, like the keys: a
 ##flag only set once can be put back by the rollback restoring an older tick's input, and the player stays at the console after leaving it (dying there, say)
 
@@ -66,7 +67,7 @@ var _scroll : int = 0
 
 
 func _input(event : InputEvent) -> void:
-	if not active or not event.is_pressed() or event.is_echo():
+	if not active or typing or not event.is_pressed() or event.is_echo():
 		return
 	for action : StringName in [&"player_holster", &"player_reload", &"player_flashlight"]:
 		if event.is_action(action):
@@ -87,23 +88,24 @@ func _took_press(action : StringName) -> int:
 
 
 func _gather() -> void:
-	movement = Input.get_vector("player_left", "player_right", "player_up", "player_down") if active else Vector2.ZERO
-	aim = (get_parent() as Node2D).get_global_mouse_position() if active else aim
-	use_item = active and Input.is_action_pressed("player_use_active_item")
-	run = active and Input.is_action_pressed("player_run")
-	sneak = active and Input.is_action_pressed("player_sneak")
+	var on : bool = active and not typing
+	movement = Input.get_vector("player_left", "player_right", "player_up", "player_down") if on else Vector2.ZERO
+	aim = (get_parent() as Node2D).get_global_mouse_position() if on else aim
+	use_item = on and Input.is_action_pressed("player_use_active_item")
+	run = on and Input.is_action_pressed("player_run")
+	sneak = on and Input.is_action_pressed("player_sneak")
 	var holsters : int = _took_press(&"player_holster")
 	var reloads : int = _took_press(&"player_reload")
 	var flashlights : int = _took_press(&"player_flashlight")
-	holster = active and holsters > 0
-	reload = active and reloads > 0
-	slot_select = _slot_pressed if active else -1
-	slot_delta = _scroll if active else 0
+	holster = on and holsters > 0
+	reload = on and reloads > 0
+	slot_select = _slot_pressed if on else -1
+	slot_delta = _scroll if on else 0
 	_slot_pressed = -1
 	_scroll = 0
 	interacting = at_console
 	view_lag = ceili(NetworkTime.remote_rtt * 0.5 * NetworkTime.tickrate) + NetworkRollback.display_offset
-	if active and flashlights % 2 == 1:
+	if on and flashlights % 2 == 1:
 		flashlight_on = not flashlight_on
 
 

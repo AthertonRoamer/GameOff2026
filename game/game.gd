@@ -48,6 +48,7 @@ signal play_started #every peer: the phases are over and the players can move (t
 @onready var exit_chooser : DesignatedExitChooser = $DesignatedExitChooser
 @onready var artifact_escape : ArtifactEscape = $ArtifactEscape
 @onready var phases : MatchPhases = $MatchPhases
+@onready var chat_relay : ChatRelay = $ChatRelay #the text chat: the lobby passes each message to the players on its channel only
 
 var started : bool = false #play has begun: the phases are over. (The test harness waits for this)
 
@@ -124,6 +125,7 @@ func _ready() -> void:
 	player_hud.bind_exit(exit_chooser) #the target exit on the full map, for intruders only
 	player_hud.bind_relics(artifact_placer) #the treasure rooms the relics start in, on the full map
 	player_hud.bind_power(level.power)
+	chat_relay.game = self
 	level.sound.listener = func() -> Variant: return spawner.local_player.global_position if is_instance_valid(spawner.local_player) else null #sounds are heard from where this peer's own player is
 	level.sound.heard.connect(player_hud.sound_cue.ping)
 	level.blood.splat_made.connect(func(kind : int, at : Vector2) -> void: level.sound.play(level.sound.blood_drip if kind == BloodSplat.Kind.BLEED else level.sound.blood_splat, at))
@@ -148,6 +150,7 @@ func _ready() -> void:
 			_ensure_assignment()
 			lobby.member_left.connect(func(_m : LobbyMember) -> void: _spawn_on_lobby_when_ready())
 			lobby.member_left.connect(func(_m : LobbyMember) -> void: match_director.check_elimination())
+			lobby.member_left.connect(chat_relay._on_member_left)
 			artifact_escape.watch() #the attackers win when the target artifact is carried into an exit zone
 			_spawn_on_lobby_when_ready() #no members: spawns now
 		else:
@@ -285,6 +288,7 @@ func _spawn_players(roles : Dictionary, known_teams : Dictionary) -> void:
 		if role != null:
 			SkinFrames.load_role("res://game/player/skin", role.skin)
 	spawner.spawn_all()
+	_refresh_chat()
 	var summary : Array[String] = []
 	for id : int in roles:
 		var role : Role = role_assigner.role_at(roles[id])
@@ -341,6 +345,7 @@ func _apply_role(member_id : int, role_index : int, reset_tick : int) -> void:
 	var player : Player = spawner.players.get(member_id)
 	if is_instance_valid(player):
 		player.change_role(role_assigner.role_at(role_index), reset_tick) #(the ammunition starts again on one tick everywhere, so a rollback keeps it)
+	_refresh_chat()
 
 
 @rpc("authority", "call_remote", "reliable")
@@ -359,6 +364,19 @@ func _apply_teams(known_teams : Dictionary) -> void:
 	var local : Player = spawner.local_player
 	if is_instance_valid(local):
 		player_hud.show_target(target_chooser.target if local.team == Team.ATTACKERS else null)
+	_refresh_chat()
+
+
+##The local player's chat window, on the channels this peer's own role and team put it on (a peer always knows its own team). None in a deathmatch,
+##and none on the lobby, which has no player of its own.
+func _refresh_chat() -> void:
+	var local : Player = spawner.local_player
+	if not is_instance_valid(local):
+		return
+	var channels : Array[int] = []
+	if not settings.is_deathmatch():
+		channels = ChatRules.channels_for(multiplayer.get_unique_id(), {"roles": _roles, "teams": _known_teams}, role_assigner)
+	player_hud.bind_chat(chat_relay, local, channels)
 
 
 func _add_debug_rings() -> void:

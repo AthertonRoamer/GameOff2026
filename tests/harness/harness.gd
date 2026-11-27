@@ -19,6 +19,7 @@ var use_combat : bool = false #the acting client kills the host's player with pr
 var use_killkey : bool = false #the real game: the client taps the debug kill key (K) twice; every peer must see it die and come back
 var use_hold : bool = false #the client, then the host, hold fire for 3 s each and report every shot event they saw
 var use_night_shift : bool = false #the real game (game/game.tscn): the client works the door console; every peer reports doors, flashlight, interact
+var use_chat : bool = false #--chat, the real game: every player sends a message on each of its chat channels, a loyal guard forges one on the intruder channel, the host spams; every peer reports what it got
 var no_lagcomp : bool = false #the lobby does not rewind targets, for comparison
 var use_phases : bool = false #--phases: the real game runs its phases (role reveal...) before play. Otherwise every process skips them
 var join_port : int = LOBBY_PORT #the client can join through a latency proxy by using another port
@@ -51,7 +52,8 @@ func _ready() -> void:
 	if idx != -1 and idx + 1 < args.size():
 		soak_seconds = float(args[idx + 1])
 	soak_move = args.has("--soak-move")
-	use_night_shift = args.has("--night-shift") or OS.get_cmdline_args().has("--harness-night-shift") or soak_seconds > 0.0 #a soak plays the real game
+	use_chat = args.has("--chat")
+	use_night_shift = args.has("--night-shift") or OS.get_cmdline_args().has("--harness-night-shift") or soak_seconds > 0.0 or use_chat #a soak plays the real game, and so does the chat check
 	use_rollback = args.has("--rollback") or use_demo or use_night_shift
 	idx = args.find("--join-port")
 	if idx != -1 and idx + 1 < args.size():
@@ -649,6 +651,10 @@ func tap_key(code : Key) -> void:
 
 
 func run_host_scenario() -> void:
+	if use_chat:
+		await chat_run()
+		await get_tree().create_timer(2.0).timeout #(the other peers report before the game is torn down)
+		return
 	if soak_seconds > 0.0:
 		await soak_run()
 	elif use_killkey:
@@ -690,6 +696,9 @@ func run_host_scenario() -> void:
 
 
 func run_client_scenario(mode : ClientMode) -> void:
+	if use_chat:
+		await chat_run()
+		return
 	if soak_seconds > 0.0:
 		await soak_run()
 	elif use_killkey:
@@ -766,3 +775,32 @@ func run_client() -> void:
 	await get_tree().create_timer(1.0).timeout
 	log_line("DONE")
 	get_tree().quit(0)
+
+
+##--chat: this player sends one message on each chat channel it is on, a loyal guard also forges one on the intruder channel (straight to the lobby,
+##past the window), and the host spams. Then it reports every message the lobby delivered to it, and its window. The runner checks each message
+##reached exactly the players on its channel.
+func chat_run() -> void:
+	var game : Game = Main.mode.get_game()
+	var me : int = multiplayer.get_unique_id()
+	var got : Array[String] = []
+	var notices : Array[String] = []
+	game.chat_relay.message_received.connect(func(channel : int, _sender : String, text : String, _own : bool) -> void: got.append("%d:%s" % [channel, text]))
+	game.chat_relay.notice.connect(func(text : String) -> void: notices.append(text))
+	var channels : Array[int] = ChatRules.channels_for(me, {"roles": game._roles, "teams": game._known_teams}, game.role_assigner)
+	await get_tree().create_timer(1.0).timeout
+	for channel in channels:
+		var text : String = "m_%d_%d" % [me, channel]
+		game.chat_relay.submit(channel, text)
+		log_line("CHAT_SENT me=%d ch=%d text=%s" % [me, channel, text])
+	if channels == [ChatRules.Channel.GUARDS]:
+		game.chat_relay._submit.rpc_id(1, ChatRules.Channel.INTRUDERS, "forged_%d" % me)
+		log_line("CHAT_FORGED me=%d text=forged_%d" % [me, me])
+	if role == "host" and not channels.is_empty():
+		for k in 8:
+			game.chat_relay.submit(channels[0], "spam_%d_%d" % [me, k])
+		log_line("CHAT_SPAMMED me=%d ch=%d" % [me, channels[0]])
+	await get_tree().create_timer(3.0).timeout
+	var window : ChatWindow = game.player_hud.chat
+	log_line("CHAT_REPORT me=%d channels=%s got=%s notices=%d window=%s header=%s" % [me, ",".join(channels.map(func(c : int) -> String: return str(c))),
+		"|".join(got), notices.size(), window.visible, window._header.visible])
