@@ -112,7 +112,9 @@ func _process(delta : float) -> void:
 	_update_view(me, sees_all)
 	_update_bodies()
 	_update_room_lights(me, sees_all)
-	for player : Player in players.call():
+	var current : Array = players.call()
+	_forget_leavers(current)
+	for player in current:
 		if player == me or not is_instance_valid(player):
 			continue
 		if not _lights.has(player):
@@ -128,6 +130,20 @@ func _process(delta : float) -> void:
 		player.set_muzzle_seen(sees_them or visibility(player.global_position) > 0.3)
 		_update_lights(player, sees_them)
 	me.set_body_seen(1.0, Color.WHITE if sees_all else _lighting_of(me, me)["tint"]) #(the local player's own body is lit by the others' drawn lights too, alive or fallen)
+
+
+## A player who left the game is out of players (and freed a moment later): their drawn beam and glow go, or the last shape of their light would stay on screen.
+## (The keys are untyped: a freed player is a freed object, which a typed variable refuses.)
+func _forget_leavers(current : Array) -> void:
+	for key in _lights.keys():
+		if not is_instance_valid(key) or not current.has(key):
+			for light in (_lights[key] as Dictionary).values():
+				if is_instance_valid(light):
+					(light as Node).queue_free()
+			_lights.erase(key)
+	for key in _alpha.keys():
+		if not is_instance_valid(key) or not current.has(key):
+			_alpha.erase(key)
 
 
 func _add_light() -> RemoteBeam:
@@ -372,7 +388,7 @@ func _lighting_of(me : Player, other : Player) -> Dictionary:
 	var at : Vector2 = other.skin.body_position()
 	var lit : bool = false
 	var added : Color = Color(0, 0, 0, 0) #the light that falls on them, in the scene lights' units
-	for holder : Player in players.call():
+	for holder in players.call():
 		if not is_instance_valid(holder) or not holder.flashlight.on or not holder.is_alive():
 			continue
 		var origin : Vector2 = holder.flashlight.global_position

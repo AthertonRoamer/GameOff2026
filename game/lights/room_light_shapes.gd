@@ -50,7 +50,7 @@ func rebuild() -> void:
 	for lamp : PointLight2D in _lamps:
 		lamp.queue_free()
 	_lamps.clear()
-	for door : FacilityDoor in _watched:
+	for door in _watched:
 		if is_instance_valid(door) and door.state_changed.is_connected(_watched[door]):
 			door.state_changed.disconnect(_watched[door])
 	_watched.clear()

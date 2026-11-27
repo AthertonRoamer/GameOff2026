@@ -22,7 +22,7 @@ func _draw() -> void:
 		for node : Node in map.props_node.find_children("*", "StaticBody2D", true, false):
 			if node is ControlPanel:
 				_found.append(node)
-	for panel : ControlPanel in _found:
+	for panel in _found:
 		if not is_instance_valid(panel):
 			continue
 		var at : Vector2 = map.to_local(panel.global_position)

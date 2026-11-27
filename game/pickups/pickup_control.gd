@@ -77,8 +77,11 @@ func quiesce() -> void:
 
 
 func _decide(peer_id : int, id : int) -> void:
-	var pickup : Pickup = _pickups.get(id)
-	if pickup == null or _pending.any(func(change : Dictionary) -> bool: return change["id"] == id or change["peer"] == peer_id):
+	var found : Variant = _pickups.get(id) #(untyped until checked: one freed by someone else is a freed object, which a typed variable refuses)
+	if not is_instance_valid(found):
+		return
+	var pickup : Pickup = found
+	if _pending.any(func(change : Dictionary) -> bool: return change["id"] == id or change["peer"] == peer_id):
 		return
 	var player : Player = player_lookup.call(peer_id)
 	if player == null or not player.is_alive() or not pickup.is_in_reach(player.global_position, reach_slack) or not pickup.can_interact(player):
@@ -116,9 +119,10 @@ func _apply_due(tick : int) -> void:
 
 func _apply(change : Dictionary) -> void:
 	var player : Player = player_lookup.call(change["peer"])
-	var pickup : Pickup = _pickups.get(change["id"])
-	if player == null or pickup == null: #the player left first: the item stays on the floor
+	var found : Variant = _pickups.get(change["id"]) #(untyped until checked, as in _decide)
+	if player == null or not is_instance_valid(found): #the player left first: the item stays on the floor
 		return
+	var pickup : Pickup = found
 	pickup.item.put_into(player.inventory, change["slot"], change["tick"])
 	_pickups.erase(change["id"])
 	pickup.queue_free()
