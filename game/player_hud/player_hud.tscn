@@ -3,6 +3,9 @@
 [ext_resource type="Script" path="res://game/player_hud/player_hud.gd" id="1_hud"]
 [ext_resource type="Script" path="res://game/audio/sound_cue.gd" id="2_cue"]
 [ext_resource type="Script" path="res://game/ui/map_view/minimap.gd" id="3_minimap"]
+[ext_resource type="Script" path="res://game/ui/map_view/layers/doors_layer.gd" id="20_mini_doors"]
+[ext_resource type="Script" path="res://game/ui/map_view/layers/consoles_layer.gd" id="21_mini_consoles"]
+[ext_resource type="Script" path="res://game/ui/map_view/layers/relic_rooms_layer.gd" id="22_mini_relics"]
 [ext_resource type="Script" path="res://game/ui/map_view/layers/rooms_layer.gd" id="4_rooms"]
 [ext_resource type="Script" path="res://game/ui/map_view/layers/player_dot_layer.gd" id="5_dot"]
 [ext_resource type="PackedScene" path="res://game/ui/map_view/map_screen.tscn" id="6_mapscreen"]
@@ -264,12 +267,26 @@ offset_bottom = -16.0
 grow_horizontal = 0
 grow_vertical = 0
 script = ExtResource("3_minimap")
-default_zoom = 0.45
+clip_contents = true
+default_zoom = 0.2
 show_zoom_buttons = false
 
 [node name="Rooms" type="Node2D" parent="Minimap"]
 script = ExtResource("4_rooms")
 show_names = false
+
+[node name="RelicRooms" type="Node2D" parent="Minimap"]
+script = ExtResource("22_mini_relics")
+width_px = 1.5
+
+[node name="Doors" type="Node2D" parent="Minimap"]
+script = ExtResource("20_mini_doors")
+interactive = false
+
+[node name="Consoles" type="Node2D" parent="Minimap"]
+script = ExtResource("21_mini_consoles")
+show_names = false
+size_px = 7.0
 
 [node name="Player" type="Node2D" parent="Minimap"]
 script = ExtResource("5_dot")

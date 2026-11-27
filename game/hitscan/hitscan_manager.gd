@@ -13,6 +13,7 @@ signal shot_hit(shot : Dictionary, target : Node) #lobby only. The target is a p
 
 const SHOOTABLE_GROUP : StringName = &"shootable" ## solid bodies on the world mask that take damage when a shot ends on them: take_damage(damage, direction), lobby only
 signal hit_confirmed(damage : float) #on the shooter's own peer
+signal door_shot(door : FacilityDoor) #lobby only: a shot struck this shut door (nobody in the way). The game opens it
 signal wall_hit(at : Vector2, own_shot : bool) #a shot ended on a wall (on every peer that is told of the shot: the impact sound). own_shot: this peer's own player made it
 
 @export var world_collision_mask : int = 10 #walls and closed doors stop a shot
@@ -114,6 +115,8 @@ func _trace(owner_node : Node, owner_id : int, origin : Vector2, dir : Vector2, 
 		elif struck != null and on_wall: #no player in the way: the shot strikes the shootable thing it ended on
 			dealt = damage
 			shot_hit.emit({"damage": damage, "direction": dir, "owner_id": owner_id}, struck)
+		elif on_wall and not wall.is_empty() and wall["collider"] is FacilityDoor:
+			door_shot.emit(wall["collider"])
 	return {"end": end, "on_wall": on_wall, "damage": dealt}
 
 

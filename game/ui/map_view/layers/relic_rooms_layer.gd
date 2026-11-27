@@ -19,6 +19,17 @@ func set_rooms(value : Array[String]) -> void:
 func _draw() -> void:
 	if facility() == null:
 		return
-	for id : String in rooms:
+	var shown : Array[String] = rooms.duplicate()
+	for id : String in facility().rooms_of_kind("item"): #(every treasure room, whether or not a relic started in it)
+		if not shown.has(id):
+			shown.append(id)
+	var spots : Node = facility().get_node_or_null("ArtifactLocations") #(and every room with a place for a relic, whatever its kind)
+	if spots != null:
+		for spot : Node in spots.get_children():
+			var id : String = facility().room_at((spot as Node2D).position)
+			if id != "" and not shown.has(id):
+				shown.append(id)
+	for id : String in shown:
 		for rect : Rect2 in room_rects(id):
+			draw_rect(rect, Color(COLOUR, 0.22))
 			draw_rect(rect, COLOUR, false, px(width_px))

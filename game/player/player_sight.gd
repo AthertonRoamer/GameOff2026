@@ -279,7 +279,7 @@ func _update_room_lights(me : Player, sees_all : bool) -> void:
 		if any_on:
 			var reach : Callable = func(_angle : float) -> float: return sight_range
 			#over furniture: the floor behind a generator is drawn, so a light missing there would look like a shadow, and a ceiling light casts none
-			_sight = SightFan.ring(get_world_2d().direct_space_state, me.global_position, sight_rays, reach, WALLS, room_lights.furniture())
+			_sight = SightFan.ring(get_world_2d().direct_space_state, me.global_position, sight_rays, reach, SightFan.CEILING)
 			if _sight_mask.size != Vector2i(view_size.ceil()):
 				_sight_mask.size = Vector2i(view_size.ceil())
 			_sight_mask.canvas_transform = to_screen #(the mask is the screen: world -> screen pixels)

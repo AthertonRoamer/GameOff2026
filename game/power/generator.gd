@@ -23,6 +23,7 @@ const LAMP_OFF : Color = Color("#2a313d")
 @export_range(-1.0, 2000.0, 1.0, "or_greater") var health_override : float = -1.0 ## damage it takes to go down; -1 uses PowerSettings
 @export_range(-1.0, 60.0, 0.1) var start_seconds_override : float = -1.0 ## how long E is held to start it; -1 uses PowerSettings
 @export_range(-1.0, 60.0, 0.1) var repair_seconds_override : float = -1.0 ## how long E is held to repair it; -1 uses PowerSettings
+@export_range(0.0, 60.0, 0.1, "suffix:s") var stop_seconds : float = 2.0 ## how long E is held to turn a running one off
 @export var reach_m : float = 1.3 ## how close a player has to be to work it, from its middle
 @export_range(0.0, 3.0, 0.05, "suffix:m") var height : float = 1.2 ## how tall it is: its shadow falls on lower things in a flashlight beam (see LightLayers), never in a ceiling light
 
@@ -89,6 +90,8 @@ func supply() -> float:
 
 # ------------------------------------------------------------------ interactable (see PlayerInteractor)
 func get_prompt() -> String:
+	if state == State.RUNNING:
+		return "Hold E   turn off the generator"
 	var what : String = "repair the generator" if state == State.DESTROYED else "start the generator"
 	return "Hold E   %s (%s)" % [what, "whole facility" if scope == Scope.WHOLE_MAP else (grid.facility.region_name(region) if grid != null else region)]
 
@@ -103,15 +106,19 @@ func is_in_reach(world_position : Vector2) -> bool:
 	return get_world_2d().direct_space_state.intersect_ray(query).is_empty()
 
 
-##Only guards work generators (a player with no role, in the playground, counts as one), and only while it is not running.
+##Anyone can switch a running generator off by hand. Only guards start or repair one (a player with no role, in the playground, counts as one).
 func can_interact(player : Node) -> bool:
-	if grid == null or state == State.RUNNING:
+	if grid == null:
 		return false
+	if state == State.RUNNING:
+		return true
 	var role : Role = player.get("role")
 	return role == null or role.kind == Role.Kind.GUARD
 
 
 func hold_seconds(_player : Node) -> float:
+	if state == State.RUNNING:
+		return stop_seconds
 	return repair_seconds() if state == State.DESTROYED else start_seconds()
 
 

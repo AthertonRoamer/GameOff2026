@@ -21,6 +21,7 @@ const TILESET_PATH : String = "res://game/environment/facility_tileset.tres" #th
 
 const WORLD_LAYER : int = 1 << 1 #physics layer 2: walls and other solid world pieces, stops bodies and projectiles
 const DOOR_LAYER : int = 1 << 3 #physics layer 4: closed doors, stops bodies only
+const STRUCTURE_LAYER : int = 1 << 5 #physics layer 6: the walls only (they are on WORLD_LAYER too). What a ceiling light is stopped by, with doors: testing this layer passes over every piece of furniture without listing them
 const PROP_LAYER : int = 1 << 4 #physics layer 5: furniture (generators, consoles). Casts shadows in flashlight beams, not in the rooms' ceiling lights. Stops nothing by itself
 
 const NEIGHBOURS : Array[Vector2i] = [Vector2i(0, -1), Vector2i(1, -1), Vector2i(1, 0), Vector2i(1, 1),

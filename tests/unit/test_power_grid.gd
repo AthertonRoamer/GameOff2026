@@ -26,7 +26,8 @@ func _ready() -> void:
 	await get_tree().process_frame
 
 	#regions on the map
-	check(map.regions.size() == 3, "the map has three regions (%d)" % map.regions.size())
+	var region_nodes : int = map.get_node("Regions").get_child_count()
+	check(map.regions.size() == region_nodes and region_nodes >= 3, "the map has every region under its Regions node (%d of %d)" % [map.regions.size(), region_nodes])
 	for id : String in map.rooms:
 		var region : String = map.rooms[id]["region"]
 		check(region == "" or map.regions.has(region), "room %s is in a region the map has (%s)" % [id, region])
@@ -44,7 +45,8 @@ func _ready() -> void:
 	grid.build()
 	var west_gen : Generator = _generator(grid, "WestGenerator")
 	var main_gen : Generator = _generator(grid, "MainGenerator")
-	check(grid.generators.size() == 3, "the grid finds the map's three generators")
+	var placed : int = map.props_node.find_children("*", "StaticBody2D", true, false).filter(func(n : Node) -> bool: return n is Generator).size()
+	check(grid.generators.size() == placed and placed >= 3, "the grid finds every generator on the map (%d of %d)" % [grid.generators.size(), placed])
 	check(west_gen != null and west_gen.region == "west" and west_gen.scope == Generator.Scope.REGION, "the west generator powers the west wing")
 	check(main_gen != null and main_gen.scope == Generator.Scope.WHOLE_MAP, "the main generator powers the whole map")
 	for generator : Generator in grid.generators:

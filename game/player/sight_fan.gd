@@ -5,6 +5,7 @@ extends RefCounted
 ## the local player's line of sight) and by RoomLightShapes (where a room's ceiling light falls).
 
 const WALLS : int = FacilityTileSet.WORLD_LAYER | FacilityTileSet.DOOR_LAYER
+const CEILING : int = FacilityTileSet.STRUCTURE_LAYER | FacilityTileSet.DOOR_LAYER #what stops a ceiling light, and the sight of one: walls and shut doors, not furniture
 const BEAMS : int = WALLS | FacilityTileSet.PROP_LAYER #what stops a flashlight beam: walls, shut doors and furniture (which has a LightOccluder2D for the scene's own lights)
 const REFINE_GAP : float = 14.0 #two neighbouring rays that land this much further apart than that get a ray between them (a corner, a doorway)
 const REFINE_DEPTH : int = 8 #how many times a gap is halved at most

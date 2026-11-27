@@ -39,6 +39,10 @@ func use_role(role : Role) -> void:
 ##A step is made when the stride runs on to a foot-down frame, or when a gait starts on one. A sheet that hands over to another mid-stride (or is set to a frame) does not
 ##make a step of its own, which is what made some steps land off the beat.
 func _on_frame_changed() -> void:
+	var body : Player = get_parent() as Player
+	if body != null and not body.is_alive(): #a body is silent: the hidden legs of the fallen can go on striding (the input and velocity it died with are still there)
+		_last_frame = -1
+		return
 	var gait : bool = legs.animation in WALKS or legs.animation in RUNS
 	var previous : int = _last_frame
 	_last_frame = legs.frame if gait else -1

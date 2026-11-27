@@ -74,6 +74,7 @@ func bind_exit(exit_chooser : DesignatedExitChooser) -> void:
 ## The full map outlines the treasure rooms the relics are placed in at the start of the match, and keeps them outlined after a relic is taken.
 func bind_relics(placer : ArtifactPlacer) -> void:
 	placer.placed.connect(map_screen.mark_relic_rooms)
+	placer.placed.connect(func(_positions : PackedVector2Array) -> void: ($Minimap/RelicRooms as RelicRoomsLayer).rooms = map_screen.relic_rooms_layer.rooms) #(after the full map has marked them)
 
 
 ## Guards see the power: the readout of the region they stand in, and every region's power on the full map.

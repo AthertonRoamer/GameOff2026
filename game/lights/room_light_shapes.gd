@@ -180,7 +180,7 @@ func _compute(source : int) -> Array:
 		var tx : float = half.x / absf(direction.x) if absf(direction.x) > 0.0001 else INF
 		var ty : float = half.y / absf(direction.y) if absf(direction.y) > 0.0001 else INF
 		return minf(tx, ty)
-	var shape : PackedVector2Array = SightFan.ring(get_world_2d().direct_space_state, centre, rays, reach, SightFan.WALLS, furniture())
+	var shape : PackedVector2Array = SightFan.ring(get_world_2d().direct_space_state, centre, rays, reach, SightFan.CEILING)
 	#the whole room is lit, corners too (the fan's straight edges between rays cut them off a little), and things standing in it cast no shadow: the lamp is on the ceiling
 	var result : Array = _outer(Geometry2D.merge_polygons(shape, _rect_polygon(rect)))
 	var room : String = facility.light_sources[source]["room"]

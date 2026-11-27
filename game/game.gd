@@ -121,6 +121,9 @@ func _ready() -> void:
 	$PlayerSight.local_player = func() -> Player: return spawner.local_player
 	$PlayerSight.room_lights = level.lights #rooms' ceiling lights are drawn where the local player has a line of sight to them
 	level.hitscan.shot_hit.connect(_on_projectile_hit) #(the same hit as a bullet makes: damage and the way it was going)
+	level.hitscan.door_shot.connect(func(door : FacilityDoor) -> void: #(lobby) a shot opens a shut door; it can be shut again. A locked one stays
+		if door.state == FacilityDoor.State.CLOSED and not level.control.is_pending(door):
+			level.control.force_open(door))
 	player_hud.bind_hitscan(level.hitscan)
 	player_hud.bind_map(level.facility)
 	player_hud.bind_exit(exit_chooser) #the target exit on the full map, for intruders only

@@ -133,7 +133,7 @@ func _make_layers() -> void:
 			old_node.free()
 	wall_body = StaticBody2D.new() #the walls' collision and light occluders, see _build_wall_body
 	wall_body.name = "WallBodies"
-	wall_body.collision_layer = FacilityTileSet.WORLD_LAYER
+	wall_body.collision_layer = FacilityTileSet.WORLD_LAYER | FacilityTileSet.STRUCTURE_LAYER
 	wall_body.collision_mask = 0
 	add_child(wall_body)
 	move_child(wall_body, index)

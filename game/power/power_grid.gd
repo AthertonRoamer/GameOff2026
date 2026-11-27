@@ -257,7 +257,7 @@ func _decide_hold(peer_id : int, index : int, started : bool) -> void:
 	if index < 0 or index >= generators.size():
 		return
 	if started and _may_work(peer_id, generators[index]):
-		_holds[peer_id] = {"index": index, "since": Time.get_ticks_msec()}
+		_holds[peer_id] = {"index": index, "since": Time.get_ticks_msec(), "stop": generators[index].state == Generator.State.RUNNING}
 	elif not started and _holds.has(peer_id) and _holds[peer_id]["index"] == index:
 		_holds.erase(peer_id)
 
@@ -267,16 +267,20 @@ func _decide_finish(peer_id : int, index : int) -> void:
 		return
 	var generator : Generator = generators[index]
 	var held : float = (Time.get_ticks_msec() - int(_holds[peer_id]["since"])) / 1000.0
+	var stopping : bool = _holds[peer_id].get("stop", false)
 	_holds.erase(peer_id)
-	if generator.state == Generator.State.RUNNING or held < generator.hold_seconds(null) - HOLD_SLACK_SECONDS or not _may_work(peer_id, generator):
+	if stopping != (generator.state == Generator.State.RUNNING): #(someone else started or stopped it while this hold ran)
 		return
-	_set_generator(index, Generator.State.RUNNING, generator.max_health())
+	if held < generator.hold_seconds(null) - HOLD_SLACK_SECONDS or not _may_work(peer_id, generator):
+		return
+	if stopping:
+		_set_generator(index, Generator.State.OFF, generator.health) #(its damage stays)
+	else:
+		_set_generator(index, Generator.State.RUNNING, generator.max_health())
 
 
-##Lobby: is this peer's player a living guard at the generator (as the lobby sees them)? Unchecked while there is no way to find the player.
+##Lobby: is this peer's player a living player who may work the generator (see Generator.can_interact) at it (as the lobby sees them)? Unchecked while there is no way to find the player.
 func _may_work(peer_id : int, generator : Generator) -> bool:
-	if generator.state == Generator.State.RUNNING:
-		return false
 	if not player_of.is_valid():
 		return true
 	var player : Player = player_of.call(peer_id)
