@@ -97,7 +97,7 @@ func _trace(owner_node : Node, owner_id : int, origin : Vector2, dir : Vector2, 
 		on_wall = true
 	var wall_distance : float = origin.distance_to(end)
 	if targets.is_valid(): #where this peer sees the players: the shot is drawn ending on the first one it passes through
-		for target : Node2D in targets.call():
+		for target in targets.call():
 			if target == owner_node or not is_instance_valid(target) or (can_hit.is_valid() and not can_hit.call(target)):
 				continue
 			var distance : float = LagCompensator.ray_circle_distance(origin, dir, target.global_position, target_radius)

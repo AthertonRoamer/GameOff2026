@@ -59,15 +59,22 @@ func _process(delta : float) -> void:
 	if not _active:
 		return
 	_update_seen(delta)
-	for player : Player in _puddles.keys(): #a body that got up leaves its puddle to fade
-		if not is_instance_valid(player) or player.is_alive():
-			if is_instance_valid(_puddles[player]):
-				(_puddles[player] as BloodSplat).fade_now(1.2)
-			_puddles.erase(player)
+	#(the loop variables are untyped: a player who left the game is a freed object, and a typed variable refuses one before is_instance_valid can see it)
+	for key in _puddles.keys(): #a body that got up, or left the game, leaves its puddle to fade
+		if not is_instance_valid(key) or (key as Player).is_alive():
+			if is_instance_valid(_puddles[key]):
+				(_puddles[key] as BloodSplat).fade_now(1.2)
+			_puddles.erase(key)
+	for key in _bleed_timers.keys(): #(a player who left is not in players any more, so would never be erased below)
+		if not is_instance_valid(key):
+			_bleed_timers.erase(key)
 	if not _is_lobby() or not players.is_valid():
 		return
-	for player : Player in players.call():
-		if not is_instance_valid(player) or not player.is_bleeding():
+	for entry in players.call():
+		if not is_instance_valid(entry):
+			continue
+		var player : Player = entry as Player
+		if not player.is_bleeding():
 			_bleed_timers.erase(player)
 			continue
 		var left : float = _bleed_timers.get(player, randf_range(0.3, 1.0)) - delta
@@ -82,8 +89,9 @@ func _process(delta : float) -> void:
 func _update_seen(delta : float) -> void:
 	if not sight.is_valid():
 		return
-	for splat : BloodSplat in _splats:
-		if is_instance_valid(splat):
+	for entry in _splats: #(untyped: a splat that faded away is a freed object)
+		if is_instance_valid(entry):
+			var splat : BloodSplat = entry as BloodSplat
 			splat.seen = move_toward(splat.seen, sight.call(splat.global_position), SEEN_FADE_PER_SECOND * delta)
 
 

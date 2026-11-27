@@ -31,7 +31,7 @@ func _process(_delta : float) -> void:
 func _draw_rings() -> void:
 	if not players.is_valid():
 		return
-	for player : Player in players.call():
+	for player in players.call():
 		if not is_instance_valid(player) or not player.visible or not player.is_alive():
 			continue
 		var at : Vector2 = player.global_position

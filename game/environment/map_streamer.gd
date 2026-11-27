@@ -66,7 +66,7 @@ func _process(delta : float) -> void:
 
 func _exit_tree() -> void:
 	for list : Array in _decor.values(): #Decor that is out of the tree is nobody's child any more: it has to be freed by hand
-		for node : Node in list:
+		for node in list:
 			if is_instance_valid(node) and not node.is_inside_tree():
 				node.free()
 
@@ -198,7 +198,7 @@ func _update_furniture(ranges : Array[Rect2i]) -> void:
 		var inside : bool = _in_any(ranges, chunk)
 		if inside == _pieces_in.has(chunk):
 			continue
-		for piece : Furniture in _pieces[chunk]:
+		for piece in _pieces[chunk]:
 			if is_instance_valid(piece):
 				piece.set_shown(inside)
 		if inside:
@@ -214,7 +214,7 @@ func _update_decor(ranges : Array[Rect2i]) -> void:
 		var inside : bool = _in_any(ranges, chunk)
 		if inside == _decor_in.has(chunk):
 			continue
-		for node : Node in _decor[chunk]:
+		for node in _decor[chunk]:
 			if not is_instance_valid(node):
 				continue
 			if inside:

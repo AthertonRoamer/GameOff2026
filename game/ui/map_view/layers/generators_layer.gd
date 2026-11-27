@@ -12,7 +12,7 @@ func _draw() -> void:
 	var map : FacilityMap = facility()
 	if map == null or grid == null:
 		return
-	for generator : Generator in grid.generators:
+	for generator in grid.generators:
 		if not is_instance_valid(generator):
 			continue
 		var at : Vector2 = map.to_local(generator.global_position)

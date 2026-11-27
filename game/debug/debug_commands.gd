@@ -98,13 +98,13 @@ func players_named(word : String, sender : int) -> Array[Player]:
 		if players.has(sender):
 			found.append(players[sender])
 	elif word == "all":
-		for player : Player in players.values():
+		for player in players.values():
 			if is_instance_valid(player):
 				found.append(player)
 	elif word.is_valid_int() and players.has(word.to_int()):
 		found.append(players[word.to_int()])
 	else:
-		for player : Player in players.values():
+		for player in players.values():
 			if is_instance_valid(player) and player.player_name.to_lower() == word.to_lower():
 				found.append(player)
 	return found

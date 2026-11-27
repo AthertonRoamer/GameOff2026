@@ -431,7 +431,7 @@ const RICOCHET_NEAR_METRES : float = 5.0 ## a wall impact this close to a living
 ##Whether a living player is close to a point (as this peer sees the players).
 func _player_near(point : Vector2) -> bool:
 	var near_px : float = RICOCHET_NEAR_METRES * Acoustics.PX_PER_METRE
-	for player : Player in spawner.players.values():
+	for player in spawner.players.values():
 		if is_instance_valid(player) and player.is_alive() and player.global_position.distance_to(point) < near_px:
 			return true
 	return false
@@ -466,7 +466,7 @@ func _respawn_point() -> Vector2:
 	for attempt in 6:
 		var point : Vector2 = level.facility.random_floor_point()
 		var gap : float = INF
-		for other : Player in spawner.players.values():
+		for other in spawner.players.values():
 			if is_instance_valid(other) and other.is_alive():
 				gap = minf(gap, other.global_position.distance_to(point))
 		if gap > best_gap:

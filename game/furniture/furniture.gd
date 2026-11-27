@@ -233,7 +233,7 @@ func _set_size(value : Vector2) -> void:
 func _rebuild() -> void:
 	if not is_node_ready():
 		return
-	for old : Node in [get_node_or_null("Footprint"), _art, _occluder]: #(the picture and the shadow may be out of the tree: see set_shown)
+	for old in [get_node_or_null("Footprint"), _art, _occluder]: #(the picture and the shadow may be out of the tree: see set_shown)
 		if is_instance_valid(old):
 			if old.get_parent() == self:
 				remove_child(old)
@@ -295,7 +295,7 @@ func set_shown(value : bool) -> void:
 	if value == _shown:
 		return
 	_shown = value
-	for node : Node in [_art, _occluder]:
+	for node in [_art, _occluder]:
 		if not is_instance_valid(node):
 			continue
 		if value and node.get_parent() == null:
@@ -306,7 +306,7 @@ func set_shown(value : bool) -> void:
 
 func _notification(what : int) -> void:
 	if what == NOTIFICATION_PREDELETE: #what is out of the tree is nobody's child: it is freed by hand
-		for node : Node in [_art, _occluder]:
+		for node in [_art, _occluder]:
 			if is_instance_valid(node) and node.get_parent() == null:
 				node.free()
 
