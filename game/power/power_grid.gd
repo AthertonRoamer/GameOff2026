@@ -4,8 +4,8 @@ extends Node
 ##The facility's power, owned by the lobby. Power is a flow, in points per second:
 ##  - Supply. Each running generator gives its output either to its region (the region of the room it stands in) or, if it is a whole-map
 ##    generator, to the shared pool that every region draws on.
-##  - Load. Everything that is on takes its cost while it is on (PowerSettings: a closed door, a light, a camera, a turret). Doors and the rooms'
-##    ceiling lights exist so far; a light is paid for by the region of its room.
+##  - Load. Everything that is on takes its cost while it is on (PowerSettings: a closed door, a light, a camera, a turret). Doors, the rooms'
+##    ceiling lights and the rooms' cameras exist so far; a light or a camera is paid for by the region of its room.
 ##  - A region first uses its own generators; what it needs beyond them it takes from the pool. So the power still free for a region is what its own
 ##    generators have left plus what the pool has left: available(region). Something can be switched on only if its cost fits in that (can_afford).
 ##  - When supply drops (a generator shot down), the lobby switches things off until what is left fits again: first the category that comes first
@@ -71,10 +71,14 @@ func build() -> void:
 			control.build_lights()
 		if _lights_watched != control:
 			control.light_changed.connect(_on_light_changed)
+			control.camera_changed.connect(_on_camera_changed)
 			_lights_watched = control
 		for index in control.light_count():
 			if control.is_light_on(index):
 				_on_light_changed(index, true, false)
+		for index in control.camera_count():
+			if control.is_camera_on(index):
+				_on_camera_changed(index, true, false)
 	_built = true
 	_recount()
 
@@ -133,6 +137,10 @@ func light_cost() -> float:
 	return settings.light_cost
 
 
+func camera_cost() -> float:
+	return settings.camera_cost
+
+
 # ------------------------------------------------------------------ loads
 ##Something switched on. Safe to call again for something already on.
 func add_load(key : String, category : PowerSettings.Category, region : String) -> void:
@@ -170,12 +178,28 @@ func reserve_light(index : int, region : String) -> void:
 	add_load(light_key(index), PowerSettings.Category.LIGHTS, region)
 
 
+static func camera_key(index : int) -> String:
+	return "camera:%d" % index
+
+
+##Lobby: a camera has been allowed to come on and will on its tick. Its power is counted now (see reserve_door).
+func reserve_camera(index : int, region : String) -> void:
+	add_load(camera_key(index), PowerSettings.Category.CAMERAS, region)
+
+
 func _on_light_changed(index : int, on : bool, recount : bool = true) -> void:
-	var key : String = light_key(index)
+	_on_room_switch_changed(light_key(index), PowerSettings.Category.LIGHTS, index, on, recount)
+
+
+func _on_camera_changed(index : int, on : bool, recount : bool = true) -> void:
+	_on_room_switch_changed(camera_key(index), PowerSettings.Category.CAMERAS, index, on, recount)
+
+
+func _on_room_switch_changed(key : String, category : PowerSettings.Category, index : int, on : bool, recount : bool) -> void:
 	if on:
 		if not _loads.has(key):
 			_order += 1
-			_loads[key] = {"category": PowerSettings.Category.LIGHTS, "region": control.light_region(index), "order": _order}
+			_loads[key] = {"category": category, "region": control.light_region(index), "order": _order}
 	else:
 		_loads.erase(key)
 	if recount:
@@ -349,6 +373,8 @@ func _switch_off(key : String) -> void:
 			facility.doors[index].state = FacilityDoor.State.OPEN #(no control: a bare test)
 	elif entry["category"] == PowerSettings.Category.LIGHTS and control != null:
 		control.force_light_off(int(key.get_slice(":", 1))) #(only the lobby sheds, so this is the lobby)
+	elif entry["category"] == PowerSettings.Category.CAMERAS and control != null:
+		control.force_camera_off(int(key.get_slice(":", 1)))
 
 
 func _is_lobby() -> bool:

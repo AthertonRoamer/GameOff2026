@@ -121,7 +121,7 @@ func use_skin(role_skin : String, legs_tint : Color = Color.WHITE) -> void:
 ## move_vel: current velocity. aim_dir: direction the player is aiming.
 ## aiming: the gun is out. running: sprint held (forces holster).
 ## reload_seconds: how long the reload in progress takes (0 when not reloading): the gun comes up to the reload sheet, which is played over exactly that time.
-func update_visual(move_vel: Vector2, aim_dir: Vector2, aiming: bool, running: bool, interacting := false, held_item := -1, reload_seconds := 0.0) -> void:
+func update_visual(move_vel: Vector2, aim_dir: Vector2, aiming: bool, running: bool, interacting := false, held_item := -1, reload_seconds := 0.0, pace := 1.0) -> void: #pace: how fast the walk cycle plays (slower while sneaking, so the feet do not slide)
 	if dead:
 		return
 	var moving := move_vel.length() > 5.0
@@ -181,7 +181,7 @@ func update_visual(move_vel: Vector2, aim_dir: Vector2, aiming: bool, running: b
 			_: #backwards: the sheet steps down, so down is turned onto the movement
 				legs_anim = "legs_back_run" if running else "legs_back"
 				target_rotation = heading.angle() - PI / 2
-		legs.speed_scale = 1.0
+		legs.speed_scale = pace
 		if _direction != previous_direction or legs_flip != _legs_mirrored:
 			legs.rotation += angle_difference(legs.rotation, target_rotation) #a different sheet, the same stride along the movement: turn at once
 		else:
@@ -212,7 +212,7 @@ func update_visual(move_vel: Vector2, aim_dir: Vector2, aiming: bool, running: b
 			torso_anim = "torso_back_run" if running else "torso_back"
 		else:
 			torso_anim = "torso_run" if running else "torso_walk"
-	torso.speed_scale = idle_breath_speed if torso_anim in ["torso_idle", "torso_idle_aim"] else 1.0 # breathing is a slow idle cycle
+	torso.speed_scale = idle_breath_speed if torso_anim in ["torso_idle", "torso_idle_aim"] else (pace if moving and not interacting else 1.0) # breathing is a slow idle cycle; the arms swing at the legs' pace
 	if not _stepping_now: #mid-step the legs hold their own frozen pose
 		_request(legs, legs_anim, legs_flip, true)
 	if _draw_mode != "":

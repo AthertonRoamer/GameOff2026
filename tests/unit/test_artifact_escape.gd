@@ -55,7 +55,7 @@ func _ready() -> void:
 	var in_exit : Vector2 = Vector2(exit_rect.position * FacilityTileSet.TILE) + Vector2(exit_rect.size * FacilityTileSet.TILE) / 2.0
 	var other_exit_rect : Rect2i = facility.exits[facility.exits.keys()[1]][0]
 	var in_other_exit : Vector2 = Vector2(other_exit_rect.position * FacilityTileSet.TILE) + Vector2(other_exit_rect.size * FacilityTileSet.TILE) / 2.0
-	var outside : Vector2 = facility.room_center_px("ring")
+	var outside : Vector2 = facility.room_center_px(facility.start_room())
 	check(escape.exit_chooser == game.exit_chooser, "the escape check is wired to the designated exit")
 
 	#the designated exit: chosen at random from the map's exits, the same for a seed

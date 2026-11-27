@@ -10,13 +10,12 @@ extends Node2D
 ## (set_deferred), so a shape is redone once the physics has caught up. A body in one counts as lit (light_at).
 ##
 ## What lights the facility is a real PointLight2D per source (its lamp), like the flashlight, so the art under it keeps its colours: its texture is the
-## room's rectangle with the light's falloff round it (falloff()), and it casts shadows from walls and shut doors only (shadow_item_cull_mask WALL_SHADOWS:
-## furniture's occluders are on FURNITURE_SHADOWS, which only the flashlights use). The lamps are the same for everyone; PlayerSight then takes a lamp's
+## room's rectangle with the light's falloff round it (falloff()), and it casts shadows from walls and shut doors only (LightLayers.make_ceiling: furniture's,
+## generators' and consoles' occluders are on LightLayers' CAST layers, which only the flashlights use). The lamps are the same for everyone; PlayerSight then takes a lamp's
 ## light back off wherever the local player has no line of sight to it (room_light.gdshader), which is what the shapes are for.
 
 const SETTLE_PHYSICS_FRAMES : int = 2 #a door's collision is in the physics space this many physics frames after it changed
-const WALL_SHADOWS : int = 1 #light-occluder mask of walls and doors (the default)
-const FURNITURE_SHADOWS : int = 2 #light-occluder mask of furniture (generators, consoles): flashlights cast its shadows (their shadow_item_cull_mask is 3), room lights do not
+const WALL_SHADOWS : int = LightLayers.FLOOR #light-occluder mask of walls and doors (the default)
 const TEXTURE_STEP : float = 4.0 #world pixels per pixel of a lamp's texture (the light is soft, so it needs no more)
 
 @export var facility : FacilityMap
@@ -90,7 +89,7 @@ func _make_lamp(source : int) -> PointLight2D:
 	lamp.texture_scale = TEXTURE_STEP
 	lamp.shadow_enabled = true
 	lamp.shadow_filter = Light2D.SHADOW_FILTER_PCF5
-	lamp.shadow_item_cull_mask = WALL_SHADOWS #furniture casts no shadow: the lamp is on the ceiling
+	LightLayers.make_ceiling(lamp) #lights furniture of every height; only walls and doors shadow it, since the lamp is on the ceiling
 	lamp.enabled = false
 	add_child(lamp)
 	lamp.global_position = facility.to_global(reach.position + Vector2(size) * TEXTURE_STEP / 2.0)

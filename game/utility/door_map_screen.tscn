@@ -7,6 +7,7 @@
 [ext_resource type="Script" path="res://game/ui/map_view/layers/player_dot_layer.gd" id="5_player"]
 [ext_resource type="Script" path="res://game/ui/map_view/layers/regions_layer.gd" id="6_regions"]
 [ext_resource type="Script" path="res://game/ui/map_view/layers/lights_layer.gd" id="7_lights"]
+[ext_resource type="Script" path="res://game/ui/map_view/layers/cameras_layer.gd" id="8_cameras"]
 
 [node name="DoorMapScreen" type="Control"]
 visible = false
@@ -36,6 +37,9 @@ script = ExtResource("7_lights")
 [node name="Regions" type="Node2D" parent="Map"]
 script = ExtResource("6_regions")
 tint = 0.0
+
+[node name="Cameras" type="Node2D" parent="Map"]
+script = ExtResource("8_cameras")
 
 [node name="Doors" type="Node2D" parent="Map"]
 script = ExtResource("4_doors")

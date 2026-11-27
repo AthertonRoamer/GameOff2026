@@ -55,7 +55,7 @@ func _ready() -> void:
 	check(shapes.light_at(centre) == 0.0, "a light that is off lights nothing")
 	var lamp : PointLight2D = shapes.get_node_or_null("Lamp%d" % source)
 	check(lamp != null and not lamp.enabled and lamp.global_position.distance_to(centre) < FacilityTileSet.TILE, "its lamp is a light over the middle of the room, off")
-	check(lamp != null and lamp.shadow_enabled and lamp.shadow_item_cull_mask == RoomLightShapes.WALL_SHADOWS, "walls shadow the lamp, furniture does not")
+	check(lamp != null and lamp.shadow_enabled and lamp.shadow_item_cull_mask & (LightLayers.CAST_LOW | LightLayers.CAST_MID | LightLayers.CAST_TALL) == 0 and lamp.shadow_item_cull_mask & RoomLightShapes.WALL_SHADOWS and lamp.range_item_cull_mask == LightLayers.ALL_PICTURES, "walls shadow the lamp, furniture does not, and it lights furniture of every height")
 	var lamp_size : Vector2 = Vector2(lamp.texture.get_size()) * lamp.texture_scale if lamp != null else Vector2.ZERO
 	check(lamp_size.distance_to(rect.size + Vector2.ONE * shapes.spill_px() * 2.0) < RoomLightShapes.TEXTURE_STEP * 2.0, "the lamp's light is the room's size and its spill (%s)" % lamp_size)
 	control.set_light_now(light, true)
@@ -96,11 +96,9 @@ func _ready() -> void:
 	await _physics(3)
 	var behind_generator : Vector2 = past_door + out_dir * 70.0
 	var occluder : LightOccluder2D = generator.get_node_or_null("Occluder")
-	check(generator.collision_layer & FacilityTileSet.PROP_LAYER and occluder != null and occluder.occluder_light_mask == RoomLightShapes.FURNITURE_SHADOWS, "a generator is furniture, with a light occluder only flashlights see")
-	var skin : Node = preload("res://game/player/skin/player_skin.tscn").instantiate()
-	var cone : PointLight2D = skin.find_child("Cone", true, false)
-	check(cone != null and cone.shadow_item_cull_mask & RoomLightShapes.FURNITURE_SHADOWS and cone.shadow_item_cull_mask & RoomLightShapes.WALL_SHADOWS, "the flashlight is shadowed by walls and furniture")
-	skin.free()
+	check(generator.collision_layer & FacilityTileSet.PROP_LAYER and occluder != null and occluder.occluder_light_mask == LightLayers.caster_layer(LightLayers.tier_of(generator.height)) and occluder.occluder_light_mask != 0, "a generator is furniture, with a light occluder on the cast layer of its height")
+	var floor_shadows : int = LightLayers.shadow_layers(LightLayers.Tier.FLAT)
+	check(floor_shadows & occluder.occluder_light_mask and floor_shadows & RoomLightShapes.WALL_SHADOWS, "the flashlight's floor beam is shadowed by walls and the generator")
 	check(shapes.light_at(behind_generator) > 0.0, "a generator in the doorway's spill casts no shadow in the room light (%.2f)" % shapes.light_at(behind_generator))
 	var space : PhysicsDirectSpaceState2D = shapes.get_world_2d().direct_space_state
 	var beam_hit : Dictionary = space.intersect_ray(PhysicsRayQueryParameters2D.create(past_door, behind_generator, SightFan.BEAMS))

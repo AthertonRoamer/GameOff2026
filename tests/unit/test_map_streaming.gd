@@ -49,6 +49,15 @@ func _ready() -> void:
 		await get_tree().process_frame
 	check(map.is_chunk_painted(far_chunk) and not map.is_chunk_painted(near_chunk), "moving the view paints the new chunks and erases the old")
 	check(far.is_inside_tree() and not near.is_inside_tree(), "and swaps the Decor")
+	streamer.watched = [Rect2(near.position - Vector2(100, 100), Vector2(200, 200))] #(a room on a camera feed, far from the view)
+	for i in 60:
+		await get_tree().process_frame
+	check(map.is_chunk_painted(near_chunk) and map.is_chunk_painted(far_chunk), "a watched room far from the view is painted too, and the view stays painted")
+	check(near.is_inside_tree() and far.is_inside_tree(), "and its Decor is in the tree")
+	streamer.watched = []
+	for i in 60:
+		await get_tree().process_frame
+	check(not map.is_chunk_painted(near_chunk) and not near.is_inside_tree(), "once it is no longer watched it is let go again")
 	var before : int = map.floors.get_used_cells().size()
 	map.paint_all()
 	check(map.floors.get_used_cells().size() == map.floor_cell_count() and map.floors.get_used_cells().size() > before, "paint_all paints the whole floor (%d cells)" % map.floors.get_used_cells().size())
