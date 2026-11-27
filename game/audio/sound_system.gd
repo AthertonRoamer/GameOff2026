@@ -26,6 +26,8 @@ signal heard(direction : Vector2, strength : float) ## a sound reached the liste
 @export var door_open : SoundDef
 @export var door_close : SoundDef
 @export var door_locked : SoundDef
+@export_group("Voice")
+@export var chat_voice : SoundDef ## one syllable of a chat message said aloud, played once per letter (SpeechBubbles): its range_m is also how far the words are seen
 
 var listener : Callable = Callable() ## () -> Vector2 (the listener's world position) or null when there is no listener. Set by the scene that knows the local player
 
@@ -53,24 +55,25 @@ func _make_voice() -> AudioStreamPlayer2D:
 
 
 ##A sound made at a world position. own: made by the listener, so a little quieter and from right where they stand. cue: false for a sound that must not show a marker (the impact of the listener's own shot).
-func play(def : SoundDef, at : Vector2, own : bool = false, cue : bool = true) -> void:
+##Returns how loud it was heard, 0 (not at all) to 1.
+func play(def : SoundDef, at : Vector2, own : bool = false, cue : bool = true) -> float:
 	if def == null or not listener.is_valid():
-		return
+		return 0.0
 	var origin : Variant = listener.call()
 	if origin == null:
-		return
+		return 0.0
 	var stream : AudioStream = def.pick()
 	if stream == null:
-		return
+		return 0.0
 	var range_px : float = def.range_m * Acoustics.PX_PER_METRE
 	var hearing : AcousticMap.Hearing = acoustic_map.hear(at, origin, range_px)
 	if hearing == null:
-		return
+		return 0.0
 	if own:
 		hearing.distance_px = 0.0
 	var loudness : float = pow(1.0 - hearing.distance_px / range_px, def.falloff)
 	if loudness < 0.01:
-		return
+		return 0.0
 	var seems_at : Vector2 = origin + hearing.direction * hearing.distance_px #the voice sits where the sound seems to come from, the engine fades and pans it from there
 	var volume : float = def.volume_db + randf_range(-def.volume_jitter_db, def.volume_jitter_db) + (acoustics.own_sound_db if own else 0.0)
 	var pitch : float = randf_range(def.pitch_min, def.pitch_max)
@@ -81,6 +84,24 @@ func play(def : SoundDef, at : Vector2, own : bool = false, cue : bool = true) -
 	var from_listener : bool = own or at.distance_to(origin) < OWN_RADIUS_PX #(a hit, a bleed or a death of the listener's own player is not a cue to look somewhere else)
 	if def.show_cue and cue and not from_listener and not hearing.direction.is_zero_approx():
 		heard.emit(hearing.direction, def.cue_strength * loudness)
+	return loudness
+
+
+##How loud this sound would be heard if it were made here now, 0 (not at all) to 1, without playing it. own: made by the listener.
+func audibility(def : SoundDef, at : Vector2, own : bool = false) -> float:
+	if def == null or not listener.is_valid():
+		return 0.0
+	var origin : Variant = listener.call()
+	if origin == null:
+		return 0.0
+	if own:
+		return 1.0
+	var range_px : float = def.range_m * Acoustics.PX_PER_METRE
+	var hearing : AcousticMap.Hearing = acoustic_map.hear(at, origin, range_px)
+	if hearing == null:
+		return 0.0
+	var loudness : float = pow(1.0 - hearing.distance_px / range_px, def.falloff)
+	return loudness if loudness >= 0.01 else 0.0
 
 
 func _start(voice : AudioStreamPlayer2D, stream : AudioStream, at : Vector2, volume : float, pitch : float, falloff : float, range_px : float, bus : StringName) -> void:

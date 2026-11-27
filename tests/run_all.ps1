@@ -107,6 +107,14 @@ if (-not $p.WaitForExit(90000)) { Stop-Process -Id $p.Id -Force }
 $unit = (Select-String -Path "$env:TEMP\ammotest.out" -Pattern "RESULT: PASS" -Quiet)
 $results["ammo, stamina and map unit test"] = $unit
 "{0,-62} {1}" -f "ammo, stamina and map unit test", $(if ($unit) { "PASS" } else { "FAIL" })
+# chat said aloud: a syllable per letter, the words shown only while heard, the on/off switch
+$p = Start-Process $Godot -ArgumentList "--headless", "--path", "`"$project`"", "res://tests/unit/test_speech.tscn" -NoNewWindow -PassThru `
+	-RedirectStandardOutput "$env:TEMP\speechtest.out" -RedirectStandardError "$env:TEMP\speechtest.err"
+if (-not $p.WaitForExit(90000)) { Stop-Process -Id $p.Id -Force }
+$unit = (Select-String -Path "$env:TEMP\speechtest.out" -Pattern "RESULT: PASS" -Quiet)
+$results["speech bubbles unit test"] = $unit
+"{0,-62} {1}" -f "speech bubbles unit test", $(if ($unit) { "PASS" } else { "FAIL" })
+if (-not $unit) { Select-String -Path "$env:TEMP\speechtest.out" -Pattern "FAIL" | ForEach-Object { "      " + $_.Line } }
 # the roles' abilities: the shade's quiet, the gunner's shotgun, the medic's revive, the ventrat's vents
 $p = Start-Process $Godot -ArgumentList "--headless", "--path", "`"$project`"", "res://tests/unit/test_abilities.tscn" -NoNewWindow -PassThru `
 	-RedirectStandardOutput "$env:TEMP\abilitytest.out" -RedirectStandardError "$env:TEMP\abilitytest.err"

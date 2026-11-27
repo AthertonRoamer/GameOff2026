@@ -9,7 +9,10 @@ extends Node
 signal message_received(channel : int, sender : String, text : String, is_own : bool)
 signal notice(text : String) #the lobby refused a message, or something to tell this player only
 signal ping_received(channel : int, sender : String, at : Vector2, label : String, is_own : bool)
+signal speech_received(member_id : int, text : String) ## a player said a message aloud near this peer (SpeechBubbles shows and voices it)
 
+@export var speech_bubbles_enabled : bool = true ## a message is also said aloud: its words over the sender's head and a muffled voice, for everyone near enough to hear, whatever their channel. Off: chat is only the window
+@export_range(0.0, 10.0, 0.5, "suffix:m") var speech_send_margin_m : float = 2.0 ## lobby: the words go to peers this much further than the voice carries (each peer then decides by what it hears; past that it is never sent them)
 @export var reveal_unknown_attackers : bool = false ## on: imposters see each other's names on the intruder channel even when they are not told about each other (Game.attacking_guards_know_each_other off). Off: such a sender shows as "Unknown ally"
 @export var dead_can_send : bool = false ## dead players may send. Off: they can still read
 
@@ -62,6 +65,36 @@ func _receive_submission(sender : int, channel : Variant, text : Variant) -> voi
 			_deliver(channel, label, clean, id == sender)
 		else:
 			_deliver.rpc_id(id, channel, label, clean, id == sender)
+	_say_aloud(sender, clean)
+
+
+##Lobby: a message is said aloud as well, to every peer near enough to hear it, whatever channel they are on (so a message to the intruders said near a guard
+##gives the speaker away). Peers further than the voice carries are never sent the words. A dead peer, who watches from anywhere, is sent them all.
+func _say_aloud(sender : int, text : String) -> void:
+	if not speech_bubbles_enabled or not game.started:
+		return
+	var speaker : Player = game.spawner.players.get(sender)
+	if not is_instance_valid(speaker) or not speaker.is_alive():
+		return
+	var voice : SoundDef = game.level.sound.chat_voice
+	var reach_px : float = ((voice.range_m if voice != null else 9.0) + speech_send_margin_m) * Acoustics.PX_PER_METRE
+	for member in game.spawner.lobby.members:
+		var id : int = member.id
+		var listener : Player = game.spawner.players.get(id)
+		if not is_instance_valid(listener):
+			continue
+		if listener.is_alive() and listener.global_position.distance_to(speaker.global_position) > reach_px:
+			continue
+		if id == multiplayer.get_unique_id():
+			_speak(sender, text)
+		else:
+			_speak.rpc_id(id, sender, text)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _speak(member_id : int, text : String) -> void:
+	if speech_bubbles_enabled:
+		speech_received.emit(member_id, text)
 
 
 @rpc("any_peer", "call_remote", "reliable")

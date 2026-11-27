@@ -141,6 +141,7 @@ func _ready() -> void:
 			return spectator.target.global_position
 		return spawner.local_player.global_position if is_instance_valid(spawner.local_player) else null
 	level.sound.heard.connect(player_hud.sound_cue.ping)
+	player_hud.bind_speech(chat_relay, level.sound, level.player_lookup, func() -> Player: return spawner.local_player) #chat said aloud (ChatRelay.speech_bubbles_enabled turns it off)
 	level.blood.splat_made.connect(func(kind : int, at : Vector2) -> void: level.sound.play(level.sound.blood_drip if kind == BloodSplat.Kind.BLEED else level.sound.blood_splat, at))
 	level.hitscan.wall_hit.connect(func(at : Vector2, own_shot : bool) -> void:
 		await get_tree().create_timer(IMPACT_SOUND_DELAY).timeout #(after the bang, so a loud shot does not hide it)

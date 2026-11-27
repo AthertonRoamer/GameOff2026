@@ -12,6 +12,7 @@ variations of the same sound; one is picked at random each time and never the sa
 | weapons/pistol_reload/, weapons/shotgun_reload/ | a reload starting (a gun's reload_sound) | ../definitions/pistol_reload.tres, shotgun_reload.tres |
 | impacts/wall/, impacts/ricochet/ | a bullet striking a wall; a ricochet instead when a player is within 3 m of it | ../definitions/bullet_wall.tres, bullet_ricochet.tres |
 | doors/open, doors/close, doors/locked | a door opening, closing, or locked | ../definitions/door_*.tres |
+| voice/ | a chat message said aloud: one syllable per letter, the words never heard (made by tools/audio/make_voice_blips.gd; recorded ones can replace them). Its range_m is also how far the speech bubble is seen | ../definitions/chat_voice.tres |
 
 Short sounds, recorded dry (no echo: the game adds the echo itself) and mono, work best. Click a definition in the editor to change its volume, pitch
 variation, how far it carries (range_m) and how it fades. A new kind of sound is a new SoundDef resource (copy one) pointed at a new folder.

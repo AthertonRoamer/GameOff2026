@@ -12,6 +12,7 @@
 [ext_resource type="Script" path="res://game/player_hud/power_readout.gd" id="7_power"]
 [ext_resource type="PackedScene" path="res://game/chat/chat_window.tscn" id="8_chat"]
 [ext_resource type="Script" path="res://game/chat/ping_overlay.gd" id="23_ping_overlay"]
+[ext_resource type="Script" path="res://game/chat/speech_bubbles.gd" id="25_speech"]
 [ext_resource type="PackedScene" path="res://game/chat/ping_control.tscn" id="24_ping_control"]
 [ext_resource type="Script" path="res://game/ui/map_view/layers/regions_layer.gd" id="map_regions"]
 [ext_resource type="Script" path="res://game/ui/map_view/layers/exits_layer.gd" id="map_exits"]
@@ -354,6 +355,16 @@ offset_right = -16.0
 offset_bottom = -304.0
 grow_horizontal = 0
 grow_vertical = 0
+
+[node name="SpeechBubbles" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("25_speech")
 
 [node name="PingOverlay" type="Control" parent="."]
 layout_mode = 3
