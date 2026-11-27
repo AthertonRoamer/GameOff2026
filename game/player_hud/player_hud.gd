@@ -21,6 +21,7 @@ extends CanvasLayer
 @onready var chat : ChatWindow = $ChatLayer/ChatWindow #the text chat: hidden until bind_chat (no chat in a deathmatch or the playground)
 @onready var chat_layer : CanvasLayer = $ChatLayer #its own layer, over the phases' screens: the chat is there from the role reveal on
 @onready var ping_overlay : PingOverlay = $PingOverlay #pings, over where they are in the world
+@onready var speech_bubbles : SpeechBubbles = $SpeechBubbles #chat messages said aloud, over the speaker's head
 @onready var ping_control : PingControl = $PingControl
 
 var _chat_early : bool = false #the chat shows although the HUD does not yet (the phases)
@@ -188,6 +189,14 @@ func show_chat_early(shown : bool, hold_open : bool = false) -> void:
 	chat_layer.visible = visible or shown
 	if chat.held_open != hold_open:
 		chat.held_open = hold_open
+
+
+## Chat messages said aloud (ChatRelay.speech_received): the words over the speaker's head and a muffled voice, for whoever is near enough to hear.
+func bind_speech(relay : ChatRelay, sound : SoundSystem, player_of : Callable, local_player : Callable) -> void:
+	speech_bubbles.sound = sound
+	speech_bubbles.player_of = player_of
+	speech_bubbles.local_player = local_player
+	speech_bubbles.listen_to(relay)
 
 
 ## Pings: shown in the world and on every map, and placed by middle clicking either.
