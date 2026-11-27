@@ -49,6 +49,14 @@ $lightsPass = (Select-String -Path "$env:TEMP\lightstest.out" -Pattern "RESULT: 
 $results["room lights unit test"] = $lightsPass
 "{0,-62} {1}" -f "room lights unit test", $(if ($lightsPass) { "PASS" } else { "FAIL" })
 if (-not $lightsPass) { Select-String -Path "$env:TEMP\lightstest.out" -Pattern "FAIL" | ForEach-Object { "      " + $_.Line } }
+# unit test of the rooms' cameras: switched like lights from the door console, 5 pts/s, shed before lights, right-click on the map, seen by PlayerSight
+$p = Start-Process $Godot -ArgumentList "--headless", "--path", "`"$project`"", "res://tests/unit/test_cameras.tscn" -NoNewWindow -PassThru `
+	-RedirectStandardOutput "$env:TEMP\camerastest.out" -RedirectStandardError "$env:TEMP\camerastest.err"
+if (-not $p.WaitForExit(90000)) { Stop-Process -Id $p.Id -Force }
+$camerasPass = (Select-String -Path "$env:TEMP\camerastest.out" -Pattern "RESULT: PASS" -Quiet)
+$results["cameras unit test"] = $camerasPass
+"{0,-62} {1}" -f "cameras unit test", $(if ($camerasPass) { "PASS" } else { "FAIL" })
+if (-not $camerasPass) { Select-String -Path "$env:TEMP\camerastest.out" -Pattern "FAIL" | ForEach-Object { "      " + $_.Line } }
 # unit test of the map streaming: tiles near the view only, decor in and out of the tree
 $p = Start-Process $Godot -ArgumentList "--headless", "--path", "`"$project`"", "res://tests/unit/test_map_streaming.tscn" -NoNewWindow -PassThru `
 	-RedirectStandardOutput "$env:TEMP\streamtest.out" -RedirectStandardError "$env:TEMP\streamtest.err"

@@ -73,7 +73,7 @@ func _ready() -> void:
 		player.role = assigner.role_at(assignment["roles"][id])
 		player.team = assignment["teams"][id]
 		player.player_name = "P%d" % id
-		player.position = facility.room_center_px("ring")
+		player.position = facility.room_center_px(facility.start_room())
 		game.level.actors.add_child(player)
 		game.spawner.players[id] = player
 	var phase : SpawnSelectPhase = game.phases.get_children().filter(func(n : Node) -> bool: return n is SpawnSelectPhase).front()

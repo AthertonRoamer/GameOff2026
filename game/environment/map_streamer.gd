@@ -15,12 +15,15 @@ extends Node
 
 var map : FacilityMap
 var focus : Callable = Callable() ## optional () -> Rect2: the world rectangle to keep loaded, instead of the camera's view
+var watched : Array[Rect2] = [] ## world rectangles kept loaded as well as the view: the rooms a camera feed shows (CamerasLayer)
+
+const WATCHED_MARGIN_CELLS : int = 2 #round a watched room: its walls
 var work_in_headless : bool = false ## tests: stream even without a display
 
 var _settled : bool = false #the first paint has been done
 var _tick : float = 0.0
 var _wanted : Array[Vector2i] = [] #chunks to paint, nearest first
-var _keep : Rect2i = Rect2i() #chunks (as chunk coordinates) that stay painted
+var _keep : Array[Rect2i] = [] #chunk ranges (as chunk coordinates) that stay painted: round the view, and round each watched room
 var _decor : Dictionary = {} #chunk -> Array of the Decor children in it
 var _decor_in : Dictionary = {} #chunk -> true while its children are in the tree
 var _decor_node : Node2D
@@ -74,21 +77,41 @@ func _update() -> bool:
 	if view.size == Vector2i.ZERO:
 		return false
 	var margin : int = map.editor_margin_cells if Engine.is_editor_hint() else map.view_margin_cells
-	var want : Rect2i = _chunk_range(view.grow(margin))
-	_keep = _chunk_range(view.grow(margin + map.unload_extra_cells))
+	var wants : Array[Rect2i] = [_chunk_range(view.grow(margin))]
+	_keep = [_chunk_range(view.grow(margin + map.unload_extra_cells))]
+	var decor : Array[Rect2i] = [_chunk_range(view.grow(map.decor_margin_cells))]
+	for rect : Rect2 in watched: #(a room on a camera feed: just the room and its walls, painted like the view)
+		var cells : Rect2i = _world_to_cells(rect).grow(WATCHED_MARGIN_CELLS)
+		wants.append(_chunk_range(cells))
+		_keep.append(_chunk_range(cells))
+		decor.append(_chunk_range(cells))
 	var centre : Vector2 = Vector2(view.get_center()) / float(1 << FacilityMap.CHUNK_SHIFT)
 	_wanted.clear()
-	for cy in range(want.position.y, want.end.y):
-		for cx in range(want.position.x, want.end.x):
-			var chunk : Vector2i = Vector2i(cx, cy)
-			if not map.is_chunk_painted(chunk) and map.chunk_has_tiles(chunk):
-				_wanted.append(chunk)
+	var seen : Dictionary = {}
+	for want : Rect2i in wants:
+		for cy in range(want.position.y, want.end.y):
+			for cx in range(want.position.x, want.end.x):
+				var chunk : Vector2i = Vector2i(cx, cy)
+				if not seen.has(chunk) and not map.is_chunk_painted(chunk) and map.chunk_has_tiles(chunk):
+					seen[chunk] = true
+					_wanted.append(chunk)
 	_wanted.sort_custom(func(a : Vector2i, b : Vector2i) -> bool: return Vector2(a).distance_squared_to(centre) > Vector2(b).distance_squared_to(centre)) #(farthest first: popped from the back)
 	if _decor_ready:
-		_update_decor(_chunk_range(view.grow(map.decor_margin_cells)))
+		_update_decor(decor)
 	if _furniture_ready:
-		_update_furniture(_chunk_range(view.grow(FURNITURE_MARGIN_CELLS)))
+		var furniture : Array[Rect2i] = [_chunk_range(view.grow(FURNITURE_MARGIN_CELLS))]
+		for rect : Rect2 in watched: #(a room on a camera feed shows its furniture too)
+			furniture.append(_chunk_range(_world_to_cells(rect).grow(WATCHED_MARGIN_CELLS)))
+		_update_furniture(furniture)
 	return true
+
+
+## Is this chunk in one of the ranges?
+static func _in_any(ranges : Array[Rect2i], chunk : Vector2i) -> bool:
+	for range_ : Rect2i in ranges:
+		if range_.has_point(chunk):
+			return true
+	return false
 
 
 ## Paints what is wanted (all of it when `all`, else within this frame's budget) and erases what is far from the view.
@@ -96,12 +119,12 @@ func _work(all : bool) -> void:
 	var stop : int = Time.get_ticks_usec() + int(map.chunk_budget_ms * 1000.0)
 	while not _wanted.is_empty() and (all or Time.get_ticks_usec() < stop):
 		map.paint_chunk(_wanted.pop_back())
-	if all or _keep.size == Vector2i.ZERO:
+	if all or _keep.is_empty():
 		return
 	for chunk : Vector2i in map.painted_chunks():
 		if Time.get_ticks_usec() >= stop:
 			return
-		if not _keep.has_point(chunk):
+		if not _in_any(_keep, chunk):
 			map.clear_chunk(chunk)
 
 
@@ -123,6 +146,11 @@ func _view_cells() -> Rect2i:
 		if viewport == null or viewport.get_camera_2d() == null:
 			return Rect2i()
 		world = viewport.get_canvas_transform().affine_inverse() * viewport.get_visible_rect()
+	return _world_to_cells(world)
+
+
+## A world rectangle as the cells of the map it covers.
+func _world_to_cells(world : Rect2) -> Rect2i:
 	var local : Rect2 = map.get_global_transform().affine_inverse() * world
 	return Rect2i(floori(local.position.x / FacilityMap.TILE), floori(local.position.y / FacilityMap.TILE), ceili(local.size.x / FacilityMap.TILE) + 1, ceili(local.size.y / FacilityMap.TILE) + 1)
 
@@ -149,8 +177,9 @@ func _setup_decor() -> void:
 		_decor_node.remove_child(child)
 
 
-## Furniture (under Props) keeps its body always, but its picture and its shadow are only in the tree near the view (Furniture.set_shown): with the shadow of every piece
-## on the big map in the tree, each shadowed light (the flashlight's four beams, every ceiling lamp that is on) went through all of them every frame.
+## Furniture (under Props) keeps its body always, but its picture and its shadow are only in the tree near the view, and in the rooms camera feeds show
+## (Furniture.set_shown): with the shadow of every piece on the big map in the tree, each shadowed light (the flashlight's four beams, every ceiling lamp that
+## is on) went through all of them every frame.
 func _setup_furniture() -> void:
 	_furniture_ready = true
 	if Engine.is_editor_hint() or map.props_node == null or not map.stream_tiles:
@@ -164,9 +193,9 @@ func _setup_furniture() -> void:
 			(node as Furniture).set_shown(false)
 
 
-func _update_furniture(range_ : Rect2i) -> void:
+func _update_furniture(ranges : Array[Rect2i]) -> void:
 	for chunk : Vector2i in _pieces:
-		var inside : bool = range_.has_point(chunk)
+		var inside : bool = _in_any(ranges, chunk)
 		if inside == _pieces_in.has(chunk):
 			continue
 		for piece : Furniture in _pieces[chunk]:
@@ -178,11 +207,11 @@ func _update_furniture(range_ : Rect2i) -> void:
 			_pieces_in.erase(chunk)
 
 
-func _update_decor(range_ : Rect2i) -> void:
+func _update_decor(ranges : Array[Rect2i]) -> void:
 	if _decor_node == null:
 		return
 	for chunk : Vector2i in _decor:
-		var inside : bool = range_.has_point(chunk)
+		var inside : bool = _in_any(ranges, chunk)
 		if inside == _decor_in.has(chunk):
 			continue
 		for node : Node in _decor[chunk]:

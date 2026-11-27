@@ -19,6 +19,7 @@ const ART_SCALE : float = 44.0 / EnvConsole.PPM #the picture is drawn at 352 px 
 @export var function : String = "" #the utility room function it works, like "doors" (what FacilityControl and the lobby check)
 @export var screen_scene : PackedScene #what using the console opens: a full-screen Control with open(player), close() and a `closed` signal
 @export var reach_m : float = 1.2 #how close the player has to be, from the middle of the console
+@export_range(0.0, 3.0, 0.05, "suffix:m") var height : float = 1.1 ## how tall it is: its shadow falls on lower things in a flashlight beam (see LightLayers), never in a ceiling light
 
 @export_group("Screen")
 @export var screen_line : Color = Palette.ITEM :
@@ -49,6 +50,9 @@ var _time : float = 0.0
 
 func _ready() -> void:
 	LightLayers.make_heightless(_light) #the screen's glow lights furniture of every height (see LightLayers)
+	var tier : LightLayers.Tier = LightLayers.tier_of(height)
+	light_mask = LightLayers.receiver_layer(tier) #lit by the flashlight beam for its height, like furniture
+	($Occluder as LightOccluder2D).occluder_light_mask = LightLayers.caster_layer(tier) #shades lower things only, in flashlights
 	if Engine.is_editor_hint():
 		return
 	add_to_group(PlayerInteractor.GROUP)

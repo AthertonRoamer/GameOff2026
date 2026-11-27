@@ -20,7 +20,8 @@ extends StaticBody2D
 ##In the editor a piece says, in the scene tree's warning, when it sticks out of its room, blocks a door or a marker, or overlaps another piece (see placement_problem).
 ##To make a new piece: duplicate an item scene, give it your picture (draw it facing the top of the screen, light from the top left) and set its footprint, or run
 ##tools/art/make_furniture.py after adding it to the list there (it also writes the scene and a trimmed sprite).
-##Physics: the footprint is on the walls' layer (FacilityTileSet.WORLD_LAYER), so it stops bodies, bullets and the view the way a wall does.
+##Physics: the footprint is on the walls' layer (FacilityTileSet.WORLD_LAYER), so it stops bodies, bullets and the view the way a wall does, and on the furniture
+##layer (FacilityTileSet.PROP_LAYER), so the rooms' ceiling lights reach over it and it throws no shadow in them, like a generator.
 
 enum Footprint { NONE, RECTANGLE, CIRCLE }
 
@@ -240,7 +241,7 @@ func _rebuild() -> void:
 	_art = null
 	_occluder = null
 	_shown = true
-	collision_layer = FacilityTileSet.WORLD_LAYER if is_solid() else 0
+	collision_layer = FacilityTileSet.WORLD_LAYER | FacilityTileSet.PROP_LAYER if is_solid() else 0 #(PROP_LAYER: the ceiling lights reach over it, see RoomLightShapes.furniture)
 	z_index = 0 if is_solid() else FLAT_Z
 	var art : Sprite2D = Sprite2D.new() #(no owner: none of this is saved into the map scene)
 	art.name = "Art"

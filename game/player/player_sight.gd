@@ -14,8 +14,11 @@ extends Node2D
 ##   rooms' ceiling lights are drawn by this node too (room_light.gdshader), wherever the local player has a clear line of sight to them in any direction (a ring of
 ##                         rays round them, `sight_range` long: not the forward view), on the shapes RoomLightShapes works out (the room, and out through its open
 ##                         doorways). A body in a lit room counts as lit, so it is seen if it is in the forward view, like a body in a flashlight.
+##   rooms on camera       (`watched`, set by the door console's CamerasLayer while it shows live feeds): everything in them is seen as a dead player sees it (bodies, their
+##                         flashlights as real scene lights, shots, blood, items), because the feeds are other views of the same world and show only what is seen here.
 ## A dead local player sees everything. Only this peer's picture changes: nothing here is sent to anyone, and the game itself (hits, the simulation) does not look at it.
 
+const GROUP : StringName = &"player_sight" #the node is in this group, so a console's camera feeds can find it
 const WALLS : int = SightFan.WALLS
 const BEAM_STRENGTH : float = 0.28 #how strongly a beam is laid over the picture at its lamp at light_scale 1: measured against the scene's own beam light (energy 1.7) on the floor
 const HALO_STRENGTH : float = 0.14 #the same for the glow round the holder (the scene's halo light has energy 0.55)
@@ -51,6 +54,8 @@ var players : Callable = Callable()
 var local_player : Callable = Callable()
 ## The rooms' lamps, where their light falls, and which are on. Set by the game; unset, lit rooms are seen from anywhere.
 var room_lights : RoomLightShapes
+## World rectangles of the rooms a camera feed is showing right now (CamerasLayer): everything inside them is seen.
+var watched : Array[Rect2] = []
 
 const ROOM_LIGHT_SHADER : Shader = preload("res://game/lights/room_light.gdshader")
 
@@ -75,6 +80,7 @@ var _layer : CanvasLayer
 
 
 func _ready() -> void:
+	add_to_group(GROUP)
 	#the rooms' lamps are real scene lights (RoomLightShapes), so they light the facility the way the flashlight does. Where the local player has no line of
 	#sight to a lamp's light, it is taken back off by a multiply pass on this layer, which is under the drawn beams' layer and over the facility
 	_unlight_layer = CanvasLayer.new()
@@ -112,14 +118,15 @@ func _process(delta : float) -> void:
 		if not _lights.has(player):
 			_lights[player] = {"beam": _add_light(), "glow": _add_light()}
 			player.paint_flashlight_in_view()
-		player.flashlight.set_painted(not sees_all) #(a dead local player sees by the scene's own lights: nothing is drawn over the bodies)
-		var lighting : Dictionary = {"lit": true, "tint": Color.WHITE} if sees_all else _lighting_of(me, player)
-		var target : float = 1.0 if sees_all else _body_seen(me, player, lighting["lit"])
+		var sees_them : bool = sees_all or is_watched(player.skin.body_position()) #(on camera: seen like a dead player sees them, so the feed shows them)
+		player.flashlight.set_painted(not sees_them) #(a dead local player sees by the scene's own lights: nothing is drawn over the bodies)
+		var lighting : Dictionary = {"lit": true, "tint": Color.WHITE} if sees_them else _lighting_of(me, player)
+		var target : float = 1.0 if sees_them else _body_seen(me, player, lighting["lit"])
 		var alpha : float = move_toward(_alpha.get(player, target), target, delta / maxf(fade_seconds, 0.001))
 		_alpha[player] = alpha
 		player.set_body_seen(alpha, lighting["tint"])
-		player.set_muzzle_seen(sees_all or visibility(player.global_position) > 0.3)
-		_update_lights(player, sees_all)
+		player.set_muzzle_seen(sees_them or visibility(player.global_position) > 0.3)
+		_update_lights(player, sees_them)
 	me.set_body_seen(1.0, Color.WHITE if sees_all else _lighting_of(me, me)["tint"]) #(the local player's own body is lit by the others' drawn lights too, alive or fallen)
 
 
@@ -132,13 +139,21 @@ func _add_light() -> RemoteBeam:
 ## How well the local player sees this point, 0 (not at all) to 1: inside the view, fading towards its edge, and not behind a wall or a shut door.
 ## Everything is seen when there is no view (the local player is dead).
 func visibility(point : Vector2) -> float:
-	if _view.is_empty():
+	if _view.is_empty() or is_watched(point):
 		return 1.0
 	var strength : float = view_strength(point)
 	if strength <= 0.0:
 		return 0.0
 	var query : PhysicsRayQueryParameters2D = PhysicsRayQueryParameters2D.create(_apex, point, WALLS)
 	return strength if get_world_2d().direct_space_state.intersect_ray(query).is_empty() else 0.0
+
+
+## Is this point in a room a camera feed is showing (`watched`)?
+func is_watched(point : Vector2) -> bool:
+	for rect : Rect2 in watched:
+		if rect.has_point(point):
+			return true
+	return false
 
 
 ## The view's strength at a point alone: 1 in the middle, fading to 0 at its edge (walls are not looked at: see visibility()).

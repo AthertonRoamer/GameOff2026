@@ -8,7 +8,7 @@ extends Node2D
 
 const CONSOLE_REACH_SLACK : float = 1.5 #the lobby's view of a player can be a few ticks behind, so its reach check is a little looser
 
-@export var spawn_room : String = "ring" #players start in the middle of this room
+@export var spawn_room : String = "" #players start in the middle of this room. Empty, or a room the map no longer has: the map's biggest corridor (FacilityMap.start_room)
 
 @onready var facility : FacilityMap = $FacilityMap
 @onready var darkness : CanvasModulate = $Darkness
@@ -38,7 +38,9 @@ func _ready() -> void:
 
 
 func spawn_position() -> Vector2:
-	return facility.room_center_px(spawn_room)
+	if spawn_room != "" and not facility.has_room(spawn_room):
+		push_warning("NightShiftLevel: the map has no room \"%s\" to start in; starting in \"%s\" instead" % [spawn_room, facility.start_room()])
+	return facility.room_center_px(facility.start_room(spawn_room))
 
 
 func _can_operate(peer_id : int, function : String) -> bool:

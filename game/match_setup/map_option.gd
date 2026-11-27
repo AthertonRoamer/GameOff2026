@@ -6,4 +6,4 @@ extends Resource
 
 @export var display_name : String = ""
 @export_file("*.tscn") var scene_path : String = "" ## the facility: a FacilityMap scene. A path, not the scene itself: only the map a match uses is loaded, when it begins
-@export var spawn_room : String = "" ## the id of the room the players start in (the middle of it)
+@export var spawn_room : String = "" ## the id of the room the players start in (the middle of it). Empty: the map picks its biggest corridor (FacilityMap.start_room)

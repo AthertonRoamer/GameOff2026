@@ -17,7 +17,7 @@ const CATEGORY_NAMES : Array[String] = ["doors", "lights", "cameras", "turrets"]
 @export_group("Cost per second")
 @export_range(0.0, 100.0, 0.5, "suffix:pts/s") var door_cost : float = 2.0 ## a door held shut
 @export_range(0.0, 100.0, 0.5, "suffix:pts/s") var light_cost : float = 1.0 ## a light switched on
-@export_range(0.0, 100.0, 0.5, "suffix:pts/s") var camera_cost : float = 3.0 ## a camera in use
+@export_range(0.0, 100.0, 0.5, "suffix:pts/s") var camera_cost : float = 5.0 ## a camera that is on (a room watched from the door console)
 @export_range(0.0, 100.0, 0.5, "suffix:pts/s") var turret_cost : float = 5.0 ## a turret switched on
 
 @export_group("Generators")
