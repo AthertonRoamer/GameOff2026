@@ -1,0 +1,35 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://game/spectator/spectator.gd" id="1_spectator"]
+
+[node name="Spectator" type="Node"]
+script = ExtResource("1_spectator")
+
+[node name="Camera" type="Camera2D" parent="."]
+enabled = false
+zoom = Vector2(2, 2)
+
+[node name="Screen" type="CanvasLayer" parent="."]
+layer = 5
+visible = false
+
+[node name="Label" type="Label" parent="Screen"]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -220.0
+offset_top = -250.0
+offset_right = 220.0
+offset_bottom = -194.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.905882, 0.890196, 0.847059, 1)
+theme_override_colors/font_outline_color = Color(0.027451, 0.035294, 0.047059, 1)
+theme_override_constants/outline_size = 8
+theme_override_font_sizes/font_size = 18
+text = "SPECTATING  Player
+A / D to switch player"
+horizontal_alignment = 1

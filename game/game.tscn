@@ -45,6 +45,7 @@
 [ext_resource type="Script" uid="uid://1wufpkt65jw4" path="res://game/abilities/ability_control.gd" id="43_abilities"]
 [ext_resource type="PackedScene" path="res://game/debug/debug_role_picker.tscn" id="44_role_picker"]
 [ext_resource type="Script" path="res://game/chat/chat_relay.gd" id="45_chat"]
+[ext_resource type="PackedScene" path="res://game/spectator/spectator.tscn" id="46_spectator"]
 
 [node name="Game" type="Node2D" unique_id=2090356720]
 script = ExtResource("1_game")
@@ -166,3 +167,5 @@ script = ExtResource("31_commands")
 [connection signal="finished" from="GameClock" to="MatchDirector" method="on_time_up"]
 [connection signal="match_ended" from="MatchDirector" to="." method="_on_match_ended"]
 [connection signal="return_to_lobby" from="MatchDirector" to="." method="_on_match_director_return_to_lobby"]
+
+[node name="Spectator" parent="." instance=ExtResource("46_spectator")]
