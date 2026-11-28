@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SoundDef" format=3]
+
+[ext_resource type="Script" path="res://game/audio/sound_def.gd" id="1_def"]
+
+[resource]
+script = ExtResource("1_def")
+folder = "res://game/audio/sounds/machines/generator_hum"
+volume_db = -9.0
+volume_jitter_db = 0.0
+pitch_min = 0.96
+pitch_max = 1.04
+range_m = 10.0
+falloff = 1.6
+echo = 0.4
+show_cue = false

@@ -40,3 +40,21 @@ func _draw() -> void:
 				draw_rect(rect, Color(Palette.METAL, 0.6), false, px(1.0))
 		if is_designated and not first:
 			draw_label(bounds.get_center() + Vector2(0.0, -bounds.size.y / 2.0 - px(10.0)), "EXIT", 12, COLOUR)
+
+
+func icon_label(world : Vector2) -> String:
+	var map : FacilityMap = facility()
+	if map == null:
+		return ""
+	for id : String in map.exits:
+		if id != highlighted and not show_all:
+			continue
+		for cells : Rect2i in map.exits[id]:
+			if Rect2(Vector2(cells.position * FacilityTileSet.TILE), Vector2(cells.size * FacilityTileSet.TILE)).has_point(world):
+				return "Exit (your target)" if id == highlighted else "Exit"
+	return ""
+
+
+##Its labels name whole areas (see MapLayer.labels_areas).
+func labels_areas() -> bool:
+	return true

@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ComsHackerItem" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://game/items/coms_hacker_item.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://game/items/coms_hacker/coms_hacker.svg" id="2_icon"]
+
+[resource]
+script = ExtResource("1_script")
+click_use = 2
+item_name = "Coms Hacker"
+icon = ExtResource("2_icon")

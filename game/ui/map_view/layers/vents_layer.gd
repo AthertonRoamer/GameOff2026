@@ -54,3 +54,10 @@ func _draw() -> void:
 		draw_rect(box, Palette.BACKUP if vent == _hover or vent == from else Palette.OK)
 		for slat : int in 3: #the grille's slots
 			draw_rect(Rect2(box.position + Vector2(box.size.x * 0.18, box.size.y * (0.2 + 0.25 * slat)), Vector2(box.size.x * 0.64, box.size.y * 0.11)), Palette.VOID)
+
+
+func icon_label(world : Vector2) -> String:
+	for vent : Vent in vents:
+		if is_instance_valid(vent) and vent.centre().distance_to(world) <= px(size_px / 2.0 + 4.0):
+			return "Vent (you are here)" if vent == from else "Vent"
+	return ""

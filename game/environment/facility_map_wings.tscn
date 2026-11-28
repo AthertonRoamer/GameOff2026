@@ -87,6 +87,18 @@
 [ext_resource type="Script" uid="uid://cwn71j7krn0x6" path="res://game/environment/facility_room_rect.gd" id="rect_script"]
 [ext_resource type="Script" uid="uid://bj3o6xoh76qn0" path="res://game/environment/guard_spawn.gd" id="90_guard_spawn"]
 [ext_resource type="Script" uid="uid://ck27vjswqmbtn" path="res://game/environment/intruder_spawn.gd" id="91_intruder_spawn"]
+[ext_resource type="Script" path="res://game/environment/facility_item_rooms.gd" id="item_rooms_script"]
+[ext_resource type="Script" path="res://game/items/item.gd" id="item_rooms_item"]
+[ext_resource type="Resource" path="res://game/items/medicine/medicine.tres" id="item_rooms_medicine"]
+[ext_resource type="Resource" path="res://game/items/ammo/ammo_box.tres" id="item_rooms_ammo"]
+[ext_resource type="Resource" path="res://game/items/portable_generator/portable_generator.tres" id="item_rooms_generator"]
+[ext_resource type="Resource" path="res://game/items/knife/knife.tres" id="item_rooms_knife"]
+[ext_resource type="Resource" path="res://game/items/smoke_bomb/smoke_bomb.tres" id="item_rooms_smoke"]
+[ext_resource type="Resource" path="res://game/items/tripwire/tripwire.tres" id="item_rooms_tripwire"]
+[ext_resource type="Resource" path="res://game/items/coms_hacker/coms_hacker.tres" id="item_rooms_hacker"]
+[ext_resource type="Resource" path="res://game/items/night_vision/night_vision.tres" id="item_rooms_night_vision"]
+[ext_resource type="Resource" path="res://game/items/radar/radar.tres" id="item_rooms_radar"]
+[ext_resource type="PackedScene" path="res://game/turrets/turret.tscn" id="wings_turret"]
 
 [node name="FacilityMap" type="Node2D" unique_id=943066301]
 texture_filter = 4
@@ -1348,6 +1360,18 @@ offset_right = -11.0
 offset_bottom = 3069.0
 mouse_filter = 2
 script = ExtResource("rect_script")
+
+[node name="ItemRooms" type="Control" parent="."]
+custom_minimum_size = Vector2(220, 44)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 0.0
+offset_top = -88.0
+offset_right = 220.0
+offset_bottom = -44.0
+mouse_filter = 2
+script = ExtResource("item_rooms_script")
+items = Array[ExtResource("item_rooms_item")]([ExtResource("item_rooms_medicine"), ExtResource("item_rooms_ammo"), ExtResource("item_rooms_generator"), ExtResource("item_rooms_knife"), ExtResource("item_rooms_smoke"), ExtResource("item_rooms_tripwire"), ExtResource("item_rooms_hacker"), ExtResource("item_rooms_night_vision"), ExtResource("item_rooms_radar")])
 
 [node name="Doors" type="Node2D" parent="." unique_id=2009482512]
 z_index = 1
@@ -5004,6 +5028,54 @@ scope = 1
 
 [node name="Decor" type="Node2D" parent="." unique_id=1828446592]
 y_sort_enabled = true
+
+[node name="TurretNorthArmory" parent="Props" instance=ExtResource("wings_turret")]
+position = Vector2(3300, 1617)
+facing_degrees = 212.0
+
+[node name="TurretNorthEvidence" parent="Props" instance=ExtResource("wings_turret")]
+position = Vector2(2761, 1771)
+facing_degrees = 360.0
+
+[node name="TurretEastGenerator" parent="Props" instance=ExtResource("wings_turret")]
+position = Vector2(5511, 2992)
+facing_degrees = 241.0
+
+[node name="TurretSouthCafeteria" parent="Props" instance=ExtResource("wings_turret")]
+position = Vector2(3916, 4455)
+facing_degrees = 150.0
+
+[node name="TurretWestVault" parent="Props" instance=ExtResource("wings_turret")]
+position = Vector2(1540, 2321)
+facing_degrees = 124.0
+
+[node name="TurretWestRecords" parent="Props" instance=ExtResource("wings_turret")]
+position = Vector2(2299, 2321)
+facing_degrees = 89.0
+
+[node name="TurretExtractEast" parent="Props" instance=ExtResource("wings_turret")]
+position = Vector2(6908, 3003)
+facing_degrees = 241.0
+
+[node name="TurretAtrium" parent="Props" instance=ExtResource("wings_turret")]
+position = Vector2(3927, 3652)
+facing_degrees = 239.0
+
+[node name="TurretPadNorth" parent="Props" instance=ExtResource("wings_turret")]
+position = Vector2(3553, 209)
+facing_degrees = 151.0
+
+[node name="TurretPadEast" parent="Props" instance=ExtResource("wings_turret")]
+position = Vector2(7260, 2607)
+facing_degrees = 132.0
+
+[node name="TurretPadSouth" parent="Props" instance=ExtResource("wings_turret")]
+position = Vector2(2695, 6292)
+facing_degrees = 315.0
+
+[node name="TurretPadWest" parent="Props" instance=ExtResource("wings_turret")]
+position = Vector2(55, 2629)
+facing_degrees = 63.0
 
 [node name="Actors" type="Node2D" parent="." unique_id=846941804]
 y_sort_enabled = true

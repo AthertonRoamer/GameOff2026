@@ -117,3 +117,34 @@ func _draw_dashed_rect(rect : Rect2, colour : Color, width : float) -> void:
 	var corners : Array[Vector2] = [rect.position, Vector2(rect.end.x, rect.position.y), rect.end, Vector2(rect.position.x, rect.end.y)]
 	for i in 4:
 		draw_dashed_line(corners[i], corners[(i + 1) % 4], colour, width, dash)
+
+
+func icon_label(world : Vector2) -> String:
+	if facility() == null:
+		return ""
+	var room : String = facility().room_at(world)
+	if room == "":
+		return ""
+	for kind : int in [SpawnRoomMarker.Kind.GUARD, SpawnRoomMarker.Kind.INTRUDER]:
+		if (kind == spawn_kind or show_other_kind) and facility().spawn_rooms(kind).has(room):
+			var text : String = "%s spawn" % SpawnRoomMarker.name_of(kind)
+			if kind != spawn_kind:
+				text += ": the other side may start here"
+			elif room == own_pick:
+				text += ": you start here"
+			elif selectable:
+				text += ": click to start here"
+			var pickers : Array[String] = []
+			for member : int in _picks:
+				if _picks[member] == room and member != local_id:
+					pickers.append(String(_names.get(member, "?")))
+			if not pickers.is_empty():
+				pickers.sort()
+				text += " (picked by %s)" % ", ".join(pickers)
+			return text
+	return ""
+
+
+##Its labels name whole rooms (see MapLayer.labels_areas).
+func labels_areas() -> bool:
+	return true

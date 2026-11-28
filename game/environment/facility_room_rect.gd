@@ -71,6 +71,9 @@ func _draw() -> void:
 		for spawn_kind : int in spawn_kinds: #"GUARD SPAWN", "INTRUDER SPAWN"
 			draw_string(ThemeDB.fallback_font, Vector2(8.0, y), "%s SPAWN" % SpawnRoomMarker.name_of(spawn_kind).to_upper(), HORIZONTAL_ALIGNMENT_LEFT, size.x - 16.0, 14, SpawnRoomMarker.colour_of(spawn_kind))
 			y += 18.0
+		if room.spawns_items and not room.is_exit(): #an item room: its chance, in the item rooms' colour
+			draw_string(ThemeDB.fallback_font, Vector2(8.0, y), ("ITEMS %d%%" % room.item_chance) + ("  OWN LIST" if room.has_own_pool() else ""), HORIZONTAL_ALIGNMENT_LEFT, size.x - 16.0, 14, FacilityItemRooms.COLOUR)
+			y += 18.0
 		if room.clash_with != "":
 			draw_string(ThemeDB.fallback_font, Vector2(8.0, y), "overlaps " + room.clash_with, HORIZONTAL_ALIGNMENT_LEFT, size.x - 16.0, 14, Color("#e5484d"))
 

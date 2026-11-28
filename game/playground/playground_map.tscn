@@ -19,4 +19,4 @@ offset_left = 16.0
 offset_top = 48.0
 offset_right = 520.0
 offset_bottom = 74.0
-text = "WASD move   shift run   H draw / holster   left mouse fire   E use panel   F flashlight"
+text = "WASD move   shift run   H draw / holster   left mouse fire or use   G drop   E use panel, take or heal   Q make medicine (medic)   F flashlight"

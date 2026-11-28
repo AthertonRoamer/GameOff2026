@@ -40,6 +40,17 @@ func map_hover(_world : Vector2) -> void:
 	pass
 
 
+##What the icon drawn at this world position is ("Door", "Generator: running"...), or "" when there is none of this layer's there. The view shows it by the mouse.
+func icon_label(_world : Vector2) -> String:
+	return ""
+
+
+##True for a layer whose labels name whole areas (a room, a zone) rather than small icons: the view asks it only after every icon layer, so an icon inside
+##a labelled room (a turret in a spawn room) still gets its own label.
+func labels_areas() -> bool:
+	return false
+
+
 ##A size in screen pixels as world pixels at the current zoom, so it looks the same however far in or out the map is.
 func px(screen_pixels : float) -> float:
 	return screen_pixels / view.zoom if view != null and view.zoom > 0.0 else screen_pixels

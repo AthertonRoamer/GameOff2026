@@ -10,9 +10,10 @@
 script = ExtResource("1_role")
 role_name = "Shade"
 color = Color(0.55, 0.35, 0.8, 1)
-description = "Walks without a sound and runs quietly. Carries a suppressed pistol."
+description = "Walks without a sound and runs quietly, and chats without saying a word aloud. Carries a suppressed pistol."
 skin = "shade"
 portrait = ExtResource("9_portrait")
 starting_items = Array[ExtResource("2_item")]([ExtResource("3_gun")])
 silent_walk = true
+silent_chat = true
 run_sound = ExtResource("4_quiet")

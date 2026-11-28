@@ -23,6 +23,16 @@
 [ext_resource type="Resource" path="res://game/power/power_settings.tres" id="21_power_settings"]
 [ext_resource type="Script" path="res://game/lights/room_light_shapes.gd" id="22_lights"]
 [ext_resource type="Resource" path="res://game/audio/definitions/chat_voice.tres" id="23_chat_voice"]
+[ext_resource type="Resource" path="res://game/audio/definitions/generator_start.tres" id="40_generator_start"]
+[ext_resource type="Resource" path="res://game/audio/definitions/generator_hum.tres" id="41_generator_hum"]
+[ext_resource type="Script" path="res://game/turrets/turret_system.gd" id="42_turrets"]
+[ext_resource type="Resource" path="res://game/audio/definitions/turret_turn.tres" id="43_turret_turn"]
+[ext_resource type="Resource" path="res://game/audio/definitions/turret_shot.tres" id="44_turret_shot"]
+[ext_resource type="Resource" path="res://game/audio/definitions/turret_lock.tres" id="45_turret_lock"]
+[ext_resource type="Resource" path="res://game/audio/definitions/generator_crank.tres" id="46_generator_crank"]
+[ext_resource type="Resource" path="res://game/audio/definitions/repair.tres" id="47_repair"]
+[ext_resource type="Resource" path="res://game/audio/definitions/console_beep_on.tres" id="48_beep_on"]
+[ext_resource type="Resource" path="res://game/audio/definitions/console_beep_off.tres" id="49_beep_off"]
 
 [node name="Level" type="Node2D"]
 script = ExtResource("1_level")
@@ -58,6 +68,13 @@ facility = NodePath("../FacilityMap")
 control = NodePath("../FacilityControl")
 settings = ExtResource("21_power_settings")
 
+[node name="Turrets" type="Node" parent="." node_paths=PackedStringArray("facility", "control", "hitscan", "sound")]
+script = ExtResource("42_turrets")
+facility = NodePath("../FacilityMap")
+control = NodePath("../FacilityControl")
+hitscan = NodePath("../ProjectileLayer/HitscanManager")
+sound = NodePath("../Sound")
+
 [node name="RoomLights" type="Node2D" parent="." node_paths=PackedStringArray("facility", "control")]
 script = ExtResource("22_lights")
 facility = NodePath("../FacilityMap")
@@ -82,6 +99,15 @@ blood_drip = ExtResource("18_blood_drip")
 door_open = ExtResource("11_door_open")
 door_close = ExtResource("12_door_close")
 door_locked = ExtResource("13_door_locked")
+generator_crank = ExtResource("46_generator_crank")
+repair = ExtResource("47_repair")
+generator_start = ExtResource("40_generator_start")
+generator_hum = ExtResource("41_generator_hum")
+turret_turn = ExtResource("43_turret_turn")
+turret_shot = ExtResource("44_turret_shot")
+turret_lock = ExtResource("45_turret_lock")
+console_beep_on = ExtResource("48_beep_on")
+console_beep_off = ExtResource("49_beep_off")
 chat_voice = ExtResource("23_chat_voice")
 
 [node name="AcousticMap" type="Node" parent="Sound"]

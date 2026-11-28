@@ -5,7 +5,7 @@ extends StaticBody2D
 ##A backup generator, seen from above. Put generator.tscn under the map's Props node, standing in a room. When it runs it gives power points per second
 ##(see PowerGrid), either to the region of the room it stands in (scope REGION) or to the whole map's shared pool (WHOLE_MAP).
 ##
-##A guard starts it by holding E on it (a progress bar fills); it is off at the start of a match unless `starts_running` is ticked. It is solid: it
+##A guard or an intruder starts it by holding E on it (a progress bar fills), and anyone can turn a running one off the same way; it is off at the start of a match unless `starts_running` is ticked. It is solid: it
 ##blocks players and shots, and a shot that ends on it damages it (it is in HitscanManager.SHOOTABLE_GROUP). Shot down to nothing it stops, and a guard
 ##can repair it by holding E longer, which brings it back running at full health.
 ##It only draws and asks: what state it is in is decided by the lobby (PowerGrid), which tells every peer.
@@ -113,11 +113,12 @@ func is_in_reach(world_position : Vector2) -> bool:
 	return get_world_2d().direct_space_state.intersect_ray(query).is_empty()
 
 
-##Anyone can switch a running generator off by hand. Only guards start or repair one (a player with no role, in the playground, counts as one).
+##Anyone can switch a running generator off by hand, and anyone can start one that is off: guards and intruders alike. Only guards repair a shot-down one
+##(a player with no role, in the playground, counts as one).
 func can_interact(player : Node) -> bool:
 	if grid == null:
 		return false
-	if state == State.RUNNING:
+	if state != State.DESTROYED:
 		return true
 	var role : Role = player.get("role")
 	return role == null or role.kind == Role.Kind.GUARD

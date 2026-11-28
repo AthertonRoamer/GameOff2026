@@ -86,7 +86,7 @@ func _ready() -> void:
 	await get_tree().physics_frame
 
 	var first : Pickup = placed[0]
-	check(first.get_prompt() == "E   take the %s" % first.item.item_name, "the prompt names the item")
+	check(first.get_prompt() == "E to pick up %s" % first.item.item_name, "the prompt names the item")
 	take(first)
 	check(pickups.get_pickups().has(first), "a defender can't take an artifact")
 	check(not first.can_interact(player), "a defender isn't offered it")

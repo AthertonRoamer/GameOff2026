@@ -146,6 +146,8 @@ func _rollback_tick(_delta : float, tick : int, _is_fresh : bool) -> void:
 		redraw_after_run = false
 
 	var gun : Gun = item as Gun
+	if gun != null and magazine > gun.magazine_size: #(the magazine is one for all the guns carried: a smaller gun picked up holds no more than it can)
+		magazine = gun.magazine_size
 	_update_reload(gun, tick)
 	var loaded : bool = gun == null or (magazine > 0 and not is_reloading()) #a gun with an empty magazine, or being reloaded, does not fire
 	var wants_to_use : bool = can_draw and drawn and loaded and player.input.use_item and tick - last_use_tick >= item.cooldown_ticks

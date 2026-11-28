@@ -21,6 +21,7 @@ const PAN_GESTURE_SPEED : float = 24.0 #screen pixels a trackpad pan moves the m
 @export var live : bool = true #redraw every frame (moving dots, blinking doors). Off: only when the view or the layers ask
 @export var show_zoom_buttons : bool = true
 @export var redraw_hz : float = 0.0 ## how often a live map redraws. 0: every frame, and on every scroll (a map that only follows the player can redraw far less often)
+@export var show_tooltips : bool = true ## a little label by the mouse naming the icon under it (a door, a generator, a vent...): see MapLayer.icon_label
 
 var facility : FacilityMap : set = set_facility
 var zoom : float = 1.0 #screen pixels per world pixel
@@ -32,6 +33,10 @@ var _press_at : Vector2 = Vector2.ZERO
 var _right_press_at : Vector2 = Vector2.ZERO
 var _zoom_buttons : HBoxContainer
 var _redraw_in : float = 0.0
+var _tooltip : PanelContainer
+var _tooltip_label : Label
+
+const TOOLTIP_OFFSET : Vector2 = Vector2(16.0, 14.0) #from the mouse to the label's corner
 
 
 func _ready() -> void:
@@ -41,6 +46,8 @@ func _ready() -> void:
 		layer.view = self
 	if show_zoom_buttons:
 		_add_zoom_buttons()
+	if show_tooltips:
+		_add_tooltip()
 	if facility != null:
 		reset_view()
 
@@ -159,7 +166,10 @@ func _clamp_center() -> void:
 
 func _process(delta : float) -> void:
 	if not is_visible_in_tree():
+		if _tooltip != null:
+			_tooltip.visible = false
 		return
+	_update_tooltip()
 	var intel : Node = _intel()
 	if intel != null:
 		intel.apply(self) #the same icons on every map
@@ -270,3 +280,76 @@ func _add_zoom_buttons() -> void:
 		var factor : float = entry[1]
 		button.pressed.connect(func() -> void: zoom_at(size / 2.0, factor))
 		_zoom_buttons.add_child(button)
+
+
+# ------------------------------------------------------------------ the label for the icon under the mouse
+##What the icon under this point of the view is (the top layer that has one there wins), or "" for none.
+func icon_label_at(screen_point : Vector2) -> String:
+	if facility == null:
+		return ""
+	var world : Vector2 = screen_to_world(screen_point)
+	var all : Array[MapLayer] = layers()
+	for areas : bool in [false, true]: #the small icons first, then the layers that label whole rooms and zones (MapLayer.labels_areas)
+		for i in range(all.size() - 1, -1, -1):
+			if all[i].visible and all[i].modulate.a > 0.05 and all[i].labels_areas() == areas:
+				var text : String = all[i].icon_label(world)
+				if text != "":
+					return text
+	return ""
+
+
+func _add_tooltip() -> void:
+	_tooltip = PanelContainer.new()
+	_tooltip.name = "Tooltip"
+	_tooltip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_tooltip.visible = false
+	_tooltip.z_index = 10
+	var style : StyleBoxFlat = StyleBoxFlat.new()
+	style.bg_color = Color(Palette.PANEL, 0.94)
+	style.border_color = Palette.METAL
+	style.set_border_width_all(1)
+	style.set_corner_radius_all(3)
+	style.content_margin_left = 6.0
+	style.content_margin_right = 6.0
+	style.content_margin_top = 2.0
+	style.content_margin_bottom = 3.0
+	_tooltip.add_theme_stylebox_override("panel", style)
+	_tooltip_label = Label.new()
+	_tooltip_label.add_theme_font_size_override("font_size", 12)
+	_tooltip_label.add_theme_color_override("font_color", Palette.TEXT)
+	_tooltip.add_child(_tooltip_label)
+	add_child(_tooltip)
+
+
+##Shows the label for the icon under the mouse, beside the mouse and kept inside the view. A view that takes the mouse shows it only while the mouse is over it (not
+##over something covering it); one that does not (the minimap) only while the mouse is over nothing else of the interface.
+func _update_tooltip() -> void:
+	if _tooltip == null:
+		return
+	var mouse : Vector2 = get_local_mouse_position()
+	var text : String = ""
+	if Rect2(Vector2.ZERO, size).has_point(mouse) and not _dragging and _mouse_is_here():
+		text = icon_label_at(mouse)
+	if text == "":
+		_tooltip.visible = false
+		return
+	if _tooltip_label.text != text:
+		_tooltip_label.text = text
+		_tooltip.reset_size()
+	var box : Vector2 = _tooltip.get_combined_minimum_size()
+	var at : Vector2 = mouse + TOOLTIP_OFFSET
+	if at.x + box.x > size.x:
+		at.x = mouse.x - TOOLTIP_OFFSET.x - box.x
+	if at.y + box.y > size.y:
+		at.y = mouse.y - TOOLTIP_OFFSET.y - box.y
+	_tooltip.position = at.clamp(Vector2.ZERO, (size - box).max(Vector2.ZERO))
+	_tooltip.size = box
+	_tooltip.visible = true
+	move_child(_tooltip, get_child_count() - 1) #(drawn over the layers and the zoom buttons)
+
+
+func _mouse_is_here() -> bool:
+	var hovered : Control = get_viewport().gui_get_hovered_control()
+	if mouse_filter == Control.MOUSE_FILTER_IGNORE:
+		return hovered == null or hovered == self or is_ancestor_of(hovered)
+	return hovered == self or (hovered != null and is_ancestor_of(hovered))

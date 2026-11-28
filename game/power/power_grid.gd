@@ -4,8 +4,9 @@ extends Node
 ##The facility's power, owned by the lobby. Power is a flow, in points per second:
 ##  - Supply. Each running generator gives its output either to its region (the region of the room it stands in) or, if it is a whole-map
 ##    generator, to the shared pool that every region draws on.
-##  - Load. Everything that is on takes its cost while it is on (PowerSettings: a closed door, a light, a camera, a turret). Doors, the rooms'
-##    ceiling lights and the rooms' cameras exist so far; a light or a camera is paid for by the region of its room.
+##    A portable generator (the technician's, PortableGeneratorItem) put down on the floor gives its output to the region it lies in, until it is picked up.
+##  - Load. Everything that is on takes its cost while it is on (PowerSettings: a closed door, a light, a camera, a turret). A light or a camera
+##    is paid for by the region of its room, a turret by the region of the room it stands in (see TurretSystem).
 ##  - A region first uses its own generators; what it needs beyond them it takes from the pool. So the power still free for a region is what its own
 ##    generators have left plus what the pool has left: available(region). Something can be switched on only if its cost fits in that (can_afford).
 ##  - When supply drops (a generator shot down), the lobby switches things off until what is left fits again: first the category that comes first
@@ -19,10 +20,15 @@ extends Node
 ##Offline (the playground, tests) the local peer is the lobby, so the same path runs with no network.
 
 signal changed #the supply or the load changed somewhere: numbers shown on screen should be read again
+signal generator_switched(key : String, at : Vector2, running : bool, announce : bool) ## a generator (or a portable one) began or stopped running, on every peer. announce: it was just started (its engine is heard starting up), not running from the start
+signal generator_worked(key : String, at : Vector2, work : int) ## on every peer: someone began holding E on a generator to start it (Work.CRANK: its starter is heard grinding) or to repair it (Work.REPAIR), or stopped (Work.NONE)
+
+enum Work { NONE, CRANK, REPAIR } ## what is being done to a generator by hand, heard while E is held
 
 const DEFAULT_SETTINGS : PowerSettings = preload("res://game/power/power_settings.tres")
 const HOLD_SLACK_SECONDS : float = 0.6 #the lobby lets a hold be this much shorter than it should, for the time the messages take
 const REACH_SLACK : float = 1.5 #the lobby's view of a player can be a few ticks behind, so its reach check is a little looser
+const STALE_HOLD_SECONDS : float = 2.0 #a hold this much longer than it needs was never ended (its player left): the lobby lets it go
 
 @export var facility : FacilityMap
 @export var control : FacilityControl
@@ -32,6 +38,7 @@ const REACH_SLACK : float = 1.5 #the lobby's view of a player can be a few ticks
 var player_of : Callable = Callable()
 
 var generators : Array[Generator] = []
+var portables : Dictionary = {} ## key -> {region, output, at}: the portable generators running on the floor (PortableGeneratorItem). Every peer adds and removes them on the same tick (PickupControl)
 
 var _loads : Dictionary = {} #key (String) -> {category, region, order}. A door's key is "door:<index>"
 var _order : int = 0 #counts switch-ons, so the last one switched on goes first
@@ -39,6 +46,7 @@ var _local : Dictionary = {} #region -> its running region generators' output
 var _pool : float = 0.0 #the running whole-map generators' output
 var _load : Dictionary = {} #region -> what its loads take
 var _holds : Dictionary = {} #lobby: peer id -> {index, since (msec)}: who is holding E on which generator
+var _work : Dictionary = {} #every peer: generator index -> Work, while someone holds E to start or repair it (it is heard)
 var _active : bool = true
 var _built : bool = false
 var _watching : bool = false #the doors' state_changed are connected (once, however often build() runs)
@@ -58,8 +66,9 @@ func build() -> void:
 			generator.index = generators.size()
 			generator.region = facility.region_at(facility.to_local(generator.global_position))
 			generator.health = generator.max_health()
-			generator.state = Generator.State.RUNNING if generator.starts_running else Generator.State.OFF
 			generators.append(generator)
+			generator.state = Generator.State.OFF
+			_switch_state(generator, Generator.State.RUNNING if generator.starts_running else Generator.State.OFF, false) #(one running from the start hums, unannounced)
 	_loads.clear()
 	for door : FacilityDoor in facility.doors:
 		if not _watching:
@@ -72,6 +81,7 @@ func build() -> void:
 		if _lights_watched != control:
 			control.light_changed.connect(_on_light_changed)
 			control.camera_changed.connect(_on_camera_changed)
+			control.turret_changed.connect(_on_turret_changed)
 			_lights_watched = control
 		for index in control.light_count():
 			if control.is_light_on(index):
@@ -79,6 +89,9 @@ func build() -> void:
 		for index in control.camera_count():
 			if control.is_camera_on(index):
 				_on_camera_changed(index, true, false)
+		for index in control.turret_count():
+			if control.is_turret_on(index):
+				_on_turret_changed(index, true, false)
 	_built = true
 	_recount()
 
@@ -141,6 +154,10 @@ func camera_cost() -> float:
 	return settings.camera_cost
 
 
+func turret_cost() -> float:
+	return settings.turret_cost
+
+
 # ------------------------------------------------------------------ loads
 ##Something switched on. Safe to call again for something already on.
 func add_load(key : String, category : PowerSettings.Category, region : String) -> void:
@@ -187,19 +204,32 @@ func reserve_camera(index : int, region : String) -> void:
 	add_load(camera_key(index), PowerSettings.Category.CAMERAS, region)
 
 
+static func turret_key(index : int) -> String:
+	return "turret:%d" % index
+
+
+##Lobby: a turret has been allowed to come on and will on its tick. Its power is counted now (see reserve_door).
+func reserve_turret(index : int, region : String) -> void:
+	add_load(turret_key(index), PowerSettings.Category.TURRETS, region)
+
+
 func _on_light_changed(index : int, on : bool, recount : bool = true) -> void:
-	_on_room_switch_changed(light_key(index), PowerSettings.Category.LIGHTS, index, on, recount)
+	_on_room_switch_changed(light_key(index), PowerSettings.Category.LIGHTS, control.light_region(index), on, recount)
 
 
 func _on_camera_changed(index : int, on : bool, recount : bool = true) -> void:
-	_on_room_switch_changed(camera_key(index), PowerSettings.Category.CAMERAS, index, on, recount)
+	_on_room_switch_changed(camera_key(index), PowerSettings.Category.CAMERAS, control.light_region(index), on, recount)
 
 
-func _on_room_switch_changed(key : String, category : PowerSettings.Category, index : int, on : bool, recount : bool) -> void:
+func _on_turret_changed(index : int, on : bool, recount : bool = true) -> void:
+	_on_room_switch_changed(turret_key(index), PowerSettings.Category.TURRETS, control.turret_region(index), on, recount)
+
+
+func _on_room_switch_changed(key : String, category : PowerSettings.Category, region : String, on : bool, recount : bool) -> void:
 	if on:
 		if not _loads.has(key):
 			_order += 1
-			_loads[key] = {"category": category, "region": control.light_region(index), "order": _order}
+			_loads[key] = {"category": category, "region": region, "order": _order}
 	else:
 		_loads.erase(key)
 	if recount:
@@ -260,6 +290,7 @@ func _decide_hold(peer_id : int, index : int, started : bool) -> void:
 		_holds[peer_id] = {"index": index, "since": Time.get_ticks_msec(), "stop": generators[index].state == Generator.State.RUNNING}
 	elif not started and _holds.has(peer_id) and _holds[peer_id]["index"] == index:
 		_holds.erase(peer_id)
+	_update_cranking()
 
 
 func _decide_finish(peer_id : int, index : int) -> void:
@@ -269,6 +300,7 @@ func _decide_finish(peer_id : int, index : int) -> void:
 	var held : float = (Time.get_ticks_msec() - int(_holds[peer_id]["since"])) / 1000.0
 	var stopping : bool = _holds[peer_id].get("stop", false)
 	_holds.erase(peer_id)
+	_update_cranking() #(before it starts: the starter stops as the engine catches)
 	if stopping != (generator.state == Generator.State.RUNNING): #(someone else started or stopped it while this hold ran)
 		return
 	if held < generator.hold_seconds(null) - HOLD_SLACK_SECONDS or not _may_work(peer_id, generator):
@@ -293,6 +325,73 @@ func _set_generator(index : int, state : int, health : float) -> void:
 	_apply_generator(index, state, health)
 	if not multiplayer.get_peers().is_empty():
 		_generator_changed.rpc(index, state, health)
+	_update_cranking() #(someone else may have started it, or shot it down, while a hold was cranking it)
+
+
+# ------------------------------------------------------------------ heard while someone holds E on a generator: the starter cranking, or the repair
+##Lobby: which generators are being worked on now (someone holds E to start one that is off, or to repair a shot-down one), told to every peer when it changes.
+func _update_cranking() -> void:
+	if not _active or not _is_lobby():
+		return
+	var now : Dictionary = {}
+	for peer_id : int in _holds:
+		var hold : Dictionary = _holds[peer_id]
+		var index : int = hold["index"]
+		if hold.get("stop", false) or index < 0 or index >= generators.size():
+			continue
+		match generators[index].state:
+			Generator.State.OFF: now[index] = Work.CRANK
+			Generator.State.DESTROYED: now[index] = Work.REPAIR
+	for index : int in _work.keys():
+		if not now.has(index):
+			_set_work(index, Work.NONE)
+	for index : int in now:
+		if _work.get(index, Work.NONE) != now[index]:
+			_set_work(index, now[index])
+
+
+func _set_work(index : int, work : Work) -> void:
+	_apply_work(index, work)
+	if not multiplayer.get_peers().is_empty():
+		_work_remote.rpc(index, work)
+
+
+func _apply_work(index : int, work : Work) -> void:
+	if index < 0 or index >= generators.size() or _work.get(index, Work.NONE) == work:
+		return
+	if work == Work.NONE:
+		_work.erase(index)
+	else:
+		_work[index] = work
+	generator_worked.emit(generator_key(generators[index]), generators[index].global_position, work)
+
+
+##What is being done to this generator by hand now (every peer): NONE, CRANK (being started) or REPAIR.
+func work_on(generator : Generator) -> Work:
+	return _work.get(generator.index, Work.NONE)
+
+
+##Is someone cranking this generator's starter now (every peer)?
+func is_cranking(generator : Generator) -> bool:
+	return work_on(generator) == Work.CRANK
+
+
+##Lobby: lets go of holds that were never ended (a player who left mid-hold), so their starter does not crank on for ever.
+func _process(_delta : float) -> void:
+	if _holds.is_empty() or not _active or not _is_lobby():
+		return
+	var now_msec : int = Time.get_ticks_msec()
+	var stale : Array = []
+	for peer_id : int in _holds:
+		var index : int = _holds[peer_id]["index"]
+		var longest : float = generators[index].hold_seconds(null) + STALE_HOLD_SECONDS if index >= 0 and index < generators.size() else 0.0
+		if (now_msec - int(_holds[peer_id]["since"])) / 1000.0 > longest:
+			stale.append(peer_id)
+	if stale.is_empty():
+		return
+	for peer_id : int in stale:
+		_holds.erase(peer_id)
+	_update_cranking()
 
 
 func _apply_generator(index : int, state : int, health : float) -> void:
@@ -300,7 +399,7 @@ func _apply_generator(index : int, state : int, health : float) -> void:
 		return
 	var generator : Generator = generators[index]
 	generator.health = health
-	generator.state = state as Generator.State
+	_switch_state(generator, state as Generator.State, true)
 	_recount() #(cheap; also picks up an output changed by hand, in a test or the debug console)
 
 
@@ -320,6 +419,37 @@ func broadcast_snapshot() -> void:
 func quiesce() -> void:
 	_active = false
 	_holds.clear()
+	for index : int in _work.keys(): #(the starters and repairs fall silent)
+		_apply_work(index, Work.NONE)
+
+
+static func generator_key(generator : Generator) -> String:
+	return "generator:%d" % generator.index
+
+
+## Sets a generator's state and tells the sound when it starts or stops running. announce: a start heard as one (not a snapshot catching up).
+func _switch_state(generator : Generator, state : Generator.State, announce : bool) -> void:
+	var was_running : bool = generator.is_running()
+	generator.state = state
+	if was_running != generator.is_running():
+		generator_switched.emit(generator_key(generator), generator.global_position, generator.is_running(), announce and generator.is_running())
+
+
+# ------------------------------------------------------------------ portable generators (every peer, on the tick PickupControl puts one down or takes it up)
+##A portable generator was put down here: it adds its output to the region it stands in ("" is the rooms in no region) until it is picked up.
+func add_portable(key : String, region : String, output : float, at : Vector2) -> void:
+	portables[key] = {"region": region, "output": output, "at": at}
+	_recount()
+	generator_switched.emit(key, at, true, true)
+
+
+func remove_portable(key : String) -> void:
+	if not portables.has(key):
+		return
+	var at : Vector2 = portables[key]["at"]
+	portables.erase(key)
+	_recount() #(the lobby switches things off if the region now has too little)
+	generator_switched.emit(key, at, false, false)
 
 
 # ------------------------------------------------------------------ counting, and switching off when short
@@ -333,6 +463,9 @@ func _recount() -> void:
 			_pool += generator.supply()
 		elif generator.region != "":
 			_local[generator.region] = _local.get(generator.region, 0.0) + generator.supply()
+	for key : String in portables:
+		var portable : Dictionary = portables[key]
+		_local[portable["region"]] = _local.get(portable["region"], 0.0) + float(portable["output"])
 	_load.clear()
 	for key : String in _loads:
 		var entry : Dictionary = _loads[key]
@@ -379,6 +512,8 @@ func _switch_off(key : String) -> void:
 		control.force_light_off(int(key.get_slice(":", 1))) #(only the lobby sheds, so this is the lobby)
 	elif entry["category"] == PowerSettings.Category.CAMERAS and control != null:
 		control.force_camera_off(int(key.get_slice(":", 1)))
+	elif entry["category"] == PowerSettings.Category.TURRETS and control != null:
+		control.force_turret_off(int(key.get_slice(":", 1)))
 
 
 func _is_lobby() -> bool:
@@ -408,6 +543,12 @@ func _finish_request(index : int) -> void:
 
 
 @rpc("authority", "call_remote", "reliable")
+func _work_remote(index : int, work : int) -> void:
+	if _active and work >= Work.NONE and work <= Work.REPAIR:
+		_apply_work(index, work as Work)
+
+
+@rpc("authority", "call_remote", "reliable")
 func _generator_changed(index : int, state : int, health : float) -> void:
 	if _active:
 		_apply_generator(index, state, health)
@@ -419,5 +560,5 @@ func _receive_snapshot(states : PackedByteArray, healths : PackedFloat32Array) -
 		return
 	for i in mini(states.size(), generators.size()):
 		generators[i].health = healths[i] if i < healths.size() else generators[i].max_health()
-		generators[i].state = states[i] as Generator.State
+		_switch_state(generators[i], states[i] as Generator.State, false)
 	_recount()

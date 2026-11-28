@@ -49,3 +49,13 @@ func _draw() -> void:
 			var text_at : Vector2 = at - Vector2(0.0, px(size_px + 9.0))
 			draw_label(text_at + Vector2.ONE * px(1.0), caption(ping), font_size, Palette.VOID, 200.0)
 			draw_label(text_at, caption(ping), font_size, colour, 200.0)
+
+
+func icon_label(world : Vector2) -> String:
+	var map : FacilityMap = facility()
+	if map == null or clamp_to_view: #(a ping held on the minimap's edge is not where it is drawn)
+		return ""
+	for i in range(pings.size() - 1, -1, -1):
+		if map.to_local(pings[i]["at"]).distance_to(world) <= px(size_px + 3.0):
+			return "Ping: %s" % caption(pings[i])
+	return ""

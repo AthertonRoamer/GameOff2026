@@ -1,13 +1,15 @@
 class_name FacilityControl
 extends Node
 
-##The facility's shared, changeable state, owned by the lobby: the doors, the rooms' ceiling lights and the rooms' cameras (turrets belong here too, later).
+##The facility's shared, changeable state, owned by the lobby: the doors, the rooms' ceiling lights, the rooms' cameras and the turrets' power switches.
+##A turret is switched like a light, from the door console (TurretsLayer) or by a technician standing by it (TurretSwitch), and costs PowerSettings.turret_cost
+##while it is on. Turrets are named by their index in TurretSystem.turrets (build_turrets sizes them); what a turret does while it is on is TurretSystem's.
 ##A light or a camera is switched exactly like a door, from the same console ("doors"), and costs power while it is on (PowerSettings.light_cost, camera_cost).
 ##Lights and cameras are named by their index in FacilityMap.light_rooms (a room's camera has its light's index) and are all off when the game starts.
 ##A camera that is on shows its room live on the door console's map (CamerasLayer).
 ##
 ##Nobody changes a door directly. A peer asks with request_door(); the lobby checks the request (the door exists, is not locked, and the asking
-##player is standing at a console that works doors, see can_operate) and, if it agrees, stamps the change with a tick a little in the future and
+##player is standing at a console that works doors, see can_operate, or a technician is standing right by the door, see request_door_by_hand) and, if it agrees, stamps the change with a tick a little in the future and
 ##tells every peer. Every peer, the lobby included, then switches the door on that same tick, so the door shuts at the same point in everyone's
 ##simulation instead of a round trip later on the clients. A change that arrives after its tick (a slow connection) is applied at once.
 ##Offline (the playground) the local peer is the lobby, so the same path runs with no network.
@@ -18,12 +20,16 @@ signal light_changed(index : int, on : bool) #a room's light went on or off, on 
 signal light_refused(index : int, reason : String) #on the peer that asked: the lobby said no ("power")
 signal camera_changed(index : int, on : bool) #a room's camera went on or off, on this peer
 signal camera_refused(index : int, reason : String) #on the peer that asked: the lobby said no ("power")
+signal turret_changed(index : int, on : bool) #a turret was switched on or off, on this peer
+signal turret_refused(index : int, reason : String) #on the peer that asked: the lobby said no ("power", or "destroyed": it has to be repaired first)
+signal operated(peer_id : int, powered : bool) #lobby only: a change asked for from a console was accepted. powered: it now takes power (a door shut, something switched on)
 
 const LIGHTS_FUNCTION : String = "doors" #lights and cameras are worked from the door console
 const KIND_DOOR : int = 0 #what a scheduled change is about, as sent to the clients
 const KIND_LIGHT : int = 1
 const KIND_CAMERA : int = 2
-const KIND_NAMES : Array[String] = ["door", "light", "camera"]
+const KIND_TURRET : int = 3
+const KIND_NAMES : Array[String] = ["door", "light", "camera", "turret"]
 
 @export var facility : FacilityMap
 @export var power : PowerGrid ## a door is held shut by power: closing one needs enough power free in its region (PowerGrid.can_afford). Unset: doors are free
@@ -32,9 +38,17 @@ const KIND_NAMES : Array[String] = ["door", "light", "camera"]
 ##(peer_id : int, function : String) -> bool. Lobby only: may this peer use the consoles of this utility function (like "doors") right now?
 ##Unset, every request is allowed.
 var can_operate : Callable = Callable()
+##(peer_id : int, door : FacilityDoor) -> bool. Lobby only: may this peer work this door by hand right now (a technician next to it, see DoorSwitch)? Unset: never.
+var can_work_by_hand : Callable = Callable()
+##(peer_id : int, index : int) -> bool. Lobby only: may this peer switch this turret by hand right now (a technician next to it, see TurretSwitch)? Unset: never.
+var can_work_turret_by_hand : Callable = Callable()
+##(index : int) -> bool. Lobby only: can this turret be switched on at all (not destroyed, see TurretSystem)? Unset: always.
+var can_turret_switch_on : Callable = Callable()
 
 var lights_on : PackedByteArray = PackedByteArray() #light index -> 1 on, 0 off (see FacilityMap.light_rooms)
 var cameras_on : PackedByteArray = PackedByteArray() #camera index -> 1 on, 0 off. A room's camera has the same index as its light
+var turrets_on : PackedByteArray = PackedByteArray() #turret index -> 1 on, 0 off (see TurretSystem.turrets)
+var turret_regions : PackedStringArray = PackedStringArray() #turret index -> the region that pays for it
 
 var _pending : Array[Dictionary] = [] #{tick, kind ("door", "light" or "camera"), index, state}, in the order they were accepted
 var _active : bool = true
@@ -90,6 +104,53 @@ func set_light_now(index : int, on : bool) -> void:
 	_set_switch_now("light", index, on)
 
 
+# ------------------------------------------------------------------ turrets: switched like a light, worked by TurretSystem while on
+##Sizes the turrets (all off): one per entry, each paid for by that region. Called by TurretSystem.build, before PowerGrid.build.
+func build_turrets(regions : PackedStringArray) -> void:
+	turret_regions = regions.duplicate()
+	turrets_on = PackedByteArray()
+	turrets_on.resize(regions.size())
+	turrets_on.fill(0)
+
+
+func is_turret_on(index : int) -> bool:
+	return _is_switch_on("turret", index)
+
+
+func turret_count() -> int:
+	return turrets_on.size()
+
+
+##Ask for a turret to be switched on or off from the door console. Safe to call on any peer; only the lobby decides.
+func request_turret(index : int, on : bool) -> void:
+	_request_switch("turret", index, on)
+
+
+##Ask for a turret to be switched on or off by hand, by a technician standing next to it (see TurretSwitch). The lobby checks can_work_turret_by_hand instead of
+##the console rule; the power rule is the same.
+func request_turret_by_hand(index : int, on : bool) -> void:
+	_request_switch("turret", index, on, true)
+
+
+func is_turret_pending(index : int) -> bool:
+	return _is_switch_pending("turret", index)
+
+
+##The region that pays for a turret: the region of the room it stands in.
+func turret_region(index : int) -> String:
+	return turret_regions[index] if index >= 0 and index < turret_regions.size() else ""
+
+
+##Lobby: switches a turret off whatever the console rules say (its region ran out of power, or it was shot down).
+func force_turret_off(index : int) -> void:
+	_force_switch_off("turret", index)
+
+
+##Sets a turret here at once, with no lobby and no tick (tests).
+func set_turret_now(index : int, on : bool) -> void:
+	_set_switch_now("turret", index, on)
+
+
 # ------------------------------------------------------------------ cameras: one per lit room, switched like its light, watched on the door console
 func is_camera_on(index : int) -> bool:
 	return _is_switch_on("camera", index)
@@ -134,6 +195,17 @@ func request_door(door : FacilityDoor, state : FacilityDoor.State) -> void:
 		_request_door.rpc_id(1, door.door_index, state)
 
 
+##Ask for a door to be opened or closed by hand, by a player standing next to it (a technician, see DoorSwitch). The lobby checks can_work_by_hand instead of
+##the console rule; the power rule is the same.
+func request_door_by_hand(door : FacilityDoor, state : FacilityDoor.State) -> void:
+	if not _active or door == null:
+		return
+	if _is_lobby():
+		_decide(multiplayer.get_unique_id(), door.door_index, state, true)
+	else:
+		_request_door_by_hand.rpc_id(1, door.door_index, state)
+
+
 ##True while a change to this door has been accepted but its tick has not come yet (the door screen shows it as switching).
 func is_pending(door : FacilityDoor) -> bool:
 	for change in _pending:
@@ -149,7 +221,7 @@ func broadcast_snapshot() -> void:
 	var states : PackedByteArray = PackedByteArray()
 	for door in facility.doors:
 		states.append(door.state)
-	_receive_snapshot.rpc(states, lights_on, cameras_on)
+	_receive_snapshot.rpc(states, lights_on, cameras_on, turrets_on)
 
 
 ##Stops sending and applying changes. Call it when the game starts to end, before the node is freed (see NetworkUnloader).
@@ -158,7 +230,7 @@ func quiesce() -> void:
 	_pending.clear()
 
 
-func _decide(peer_id : int, index : int, state : int) -> void:
+func _decide(peer_id : int, index : int, state : int, by_hand : bool = false) -> void:
 	if index < 0 or index >= facility.doors.size():
 		return
 	if state != FacilityDoor.State.OPEN and state != FacilityDoor.State.CLOSED: #locking is not something a console does
@@ -166,7 +238,10 @@ func _decide(peer_id : int, index : int, state : int) -> void:
 	var door : FacilityDoor = facility.doors[index]
 	if door.state == FacilityDoor.State.LOCKED or (door.state == state and not is_pending(door)):
 		return
-	if can_operate.is_valid() and not can_operate.call(peer_id, "doors"):
+	if by_hand:
+		if not can_work_by_hand.is_valid() or not can_work_by_hand.call(peer_id, door):
+			return
+	elif can_operate.is_valid() and not can_operate.call(peer_id, "doors"):
 		return
 	if state == FacilityDoor.State.CLOSED and power != null and not power.has_load(PowerGrid.door_key(door)):
 		if not power.can_afford(facility.region_of_door(door), power.door_cost()):
@@ -176,6 +251,8 @@ func _decide(peer_id : int, index : int, state : int) -> void:
 	elif state == FacilityDoor.State.OPEN and power != null:
 		power.remove_load(PowerGrid.door_key(door)) #(free again at once, also if it was only reserved)
 	_accept("door", index, state)
+	if not by_hand:
+		operated.emit(peer_id, state == FacilityDoor.State.CLOSED)
 
 
 ##Lobby: opens a door whatever the console rules say, because its region has run out of power (PowerGrid switching things off).
@@ -187,22 +264,54 @@ func force_open(door : FacilityDoor) -> void:
 	_accept("door", door.door_index, FacilityDoor.State.OPEN)
 
 
-# ------------------------------------------------------------------ room switches (a light or a camera), by kind
+# ------------------------------------------------------------------ switches (a light, a camera or a turret), by kind
 func _switch_count(kind : String) -> int:
-	return lights_on.size() if kind == "light" else cameras_on.size()
+	match kind:
+		"light": return lights_on.size()
+		"camera": return cameras_on.size()
+		"turret": return turrets_on.size()
+	return 0
 
 
 func _is_switch_on(kind : String, index : int) -> bool:
 	if index < 0 or index >= _switch_count(kind):
 		return false
-	return (lights_on[index] if kind == "light" else cameras_on[index]) != 0
+	match kind:
+		"light": return lights_on[index] != 0
+		"camera": return cameras_on[index] != 0
+	return turrets_on[index] != 0
 
 
-func _request_switch(kind : String, index : int, on : bool) -> void:
+static func _is_switch_kind(kind : int) -> bool:
+	return kind == KIND_LIGHT or kind == KIND_CAMERA or kind == KIND_TURRET
+
+
+##The region that pays for a switch: a light's or a camera's room's, a turret's own.
+func _switch_region(kind : String, index : int) -> String:
+	return turret_region(index) if kind == "turret" else light_region(index)
+
+
+func _switch_key(kind : String, index : int) -> String:
+	match kind:
+		"light": return PowerGrid.light_key(index)
+		"camera": return PowerGrid.camera_key(index)
+	return PowerGrid.turret_key(index)
+
+
+func _switch_cost(kind : String) -> float:
+	match kind:
+		"light": return power.light_cost()
+		"camera": return power.camera_cost()
+	return power.turret_cost()
+
+
+func _request_switch(kind : String, index : int, on : bool, by_hand : bool = false) -> void:
 	if not _active or index < 0 or index >= _switch_count(kind):
 		return
 	if _is_lobby():
-		_decide_switch(multiplayer.get_unique_id(), kind, index, on)
+		_decide_switch(multiplayer.get_unique_id(), kind, index, on, by_hand)
+	elif by_hand:
+		_request_turret_by_hand.rpc_id(1, index, on)
 	else:
 		_request_room_switch.rpc_id(1, KIND_NAMES.find(kind), index, on)
 
@@ -225,34 +334,45 @@ func _force_switch_off(kind : String, index : int) -> void:
 func _set_switch_now(kind : String, index : int, on : bool) -> void:
 	if index < 0 or index >= _switch_count(kind) or _is_switch_on(kind, index) == on:
 		return
-	if kind == "light":
-		lights_on[index] = 1 if on else 0
-		light_changed.emit(index, on)
-	else:
-		cameras_on[index] = 1 if on else 0
-		camera_changed.emit(index, on)
+	match kind:
+		"light":
+			lights_on[index] = 1 if on else 0
+			light_changed.emit(index, on)
+		"camera":
+			cameras_on[index] = 1 if on else 0
+			camera_changed.emit(index, on)
+		"turret":
+			turrets_on[index] = 1 if on else 0
+			turret_changed.emit(index, on)
 
 
-func _decide_switch(peer_id : int, kind : String, index : int, on : bool) -> void:
+func _decide_switch(peer_id : int, kind : String, index : int, on : bool, by_hand : bool = false) -> void:
 	if index < 0 or index >= _switch_count(kind):
 		return
 	if _is_switch_on(kind, index) == on and not _is_switch_pending(kind, index):
 		return
-	if can_operate.is_valid() and not can_operate.call(peer_id, LIGHTS_FUNCTION):
+	if by_hand: #(only a turret is switched by hand this way: a door has its own path)
+		if kind != "turret" or not can_work_turret_by_hand.is_valid() or not can_work_turret_by_hand.call(peer_id, index):
+			return
+	elif can_operate.is_valid() and not can_operate.call(peer_id, LIGHTS_FUNCTION):
 		return
-	var key : String = PowerGrid.light_key(index) if kind == "light" else PowerGrid.camera_key(index)
+	if on and kind == "turret" and can_turret_switch_on.is_valid() and not can_turret_switch_on.call(index):
+		_refuse_switch(peer_id, kind, index, "destroyed")
+		return
+	var key : String = _switch_key(kind, index)
 	if on and power != null and not power.has_load(key):
-		var cost : float = power.light_cost() if kind == "light" else power.camera_cost()
-		if not power.can_afford(light_region(index), cost):
+		if not power.can_afford(_switch_region(kind, index), _switch_cost(kind)):
 			_refuse_switch(peer_id, kind, index, "power")
 			return
-		if kind == "light": #counted now, so a second request cannot take the same power before it comes on
-			power.reserve_light(index, light_region(index))
-		else:
-			power.reserve_camera(index, light_region(index))
+		match kind: #counted now, so a second request cannot take the same power before it comes on
+			"light": power.reserve_light(index, light_region(index))
+			"camera": power.reserve_camera(index, light_region(index))
+			"turret": power.reserve_turret(index, turret_region(index))
 	elif not on and power != null:
 		power.remove_load(key)
 	_accept(kind, index, 1 if on else 0)
+	if not by_hand:
+		operated.emit(peer_id, on)
 
 
 func _refuse_switch(peer_id : int, kind : String, index : int, reason : String) -> void:
@@ -263,10 +383,10 @@ func _refuse_switch(peer_id : int, kind : String, index : int, reason : String) 
 
 
 func _emit_refused(kind : String, index : int, reason : String) -> void:
-	if kind == "light":
-		light_refused.emit(index, reason)
-	else:
-		camera_refused.emit(index, reason)
+	match kind:
+		"light": light_refused.emit(index, reason)
+		"camera": camera_refused.emit(index, reason)
+		"turret": turret_refused.emit(index, reason)
 
 
 # ------------------------------------------------------------------ scheduling
@@ -327,16 +447,28 @@ func _request_door(index : int, state : int) -> void:
 		_decide(multiplayer.get_remote_sender_id(), index, state)
 
 
+@rpc("any_peer", "call_remote", "reliable")
+func _request_door_by_hand(index : int, state : int) -> void:
+	if _active and multiplayer.is_server():
+		_decide(multiplayer.get_remote_sender_id(), index, state, true)
+
+
 @rpc("authority", "call_remote", "reliable")
 func _room_switch_refused(kind : int, index : int, reason : String) -> void:
-	if _active and (kind == KIND_LIGHT or kind == KIND_CAMERA) and index >= 0 and index < _switch_count(KIND_NAMES[kind]):
+	if _active and _is_switch_kind(kind) and index >= 0 and index < _switch_count(KIND_NAMES[kind]):
 		_emit_refused(KIND_NAMES[kind], index, reason)
 
 
 @rpc("any_peer", "call_remote", "reliable")
 func _request_room_switch(kind : int, index : int, on : bool) -> void:
-	if _active and multiplayer.is_server() and (kind == KIND_LIGHT or kind == KIND_CAMERA):
+	if _active and multiplayer.is_server() and _is_switch_kind(kind):
 		_decide_switch(multiplayer.get_remote_sender_id(), KIND_NAMES[kind], index, on)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _request_turret_by_hand(index : int, on : bool) -> void:
+	if _active and multiplayer.is_server():
+		_decide_switch(multiplayer.get_remote_sender_id(), "turret", index, on, true)
 
 
 @rpc("authority", "call_remote", "reliable")
@@ -345,12 +477,12 @@ func _schedule_remote(tick : int, kind : int, index : int, state : int) -> void:
 		return
 	if kind == KIND_DOOR and index >= 0 and index < facility.doors.size():
 		_schedule(tick, "door", index, state)
-	elif (kind == KIND_LIGHT or kind == KIND_CAMERA) and index >= 0 and index < _switch_count(KIND_NAMES[kind]):
+	elif _is_switch_kind(kind) and index >= 0 and index < _switch_count(KIND_NAMES[kind]):
 		_schedule(tick, KIND_NAMES[kind], index, state)
 
 
 @rpc("authority", "call_remote", "reliable")
-func _receive_snapshot(states : PackedByteArray, lights : PackedByteArray, cameras : PackedByteArray = PackedByteArray()) -> void:
+func _receive_snapshot(states : PackedByteArray, lights : PackedByteArray, cameras : PackedByteArray = PackedByteArray(), turrets : PackedByteArray = PackedByteArray()) -> void:
 	if not _active:
 		return
 	for i in mini(states.size(), facility.doors.size()):
@@ -362,3 +494,6 @@ func _receive_snapshot(states : PackedByteArray, lights : PackedByteArray, camer
 	for i in mini(cameras.size(), cameras_on.size()):
 		if not is_camera_pending(i):
 			set_camera_now(i, cameras[i] != 0)
+	for i in mini(turrets.size(), turrets_on.size()):
+		if not is_turret_pending(i):
+			set_turret_now(i, turrets[i] != 0)

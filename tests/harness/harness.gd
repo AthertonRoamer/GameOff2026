@@ -17,6 +17,7 @@ var use_demo : bool = false
 var use_moving : bool = false #shooter and target run side by side, the shooter fires at where it sees the target
 var use_combat : bool = false #the acting client kills the host's player with projectiles, then everyone checks the respawn
 var use_killkey : bool = false #the real game: the client taps the debug kill key (K) twice; every peer must see it die and come back
+var use_items : bool = false #--items, the real game: the host makes the client a technician; the client puts the portable generator down, reports the prompt it sees, and picks it up again with E
 var use_hold : bool = false #the client, then the host, hold fire for 3 s each and report every shot event they saw
 var use_night_shift : bool = false #the real game (game/game.tscn): the client works the door console; every peer reports doors, flashlight, interact
 var use_chat : bool = false #--chat, the real game: every player sends a message on each of its chat channels, a loyal guard forges one on the intruder channel, the host spams; every peer reports what it got
@@ -46,6 +47,7 @@ func _ready() -> void:
 	use_phases = args.has("--phases") or OS.get_cmdline_args().has("--harness-phases")
 	use_combat = args.has("--combat")
 	use_killkey = args.has("--killkey")
+	use_items = args.has("--items")
 	use_hold = args.has("--hold")
 	use_demo = args.has("--demo") or use_moving or use_combat or use_hold or OS.get_cmdline_args().has("--harness-demo")
 	idx = args.find("--soak")
@@ -657,6 +659,8 @@ func run_host_scenario() -> void:
 		return
 	if soak_seconds > 0.0:
 		await soak_run()
+	elif use_items:
+		await items_host()
 	elif use_killkey:
 		await killkey_run()
 	elif use_night_shift:
@@ -701,6 +705,8 @@ func run_client_scenario(mode : ClientMode) -> void:
 		return
 	if soak_seconds > 0.0:
 		await soak_run()
+	elif use_items:
+		await items_client()
 	elif use_killkey:
 		await killkey_run()
 	elif use_night_shift:
@@ -813,3 +819,62 @@ func chat_run() -> void:
 	log_line("PING_REPORT me=%d got=%s on_maps=%d" % [me, "|".join(pinged), game.map_intel.pings.size()])
 	log_line("CHAT_REPORT me=%d channels=%s got=%s notices=%d window=%s header=%s" % [me, ",".join(channels.map(func(c : int) -> String: return str(c))),
 		"|".join(got), notices.size(), window.visible, window._header.visible])
+
+
+## --items, the host: makes the first client a technician (the lobby's debug role change, which needs no debug console), then waits while the client works.
+func items_host() -> void:
+	var game : Game = Main.mode.get_game()
+	await get_tree().create_timer(1.0).timeout
+	var technician : int = -1
+	var roles : Array[Role] = game.role_assigner.all_roles()
+	for i in roles.size():
+		if roles[i].role_name == "Technician":
+			technician = i
+	for member in game.spawner.lobby.members:
+		if member.id != multiplayer.get_unique_id():
+			game.debug_set_role(member.id, technician)
+			log_line("ITEMS_HOST made %d a technician (role %d)" % [member.id, technician])
+			break
+	await get_tree().create_timer(14.0).timeout
+	log_line("ITEMS_HOST pickups=%d portables=%d" % [game.pickups.get_pickups().size(), game.level.power.portables.size()])
+
+
+## --items, the client: puts the portable generator down with a real click, reports what the HUD prompt says standing on it and a step away, then takes it back with E.
+func items_client() -> void:
+	var game : Game = Main.mode.get_game()
+	var me : Player = game.spawner.local_player
+	if not await wait_until(func() -> bool: return me.role != null and me.role.role_name == "Technician", 10.0):
+		return fail("the client never became a technician")
+	await get_tree().create_timer(0.5).timeout
+	var slot : int = -1
+	for i in 4:
+		if me.inventory.slots[i] is PortableGeneratorItem:
+			slot = i
+	log_line("ITEMS slots=%s generator_slot=%d" % [me.inventory.slots.map(func(i) -> String: return i.item_name if i != null else "-"), slot])
+	if slot < 0:
+		return fail("the technician has no portable generator")
+	Input.action_press("inventory_slot_%d" % (slot + 1))
+	await get_tree().create_timer(0.3).timeout
+	Input.action_release("inventory_slot_%d" % (slot + 1))
+	await get_tree().create_timer(0.5).timeout
+	log_line("ITEMS active=%d (%s)" % [me.inventory.active_slot, me.inventory.active_item.item_name if me.inventory.active_item else "-"])
+	var click : InputEventAction = InputEventAction.new()
+	click.action = "player_use_active_item"
+	click.pressed = true
+	Input.parse_input_event(click)
+	await get_tree().create_timer(0.1).timeout
+	var release : InputEventAction = InputEventAction.new()
+	release.action = "player_use_active_item"
+	Input.parse_input_event(release)
+	await get_tree().create_timer(1.5).timeout
+	var placed : Array = game.pickups.get_pickups().filter(func(p : Variant) -> bool: return is_instance_valid(p) and (p as Pickup).item is PortableGeneratorItem)
+	var down : Pickup = placed[0] if not placed.is_empty() else null
+	log_line("ITEMS placed=%d in_slot=%s portables=%d" % [placed.size(), me.inventory.slots[slot] != null, game.level.power.portables.size()])
+	if down == null:
+		return fail("the generator was not put down")
+	log_line("ITEMS_ON_IT distance=%.1f reach=%s can=%s target=%s prompt=\"%s\" input_active=%s" % [down.global_position.distance_to(me.global_position), down.is_in_reach(me.global_position), down.can_interact(me), me.interactor.target, game.player_hud.interact_prompt.text, me.input.active])
+	Input.action_press("player_interact")
+	await get_tree().create_timer(0.2).timeout
+	Input.action_release("player_interact")
+	await get_tree().create_timer(1.5).timeout
+	log_line("ITEMS_TAKEN in_slot=%s pickups_left=%d portables=%d prompt=\"%s\"" % [me.inventory.slots.any(func(i) -> bool: return i is PortableGeneratorItem), game.pickups.get_pickups().filter(func(p : Variant) -> bool: return is_instance_valid(p) and (p as Pickup).item is PortableGeneratorItem).size(), game.level.power.portables.size(), game.player_hud.interact_prompt.text])

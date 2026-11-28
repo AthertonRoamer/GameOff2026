@@ -211,3 +211,18 @@ func _draw() -> void:
 			var no_power : bool = not on and control.power != null and not control.power.can_afford(control.light_region(index), control.power.camera_cost())
 			if no_power: #switching it on would be refused: say so before the click
 				draw_label(bounds.get_center() + Vector2(0.0, px(30.0)), "NO POWER FOR A CAMERA", 11, Palette.ALARM, 160.0)
+
+
+func icon_label(world : Vector2) -> String:
+	var map : FacilityMap = facility()
+	if map == null or control == null:
+		return ""
+	for index in mini(control.camera_count(), map.light_rooms.size()):
+		var on : bool = control.is_camera_on(index)
+		if not on and not control.is_camera_pending(index):
+			continue
+		var bounds : Rect2 = _bounds(map.light_rooms[index])
+		var tag : Rect2 = Rect2(bounds.position + Vector2(px(2.0), px(2.0)), Vector2(px(44.0), px(16.0))) #the recording light and CAM in the room's corner
+		if tag.has_point(world):
+			return "Camera: %s" % ("on" if on else "switching")
+	return ""

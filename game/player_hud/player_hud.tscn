@@ -19,6 +19,7 @@
 [ext_resource type="Script" path="res://game/ui/map_view/layers/vents_layer.gd" id="map_vents"]
 [ext_resource type="Script" path="res://game/ui/map_view/layers/generators_layer.gd" id="map_generators"]
 [ext_resource type="Script" path="res://game/ui/map_view/layers/pings_layer.gd" id="map_pings"]
+[ext_resource type="Script" path="res://game/ui/map_view/layers/turrets_layer.gd" id="map_turrets"]
 
 [node name="PlayerHud" type="CanvasLayer"]
 script = ExtResource("1_hud")
@@ -318,6 +319,10 @@ size_px = 7.0
 [node name="Generators" type="Node2D" parent="Minimap"]
 script = ExtResource("map_generators")
 size_px = 7.0
+
+[node name="Turrets" type="Node2D" parent="Minimap"]
+script = ExtResource("map_turrets")
+size_px = 8.0
 
 [node name="Pings" type="Node2D" parent="Minimap"]
 script = ExtResource("map_pings")

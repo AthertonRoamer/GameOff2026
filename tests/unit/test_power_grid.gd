@@ -107,6 +107,38 @@ func _ready() -> void:
 	grid.request_finish(main_gen)
 	check(main_gen.state == Generator.State.RUNNING and main_gen.health == main_gen.max_health(), "a full hold repairs it, at full health")
 
+	#starting one: its starter is heard while E is held, and stops when it catches or the hold is let go
+	var cranks : Array = []
+	grid.generator_worked.connect(func(key : String, _at : Vector2, work : int) -> void: cranks.append([key, work == PowerGrid.Work.CRANK]))
+	grid.set_generator(main_gen, Generator.State.OFF)
+	grid.request_hold(main_gen, true)
+	check(grid.is_cranking(main_gen) and cranks.size() == 1 and cranks[0] == [PowerGrid.generator_key(main_gen), true], "holding E on a generator that is off cranks its starter")
+	grid.request_hold(main_gen, false)
+	check(not grid.is_cranking(main_gen) and cranks.size() == 2 and cranks[1][1] == false, "letting go stops it")
+	grid.request_hold(main_gen, true)
+	grid._holds[multiplayer.get_unique_id()]["since"] -= int(main_gen.start_seconds() * 1000.0)
+	grid.request_finish(main_gen)
+	check(main_gen.state == Generator.State.RUNNING and not grid.is_cranking(main_gen) and cranks.size() == 4, "a full hold starts it and the starter stops as it catches")
+	grid.request_hold(main_gen, true)
+	check(not grid.is_cranking(main_gen) and cranks.size() == 4, "holding E to turn a running one off does not crank it")
+	grid.request_hold(main_gen, false)
+	grid.set_generator(main_gen, Generator.State.OFF)
+	grid.request_hold(main_gen, true)
+	grid._holds[multiplayer.get_unique_id()]["since"] -= int((main_gen.start_seconds() + PowerGrid.STALE_HOLD_SECONDS + 1.0) * 1000.0)
+	grid._process(0.1)
+	check(not grid.is_cranking(main_gen) and grid._holds.is_empty(), "a hold that was never ended (its player left) is let go, and the starter stops")
+
+	#repairing one is heard too (not as a start)
+	var works : Array = []
+	grid.generator_worked.connect(func(_key : String, _at : Vector2, work : int) -> void: works.append(work))
+	grid.set_generator(main_gen, Generator.State.DESTROYED, 0.0)
+	grid.request_hold(main_gen, true)
+	check(grid.work_on(main_gen) == PowerGrid.Work.REPAIR and works == [PowerGrid.Work.REPAIR], "holding E on a shot-down generator is heard as a repair, not a start")
+	grid._holds[multiplayer.get_unique_id()]["since"] -= int(main_gen.repair_seconds() * 1000.0)
+	grid.request_finish(main_gen)
+	check(main_gen.state == Generator.State.RUNNING and grid.work_on(main_gen) == PowerGrid.Work.NONE and works == [PowerGrid.Work.REPAIR, PowerGrid.Work.NONE], "the repair sound stops when it is done")
+	grid.set_generator(main_gen, Generator.State.RUNNING)
+
 	#a generator set to start running in the editor
 	var east_gen : Generator = _generator(grid, "EastGenerator")
 	east_gen.starts_running = true

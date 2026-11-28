@@ -8,6 +8,7 @@ param(
 	[switch]$Chat, #the real game: every player chats on its channels; each message must reach exactly the players on its channel, a forged one nobody, and the host's spam must be cut off (use -Clients 3 so there is an imposter)
 	[switch]$Phases, #with the real game: run the phases before play (the role reveal). Without it every peer skips them (Game.debug_skip_phases), so play begins on the start tick
 	[switch]$KillKey, #the real game: the client taps the debug kill key (K) twice; the client and the host must both see the player die (and the fall play) and then come back
+	[switch]$Items, #the real game: the host makes the client a technician, who puts the portable generator down, must be shown the prompt to pick it up, and picks it up with E
 	[switch]$Hold, #the client and then the host hold each weapon for 3 s; prints every shot event each saw (diagnostic, no pass/fail on cadence)
 	[switch]$Combat, #the first client kills the host's player with projectiles; every peer must see it die and respawn at the same place
 	[switch]$Moving, #shooter and target run side by side and the shooter fires at where it sees the target; reports how many shots hit
@@ -44,6 +45,7 @@ if ($NightShift) { $common += "--night-shift" }
 if ($Chat) { $common += "--chat" }
 if ($Phases) { $common += "--phases" }
 if ($KillKey) { $common += @("--night-shift", "--killkey") }
+if ($Items) { $common += @("--night-shift", "--items") }
 if ($Leave) { $common += "--leave" }
 if ($Kill) { $common += "--kill" }
 if ($SoakSeconds -gt 0) { $common += @("--soak", $SoakSeconds) }

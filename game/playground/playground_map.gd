@@ -16,6 +16,7 @@ extends Node2D
 ##  --exit=<exit id> plays an intruder who knows that target exit (the full map outlines it).
 ##  --relics=<room>,<room> outlines those rooms on the full map as if relics had started in them (only treasure rooms count).
 ##  --lights=<room>,<room> switches those rooms' ceiling lights on at the start (as the console would), and starts every generator so there is power for them.
+##  --turrets=1 starts every generator and switches every turret on. --role=<name> plays that role (game/roles/<name>.tres): an intruder's (--role=infiltrator) is shot at.
 
 const PLAYER_SCENE : PackedScene = preload("res://game/player/player.tscn")
 
@@ -39,6 +40,11 @@ func _ready() -> void:
 	player.player_name = "Guard"
 	player.hitscan_manager = level.hitscan
 	player.projectile_manager = level.projectiles #the gun spawns its bullets here; walls and closed doors stop them
+	if _args.has("role"): #play this role (a file in game/roles): an intruder's is shot at by the turrets
+		var role : Role = load("res://game/roles/%s.tres" % String(_args["role"])) as Role
+		if role != null:
+			player.role = role
+			role.apply(player)
 	hud.bind_player(player)
 	hud.bind_hitscan(level.hitscan)
 	hud.bind_map(level.facility)
@@ -56,6 +62,10 @@ func _ready() -> void:
 	player.camera.zoom = Vector2.ONE * float(_args.get("zoom", camera_zoom))
 	player.shot_fired.connect(func() -> void: _shots += 1)
 	level.blood.players = func() -> Array: return [player]
+	level.hitscan.targets = func() -> Array: return [player] #(a turret's shot is traced against the players)
+	level.hitscan.can_hit = func(target : Node) -> bool: return target.is_alive()
+	level.hitscan.shot_hit.connect(func(shot : Dictionary, target : Node) -> void: target.take_damage(shot["damage"], shot["direction"]))
+	level.turrets.players = func() -> Array: return [player]
 	player.damaged.connect(level.blood.on_player_damaged.bind(player))
 	player.died.connect(level.blood.on_player_died.bind(player), CONNECT_DEFERRED)
 	var sight : PlayerSight = PlayerSight.new() #draws the rooms' ceiling lights where the player can see them, as in a game
@@ -82,6 +92,11 @@ func _ready() -> void:
 			level.power.set_generator(generator, Generator.State.RUNNING)
 		for room : String in String(_args["lights"]).split(","):
 			level.control.set_light_now(facility.light_of_room(room), true)
+	if _args.has("turrets"): #every generator running and every turret switched on (as the console would)
+		for generator : Generator in level.power.generators:
+			level.power.set_generator(generator, Generator.State.RUNNING)
+		for index in level.control.turret_count():
+			level.control.set_turret_now(index, true) #(a request would be refused: the player is not at the console)
 	if _args.has("shot"):
 		_run_check()
 

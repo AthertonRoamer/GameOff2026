@@ -1,0 +1,21 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://game/turrets/turret.gd" id="1_turret"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_base"]
+radius = 14.0
+
+[sub_resource type="OccluderPolygon2D" id="OccluderPolygon2D_base"]
+polygon = PackedVector2Array(14, 0, 9.9, 9.9, 0, 14, -9.9, 9.9, -14, 0, -9.9, -9.9, 0, -14, 9.9, -9.9)
+
+[node name="Turret" type="StaticBody2D"]
+collision_layer = 18
+collision_mask = 0
+script = ExtResource("1_turret")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_base")
+
+[node name="Occluder" type="LightOccluder2D" parent="."]
+occluder = SubResource("OccluderPolygon2D_base")
+occluder_light_mask = 32

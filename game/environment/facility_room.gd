@@ -11,6 +11,9 @@ extends Node2D
 ##A room of kind Exit is an exit zone, not a room: see is_exit().
 ##`region` is the power region it belongs to (a FacilityRegion under the map's Regions node, see PowerGrid): a dropdown of the map's regions. Select several
 ##rooms to set it on all of them at once, or select the region and click rooms in the 2D view (addons/facility_editor).
+##`spawns_items` makes it a room where an item can be found lying along a wall when the match starts, with an `item_chance` percent chance, picked from
+##`item_pool` (or, when that is empty, the map's list) (see
+##FacilityItemRooms: select the map's ItemRooms node and click rooms in the 2D view to set it).
 
 enum Kind { CORRIDOR, UTILITY, ITEM, OFFICE, EXTERIOR_ROOM, OUTDOOR, EXIT }
 enum Function { NONE, CAMERAS, DOORS, LIGHTS, GENERATOR, TURRETS, POWER }
@@ -24,6 +27,11 @@ const TILE : int = FacilityTileSet.TILE
 @export var kind : Kind = Kind.OFFICE : set = _set_kind
 @export var function : Function = Function.NONE #what the room's console does, if it has one
 @export var region : StringName = &"" : set = _set_region #the power region it is in (a FacilityRegion's node name), empty for none
+@export_group("Item spawns")
+@export var spawns_items : bool = false : set = _set_spawns_items ## an item may be found here when the match starts (see FacilityItemRooms)
+@export_range(0, 100, 1, "suffix:%") var item_chance : int = 30 : set = _set_item_chance ## how likely it is that this room has an item, each match
+@export var item_pool : Array[Item] = [] : set = _set_item_pool ## what can turn up in this room. Empty: the map's list (ItemRooms.items). List one twice to make it twice as likely
+@export_group("")
 
 var clash_with : String = "" #set by the map while two rooms share floor, so the editor can say so
 var spawn_kinds : Array = [] #SpawnRoomMarker.Kind of every spawn marker standing in this room, set by the map in the editor (shown as badges)
@@ -141,6 +149,40 @@ func _validate_property(property : Dictionary) -> void:
 				names.append(String(child.name))
 	property["hint"] = PROPERTY_HINT_ENUM_SUGGESTION
 	property["hint_string"] = ",".join(names)
+
+
+func _set_spawns_items(value : bool) -> void:
+	spawns_items = value
+	_redraw_rects()
+	_update_item_rooms_badge()
+
+
+func _set_item_chance(value : int) -> void:
+	item_chance = clampi(value, 0, 100)
+	_redraw_rects()
+
+
+func _set_item_pool(value : Array[Item]) -> void:
+	item_pool = value
+	_redraw_rects()
+
+
+## Whether this room has a list of items of its own (otherwise the map's list is used).
+func has_own_pool() -> bool:
+	return item_pool.any(func(item : Item) -> bool: return item != null)
+
+
+## The chance this room has an item each match, 0 to 1 (0 when it is not an item room).
+func item_probability() -> float:
+	return item_chance / 100.0 if spawns_items and not is_exit() else 0.0
+
+
+func _update_item_rooms_badge() -> void:
+	var map : Node = get_parent().get_parent() if get_parent() != null else null
+	var node : Node = map.get_node_or_null("ItemRooms") if map != null and map.is_inside_tree() else null
+	if node is FacilityItemRooms:
+		node.queue_redraw()
+		node.update_configuration_warnings()
 
 
 func _set_kind(value : Kind) -> void:

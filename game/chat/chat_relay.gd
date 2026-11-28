@@ -65,6 +65,9 @@ func _receive_submission(sender : int, channel : Variant, text : Variant) -> voi
 			_deliver(channel, label, clean, id == sender)
 		else:
 			_deliver.rpc_id(id, channel, label, clean, id == sender)
+	var gadgets : Node = get_tree().get_first_node_in_group(GadgetSystem.GROUP) #a coms hacker near the sender passes it to its owner, if they were not sent it
+	if gadgets is GadgetSystem:
+		(gadgets as GadgetSystem).intercept(sender, channel, sender_name, clean, _recipients(channel))
 	_say_aloud(sender, clean)
 
 
@@ -75,6 +78,8 @@ func _say_aloud(sender : int, text : String) -> void:
 		return
 	var speaker : Player = game.spawner.players.get(sender)
 	if not is_instance_valid(speaker) or not speaker.is_alive():
+		return
+	if speaker.role != null and speaker.role.silent_chat: #(the shade: no voice, no words over their head; the message still reaches the channel)
 		return
 	var voice : SoundDef = game.level.sound.chat_voice
 	var reach_px : float = ((voice.range_m if voice != null else 9.0) + speech_send_margin_m) * Acoustics.PX_PER_METRE

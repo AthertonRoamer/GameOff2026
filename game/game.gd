@@ -43,6 +43,8 @@ signal play_started #every peer: the phases are over and the players can move (t
 @onready var pickups : PickupControl = $PickupControl
 @onready var artifact_placer : ArtifactPlacer = $ArtifactPlacer
 @onready var ammo_placer : AmmoPlacer = $AmmoPlacer
+@onready var item_spawner : ItemSpawner = $ItemSpawner #items found lying in the item rooms, rolled once when the match loads
+@onready var gadgets : GadgetSystem = $Gadgets #smoke, tripwires, coms hackers, and the carried night vision and radar
 @onready var abilities : AbilityControl = $AbilityControl #what the roles can do: revive, vents
 @onready var target_chooser : TargetArtifactChooser = $TargetArtifactChooser
 @onready var exit_chooser : DesignatedExitChooser = $DesignatedExitChooser
@@ -61,6 +63,7 @@ var assignment : Dictionary = {} #lobby: every member's role and team. The win c
 var _roles : Dictionary = {} #member id -> role index, every member
 var _known_teams : Dictionary = {} #member id -> Team, only the teams this peer may know
 var _artifact_picks : PackedInt32Array = PackedInt32Array() #lobby: which artifact goes on each location, see ArtifactPlacer
+var _item_spawns : Dictionary = {"items": PackedInt32Array(), "at": PackedVector2Array()} #lobby: which item lies where, see ItemSpawner
 var _target_artifact : int = -1 #lobby: the artifact the attackers are after, see TargetArtifactChooser
 var _designated_exit : String = "" #lobby: the exit the attackers must leave by, see DesignatedExitChooser
 var _setup_complete : bool = false
@@ -99,6 +102,19 @@ func _ready() -> void:
 	level.player_lookup = func(peer_id : int) -> Player: return spawner.players.get(peer_id)
 	pickups.spawn_parent = level.actors
 	pickups.player_lookup = level.player_lookup
+	pickups.power = level.power #a portable generator put down runs on the grid
+	pickups.rule_for = func(item : Item) -> Callable: return artifact_placer._can_player_carry if item is Artifact else Callable() #a dropped relic keeps its rule: defenders still can't take it
+	item_spawner.facility = level.facility
+	gadgets.facility = level.facility
+	gadgets.players = func() -> Array: return spawner.players.values()
+	gadgets.player_lookup = level.player_lookup
+	gadgets.local_player = func() -> Player: return spawner.local_player if is_instance_valid(spawner.local_player) else null
+	gadgets.chat = chat_relay
+	gadgets.map_intel = map_intel
+	gadgets.sight = $PlayerSight
+	level.hitscan.world_collision_mask |= FacilityTileSet.GADGET_LAYER #(a shot can break a coms hacker)
+	abilities.pickups = pickups
+	abilities.players = func() -> Array: return spawner.players.values()
 	abilities.player_lookup = level.player_lookup
 	abilities.build(level.facility)
 	artifact_escape.facility = level.facility
@@ -113,6 +129,7 @@ func _ready() -> void:
 	level.hitscan.can_hit = func(target : Node) -> bool: return target.is_alive()
 	level.hitscan.targets = func() -> Array: return spawner.players.values()
 	level.hitscan.player_of = func(peer_id : int) -> Player: return spawner.players.get(peer_id)
+	level.turrets.players = func() -> Array: return spawner.players.values() #who the turrets watch for (intruders only)
 	level.hitscan.sight = $PlayerSight.visibility #shots and bullets are only seen as well as the local player can see where they are
 	level.projectiles.sight = $PlayerSight.visibility
 	level.blood.sight = $PlayerSight.visibility #and so is blood on the floor
@@ -130,6 +147,8 @@ func _ready() -> void:
 	player_hud.bind_exit(exit_chooser) #the target exit on the full map, for intruders only
 	player_hud.bind_relics(artifact_placer) #the treasure rooms the relics start in, on the full map
 	player_hud.bind_power(level.power)
+	player_hud.bind_medicine(abilities) #a medic's bar: how long until their next dose
+	abilities.own_player = func() -> Player: return spawner.local_player if is_instance_valid(spawner.local_player) else null
 	chat_relay.game = self
 	_setup_map_intel()
 	spectator.players = func() -> Array: return spawner.players.values()
@@ -176,6 +195,7 @@ func _ready() -> void:
 func start() -> void:
 	level.control.broadcast_snapshot() #lobby only: every peer starts from the lobby's doors
 	level.power.broadcast_snapshot() #and from its generators
+	level.turrets.broadcast_snapshot() #and its turrets' health
 	var start_tick : int = (get_parent() as RollbackGameManager).start_tick
 	if debug_skip_phases or settings.is_deathmatch(): #(a deathmatch has no roles to reveal and nowhere to choose: everyone is dropped in)
 		Main.output("Phases skipped (%s)" % ("deathmatch" if settings.is_deathmatch() else "debug_skip_phases"))
@@ -192,6 +212,8 @@ func _begin_play(tick : int) -> void:
 	player_hud.show_chat_early(false)
 	set_players_active(true)
 	player_hud.visible = true
+	if spawner.lobby != null and spawner.lobby.is_master:
+		abilities.start_medicine() #medics make medicine from now on
 	if settings.is_deathmatch():
 		deathmatch.begin(tick, spawner.lobby != null and spawner.lobby.is_master) #(no shift clock, no teams, no artifacts: kills and the five minutes)
 		if spawner.lobby != null and spawner.lobby.is_master:
@@ -244,6 +266,7 @@ func _ensure_assignment() -> void:
 	var rng : RandomNumberGenerator = RandomNumberGenerator.new()
 	rng.randomize()
 	assignment = role_assigner.assign(member_ids, rng)
+	_item_spawns = item_spawner.roll(rng) #(in a deathmatch too: anything lying about is fair game)
 	if not settings.is_deathmatch(): #(a deathmatch has no artifacts to steal, and no exit to take them out by)
 		_artifact_picks = artifact_placer.roll(rng)
 		_target_artifact = target_chooser.choose(_artifact_picks, rng)
@@ -260,14 +283,15 @@ func _request_assignment() -> void:
 	_ensure_assignment()
 	var is_attacker : bool = assignment["teams"].get(sender) == Team.ATTACKERS #defenders are never sent the target or the exit
 	var target_for_sender : int = _target_artifact if is_attacker else -1
-	_receive_assignment.rpc_id(sender, assignment["roles"], role_assigner.teams_visible_to(sender, assignment), _artifact_picks, target_for_sender, _designated_exit if is_attacker else "")
+	_receive_assignment.rpc_id(sender, assignment["roles"], role_assigner.teams_visible_to(sender, assignment), _artifact_picks, target_for_sender, _designated_exit if is_attacker else "", _item_spawns["items"], _item_spawns["at"])
 
 
 @rpc("authority", "call_remote", "reliable")
-func _receive_assignment(roles : Dictionary, known_teams : Dictionary, artifact_picks : PackedInt32Array, target_artifact : int, designated_exit : String) -> void:
+func _receive_assignment(roles : Dictionary, known_teams : Dictionary, artifact_picks : PackedInt32Array, target_artifact : int, designated_exit : String, item_picks : PackedInt32Array, item_spots : PackedVector2Array) -> void:
 	if not _setup_complete:
 		artifact_placer.place(artifact_picks)
 		ammo_placer.place()
+		item_spawner.place(item_picks, item_spots) #(after the ammo, as on the lobby: the pickups are numbered in the order they are made)
 		target_chooser.set_target(target_artifact)
 		exit_chooser.set_designated(designated_exit)
 		_spawn_players(roles, known_teams)
@@ -291,6 +315,7 @@ func _spawn_on_lobby_when_ready() -> void:
 			return
 	artifact_placer.place(_artifact_picks)
 	ammo_placer.place()
+	item_spawner.place(_item_spawns["items"], _item_spawns["at"])
 	target_chooser.set_target(_target_artifact)
 	exit_chooser.set_designated(_designated_exit)
 	_spawn_players(assignment["roles"], assignment["teams"]) #the lobby knows every team
@@ -425,6 +450,7 @@ func _on_player_spawned(player : Node, member : LobbyMember, index : int) -> voi
 	if spawner.lobby.is_master:
 		player.damaged.connect(level.blood.on_player_damaged.bind(player)) #a splash where a bullet came through, decided by the lobby
 		player.died.connect(match_director.check_elimination)
+		player.died.connect(pickups.drop_all.bind(player)) #everything they carried falls where they lie, for anyone to take
 	if debug_respawn_dead_players or settings.is_deathmatch():
 		player.died.connect(_on_player_died.bind(player))
 		player.health_changed.connect(_on_player_health_changed.bind(player))
@@ -459,6 +485,7 @@ func _on_player_died(player : Node) -> void:
 	if player.is_multiplayer_authority(): #only the authority decides when health comes back; HealthSynchronizer broadcasts it
 		await get_tree().create_timer(DEATHMATCH_RESPAWN_SECONDS if in_deathmatch else 3.0).timeout
 		if is_instance_valid(player) and not (in_deathmatch and deathmatch.is_over): #(nobody comes back once the deathmatch is over)
+			pickups.restock(player) #(what they carried was dropped where they fell: they come back with their kit)
 			if in_deathmatch:
 				_respawn_at.rpc(int(String(player.name)), _respawn_point()) #a deathmatch brings them back somewhere else
 			player.health = player.starting_health
@@ -595,12 +622,14 @@ func _on_network_unloader_cease_rpcs_request_received() -> void:
 	level.projectiles.quiesce()
 	level.control.quiesce()
 	level.power.quiesce()
+	level.turrets.quiesce()
 	level.consoles.quiesce()
 	level.blood.quiesce()
 	level.hitscan.quiesce()
 	pickups.quiesce()
 	abilities.quiesce()
 	ammo_placer.quiesce()
+	gadgets.quiesce()
 	artifact_escape.quiesce()
 	phases.quiesce()
 	player_hud.show_chat_early(false)

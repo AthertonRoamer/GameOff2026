@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SoundDef" format=3]
+
+[ext_resource type="Script" path="res://game/audio/sound_def.gd" id="1_def"]
+
+[resource]
+script = ExtResource("1_def")
+folder = "res://game/audio/sounds/machines/turret_turn"
+volume_db = -8.0
+volume_jitter_db = 0.0
+pitch_min = 0.97
+pitch_max = 1.03
+range_m = 14.0
+falloff = 1.4
+echo = 0.4
+show_cue = false
