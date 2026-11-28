@@ -135,9 +135,10 @@ func _test_box_and_chat(player : Player) -> void:
 	chat.fade_seconds = 0.1
 	chat.wake()
 	await get_tree().create_timer(0.7).timeout
-	check(chat.is_faded() and chat.modulate.a == 0.0 and chat.mouse_behavior_recursive == Control.MOUSE_BEHAVIOR_DISABLED, "idle, the chat fades away and takes no clicks")
+	check(chat.is_faded() and chat._log.modulate.a == 0.0 and chat._header.modulate.a == 0.0 and chat.self_modulate.a == 0.0 and chat._log.mouse_behavior_recursive == Control.MOUSE_BEHAVIOR_DISABLED, "idle, the chat fades away and takes no clicks")
+	check(chat._line.is_visible_in_tree() and chat._line.modulate.a == 1.0 and chat.modulate.a == 1.0 and chat._line.placeholder_text.contains("Enter"), "but the line to type in, \"Press Enter to chat\", always shows")
 	relay.message_received.emit(0, "Bob", "hello", false)
-	check(not chat.is_faded() and chat.modulate.a == 1.0, "a message brings it back")
+	check(not chat.is_faded() and chat._log.modulate.a == 1.0 and chat.self_modulate.a == 1.0, "a message brings it back")
 	await get_tree().create_timer(0.7).timeout
 	var enter : InputEventAction = InputEventAction.new()
 	enter.action = "chat_open"

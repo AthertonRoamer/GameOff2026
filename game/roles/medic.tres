@@ -3,14 +3,16 @@
 [ext_resource type="Script" uid="uid://v21eutcpbg5f" path="res://game/roles/role.gd" id="1_role"]
 [ext_resource type="Script" uid="uid://bko7sp24yavq3" path="res://game/items/item.gd" id="2_item"]
 [ext_resource type="Resource" path="res://game/items/guns/pistol.tres" id="3_gun"]
+[ext_resource type="Resource" path="res://game/items/medicine/medicine.tres" id="4_medicine"]
 [ext_resource type="Texture2D" uid="uid://b10ky37nop7fj" path="res://game/roles/portraits/medic.png" id="9_portrait"]
 
 [resource]
 script = ExtResource("1_role")
 role_name = "Medic"
 color = Color(1, 0.45, 0.75, 1)
-description = "Can revive fallen players."
+description = "Can revive fallen players, and can make a dose of medicine every minute (hold Q when the bar is full): choose it and hold E to get half your health back."
 skin = "medic"
 portrait = ExtResource("9_portrait")
 starting_items = Array[ExtResource("2_item")]([ExtResource("3_gun")])
 can_revive = true
+medicine_item = ExtResource("4_medicine")

@@ -33,3 +33,19 @@ func _draw() -> void:
 		for rect : Rect2 in room_rects(id):
 			draw_rect(rect, Color(COLOUR, 0.22))
 			draw_rect(rect, COLOUR, false, px(width_px))
+
+
+func icon_label(world : Vector2) -> String:
+	if facility() == null:
+		return ""
+	var id : String = facility().room_at(world)
+	if id == "":
+		return ""
+	if rooms.has(id) or facility().rooms_of_kind("item").has(id):
+		return "Relic room"
+	return ""
+
+
+##Its labels name whole rooms (see MapLayer.labels_areas).
+func labels_areas() -> bool:
+	return true

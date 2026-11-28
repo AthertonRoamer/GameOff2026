@@ -57,6 +57,15 @@ $camerasPass = (Select-String -Path "$env:TEMP\camerastest.out" -Pattern "RESULT
 $results["cameras unit test"] = $camerasPass
 "{0,-62} {1}" -f "cameras unit test", $(if ($camerasPass) { "PASS" } else { "FAIL" })
 if (-not $camerasPass) { Select-String -Path "$env:TEMP\camerastest.out" -Pattern "FAIL" | ForEach-Object { "      " + $_.Line } }
+
+# unit test of the turrets: switched like a light, power, shooting intruders only, cone and cover, shot down and repaired, technicians, the console's map
+$p = Start-Process $Godot -ArgumentList "--headless", "--path", "`"$project`"", "res://tests/unit/test_turrets.tscn" -NoNewWindow -PassThru `
+	-RedirectStandardOutput "$env:TEMP\turretstest.out" -RedirectStandardError "$env:TEMP\turretstest.err"
+if (-not $p.WaitForExit(90000)) { Stop-Process -Id $p.Id -Force }
+$turretsPass = (Select-String -Path "$env:TEMP\turretstest.out" -Pattern "RESULT: PASS" -Quiet)
+$results["turrets unit test"] = $turretsPass
+"{0,-62} {1}" -f "turrets unit test", $(if ($turretsPass) { "PASS" } else { "FAIL" })
+if (-not $turretsPass) { Select-String -Path "$env:TEMP\turretstest.out" -Pattern "FAIL" | ForEach-Object { "      " + $_.Line } }
 # unit test of the map streaming: tiles near the view only, decor in and out of the tree
 $p = Start-Process $Godot -ArgumentList "--headless", "--path", "`"$project`"", "res://tests/unit/test_map_streaming.tscn" -NoNewWindow -PassThru `
 	-RedirectStandardOutput "$env:TEMP\streamtest.out" -RedirectStandardError "$env:TEMP\streamtest.err"
@@ -100,6 +109,22 @@ if (-not $p.WaitForExit(90000)) { Stop-Process -Id $p.Id -Force }
 $unit = (Select-String -Path "$env:TEMP\pickuptest.out" -Pattern "RESULT: PASS" -Quiet)
 $results["pickups unit test"] = $unit
 "{0,-62} {1}" -f "pickups unit test", $(if ($unit) { "PASS" } else { "FAIL" })
+# items found lying in the item rooms: the rooms' chance, spots along the walls clear of furniture and doors, the roll, placing them as ordinary pickups
+$p = Start-Process $Godot -ArgumentList "--headless", "--path", "`"$project`"", "res://tests/unit/test_item_spawns.tscn" -NoNewWindow -PassThru `
+	-RedirectStandardOutput "$env:TEMP\itemspawntest.out" -RedirectStandardError "$env:TEMP\itemspawntest.err"
+if (-not $p.WaitForExit(90000)) { Stop-Process -Id $p.Id -Force }
+$unit = (Select-String -Path "$env:TEMP\itemspawntest.out" -Pattern "RESULT: PASS" -Quiet)
+$results["item spawns unit test"] = $unit
+"{0,-62} {1}" -f "item spawns unit test", $(if ($unit) { "PASS" } else { "FAIL" })
+if (-not $unit) { Select-String -Path "$env:TEMP\itemspawntest.out" -Pattern "FAIL" | ForEach-Object { "      " + $_.Line } }
+# the found gadgets: knife, smoke bomb, tripwire, coms hacker, night vision, radar, and the rooms' own item lists
+$p = Start-Process $Godot -ArgumentList "--headless", "--path", "`"$project`"", "res://tests/unit/test_gadgets.tscn" -NoNewWindow -PassThru `
+	-RedirectStandardOutput "$env:TEMP\gadgettest.out" -RedirectStandardError "$env:TEMP\gadgettest.err"
+if (-not $p.WaitForExit(90000)) { Stop-Process -Id $p.Id -Force }
+$unit = (Select-String -Path "$env:TEMP\gadgettest.out" -Pattern "RESULT: PASS" -Quiet)
+$results["gadgets unit test"] = $unit
+"{0,-62} {1}" -f "gadgets unit test", $(if ($unit) { "PASS" } else { "FAIL" })
+if (-not $unit) { Select-String -Path "$env:TEMP\gadgettest.out" -Pattern "FAIL" | ForEach-Object { "      " + $_.Line } }
 # ammunition, reloading, stamina, the minimap and the map screen
 $p = Start-Process $Godot -ArgumentList "--headless", "--path", "`"$project`"", "res://tests/unit/test_ammo.tscn" -NoNewWindow -PassThru `
 	-RedirectStandardOutput "$env:TEMP\ammotest.out" -RedirectStandardError "$env:TEMP\ammotest.err"
@@ -122,6 +147,14 @@ if (-not $p.WaitForExit(90000)) { Stop-Process -Id $p.Id -Force }
 $unit = (Select-String -Path "$env:TEMP\abilitytest.out" -Pattern "RESULT: PASS" -Quiet)
 $results["role abilities unit test"] = $unit
 "{0,-62} {1}" -f "role abilities unit test", $(if ($unit) { "PASS" } else { "FAIL" })
+# items: dropping (G, and everything on death), medicine, the portable generator, intruders starting generators, the maps' hover labels
+$p = Start-Process $Godot -ArgumentList "--headless", "--path", "`"$project`"", "res://tests/unit/test_items.tscn" -NoNewWindow -PassThru `
+	-RedirectStandardOutput "$env:TEMP\itemstest.out" -RedirectStandardError "$env:TEMP\itemstest.err"
+if (-not $p.WaitForExit(90000)) { Stop-Process -Id $p.Id -Force }
+$unit = (Select-String -Path "$env:TEMP\itemstest.out" -Pattern "RESULT: PASS" -Quiet)
+$results["items unit test"] = $unit
+"{0,-62} {1}" -f "items unit test", $(if ($unit) { "PASS" } else { "FAIL" })
+if (-not $unit) { Select-String -Path "$env:TEMP\itemstest.out" -Pattern "FAIL" | ForEach-Object { "      " + $_.Line } }
 # the attackers' win: the target artifact carried into an exit zone
 $p = Start-Process $Godot -ArgumentList "--headless", "--path", "`"$project`"", "res://tests/unit/test_artifact_escape.tscn" -NoNewWindow -PassThru `
 	-RedirectStandardOutput "$env:TEMP\escapetest.out" -RedirectStandardError "$env:TEMP\escapetest.err"

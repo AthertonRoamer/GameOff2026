@@ -11,6 +11,8 @@ extends Node2D
 var pickup_id : int = -1
 var control : PickupControl
 var can_take : Callable = Callable() #(player : Player) -> bool. Who may take this one. Unset: anyone
+var placed_by : int = -1 #the member who put it down on purpose (dropped or placed it), -1 for one placed at the start or fallen from a dead player. A tripwire or coms hacker works for them only
+var placed_facing : float = 0.0 #the way they faced as they put it down (radians): a tripwire is strung across it
 var seen : float = 1.0 : set = set_seen ## how well the local player sees it, 0 to 1 (PickupControl sets it from the player's view, as for blood and bodies): drawn that strongly
 
 @onready var icon_sprite : Sprite2D = $Icon
@@ -40,7 +42,7 @@ func is_in_reach(world_position : Vector2, slack : float = 1.0) -> bool:
 
 
 func get_prompt() -> String:
-	return "E   take the %s" % item.item_name
+	return item.take_prompt()
 
 
 func interact(_player : Player) -> Control:

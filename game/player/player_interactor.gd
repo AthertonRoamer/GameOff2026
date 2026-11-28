@@ -27,14 +27,25 @@ var target : Node #the closest interactable in reach, or null
 var screen : Control #the screen the player is using, or null
 
 var holding : Node #what E is being held on, or null
+var hold_action : StringName = &"player_interact" #the key being held: E, or Q for a medic making medicine
 var hold_time : float = 0.0
 var hold_total : float = 0.0
 
 var _prompt : String = ""
 var _inventory_full : bool = false
+var item_use : ItemUse #the item in the hand, as something to hold E on (medicine)
+var medicine_maker : MedicineMaker #a medic making their next dose of medicine (Q held)
 
 
 func _ready() -> void:
+	item_use = ItemUse.new()
+	item_use.name = "ItemUse"
+	item_use.player = player
+	add_child(item_use)
+	medicine_maker = MedicineMaker.new()
+	medicine_maker.name = "MedicineMaker"
+	medicine_maker.player = player
+	add_child(medicine_maker)
 	set_process((player.get_node("Input") as PlayerInput).is_multiplayer_authority()) #by node: this is readied before the player, whose @onready vars are still unset
 	player.died.connect(close_screen)
 	player.died.connect(cancel_hold)
@@ -49,6 +60,9 @@ func _process(delta : float) -> void:
 	if text != _prompt:
 		_prompt = text
 		prompt_changed.emit(text)
+	if Input.is_action_just_pressed("player_make_medicine") and not player.input.typing and screen == null and player.input.active and medicine_maker.can_interact(player):
+		start_hold(medicine_maker, &"player_make_medicine") #(a medic whose next dose is ready: Q held makes it)
+		return
 	if Input.is_action_just_pressed("player_interact") and not player.input.typing: #(an e typed in the chat is not a press)
 		if screen != null:
 			screen.close()
@@ -58,9 +72,29 @@ func _process(delta : float) -> void:
 			use(target)
 
 
+##The item keys, for an item in the hand: G drops it where the player stands, and a click with a portable generator puts it down (Item.ClickUse.PLACE;
+##medicine is used by holding E on it instead, see ItemUse). Both go through the lobby (PickupControl). Unhandled input only, so a click on a screen or the chat is not a use.
+func _unhandled_input(event : InputEvent) -> void:
+	if not is_processing() or holding != null or screen != null or player.input.typing or not player.input.active or not player.is_alive():
+		return
+	var dropping : bool = event.is_action_pressed("player_drop") and not event.is_echo()
+	var clicking : bool = event.is_action_pressed("player_use_active_item") and not event.is_echo()
+	if not dropping and not clicking:
+		return
+	var item : Item = player.inventory.active_item
+	var control : Node = get_tree().get_first_node_in_group(PickupControl.GROUP)
+	if item == null or control == null:
+		return
+	if dropping:
+		control.request_drop(player.inventory.active_slot)
+	elif not item.drawable and item.click_use in [Item.ClickUse.PLACE, Item.ClickUse.THROW]: #(medicine is used by holding E instead: see ItemUse)
+		control.request_use(player.inventory.active_slot)
+
+
 ##Starts holding E on an interactable that needs it (as pressing E does). The playground's check mode calls it directly.
-func start_hold(interactable : Node) -> void:
+func start_hold(interactable : Node, action : StringName = &"player_interact") -> void:
 	holding = interactable
+	hold_action = action
 	hold_time = 0.0
 	hold_total = maxf(0.01, interactable.hold_seconds(player))
 	player.set_active(false) #the player stands still while working it
@@ -82,7 +116,7 @@ func cancel_hold() -> void:
 
 
 func _continue_hold(delta : float) -> void:
-	var still_ok : bool = is_instance_valid(holding) and player.is_alive() and Input.is_action_pressed("player_interact") \
+	var still_ok : bool = is_instance_valid(holding) and player.is_alive() and Input.is_action_pressed(hold_action) \
 		and holding.is_in_reach(player.global_position) and (not holding.has_method("can_interact") or holding.can_interact(player))
 	if not still_ok:
 		cancel_hold()
@@ -136,12 +170,17 @@ func _find_target() -> void:
 	target = null
 	var full_pickup_in_reach : bool = false
 	if screen == null and player.input.active:
+		if item_use.can_interact(player): #the item chosen in the hand comes first: choosing medicine is choosing to use it
+			target = item_use
+	if target == null and screen == null and player.input.active:
 		var best_distance : float = INF
 		for node : Node in get_tree().get_nodes_in_group(GROUP):
 			if not node.is_in_reach(player.global_position) or (node.has_method("can_interact") and not node.can_interact(player)):
 				continue
 			if node is Pickup and (node as Pickup).item.slot_for(player.inventory) < 0:
 				full_pickup_in_reach = true
+				continue
+			if not node is Node2D:
 				continue
 			var distance : float = (node as Node2D).global_position.distance_to(player.global_position)
 			if distance < best_distance:

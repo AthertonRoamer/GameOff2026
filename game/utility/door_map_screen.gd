@@ -2,7 +2,7 @@ class_name DoorMapScreen
 extends Control
 
 ##The door control screen: a map of the facility with every door on it (a FacilityMapView with rooms, doors and the player's dot; scroll and zoom it
-##like any map). Click a door to open or close it. Locked doors cannot be changed. Click anywhere else in a room to switch its ceiling light (LightsLayer), right-click it to switch its camera and watch it live on the map (CamerasLayer). Put it on a CanvasLayer (it covers the screen), set `facility`
+##like any map). Click a door to open or close it. Locked doors cannot be changed. Click a turret to switch it on or off (TurretsLayer: the only map that shows whether a turret is on). Click anywhere else in a room to switch its ceiling light (LightsLayer), right-click it to switch its camera and watch it live on the map (CamerasLayer). Put it on a CanvasLayer (it covers the screen), set `facility`
 ##and `control`, call open() and listen for `closed`. A click does not change the door itself: it asks `control` (the lobby decides, then every
 ##peer switches the door on the same tick). A door whose change is on its way blinks. Without a control (a bare test) the click flips it locally.
 
@@ -34,6 +34,7 @@ var _refusal_left : float = 0.0
 @onready var cameras_layer : CamerasLayer = $Map/Cameras #the rooms' cameras: right-click a room to switch its camera, and watch it live on the map
 @onready var player_layer : PlayerDotLayer = $Map/Player
 @onready var regions_layer : RegionsLayer = $Map/Regions #the power regions and the power free in each (doors cost power to keep shut)
+@onready var turrets_layer : TurretsLayer = $Map/Turrets #the turrets, coloured by state: click one to switch it (the only map that shows whether a turret is on)
 
 
 func _ready() -> void:
@@ -50,6 +51,7 @@ func open(tracked : Node2D = null) -> void:
 	doors_layer.control = control
 	lights_layer.control = control
 	cameras_layer.control = control
+	turrets_layer.control = control
 	regions_layer.grid = control.power if control != null else null
 	if control != null and not control.camera_refused.is_connected(_on_camera_refused):
 		control.camera_refused.connect(_on_camera_refused)
@@ -57,6 +59,8 @@ func open(tracked : Node2D = null) -> void:
 		control.door_refused.connect(_on_door_refused)
 	if control != null and not control.light_refused.is_connected(_on_light_refused):
 		control.light_refused.connect(_on_light_refused)
+	if control != null and not control.turret_refused.is_connected(_on_turret_refused):
+		control.turret_refused.connect(_on_turret_refused)
 	player_layer.tracked = tracked
 	if map.facility != facility:
 		map.facility = facility
@@ -91,6 +95,12 @@ func toggle_camera(index : int) -> bool:
 	return cameras_layer.toggle_camera(index)
 
 
+##Asks for a turret to switch, the way a click on it does. Returns false for no turret or one already switching.
+func toggle_turret(index : int) -> bool:
+	turrets_layer.control = control
+	return turrets_layer.toggle_turret(index)
+
+
 ##The door under a position on this screen, if any.
 func door_at(screen_position : Vector2) -> FacilityDoor:
 	return doors_layer.door_at(map.screen_to_world(screen_position - map.position))
@@ -122,6 +132,15 @@ func _on_light_refused(index : int, reason : String) -> void:
 func _on_camera_refused(index : int, reason : String) -> void:
 	if reason == "power":
 		_refusal = "NO POWER IN %s FOR THAT CAMERA" % facility.region_name(control.light_region(index)).to_upper()
+		_refusal_left = 2.5
+
+
+func _on_turret_refused(index : int, reason : String) -> void:
+	if reason == "power":
+		_refusal = "NO POWER IN %s FOR THAT TURRET" % facility.region_name(control.turret_region(index)).to_upper()
+		_refusal_left = 2.5
+	elif reason == "destroyed":
+		_refusal = "THAT TURRET IS SHOT DOWN: REPAIR IT FIRST"
 		_refusal_left = 2.5
 
 
@@ -160,7 +179,7 @@ func _draw() -> void:
 	draw_rect(_panel_rect, PANEL)
 	draw_rect(_panel_rect, LINE, false, 2.0)
 	draw_rect(Rect2(_panel_rect.position, Vector2(6.0, 44.0)), ACCENT)
-	draw_string(_font, _panel_rect.position + Vector2(20.0, 30.0), "DOORS, LIGHTS & CAMERAS", HORIZONTAL_ALIGNMENT_LEFT, -1, 20, TEXT)
+	draw_string(_font, _panel_rect.position + Vector2(20.0, 30.0), "DOORS, LIGHTS, CAMERAS & TURRETS", HORIZONTAL_ALIGNMENT_LEFT, -1, 20, TEXT)
 	var open_count : int = 0
 	var closed_count : int = 0
 	for door in facility.doors:
@@ -170,6 +189,7 @@ func _draw() -> void:
 			closed_count += 1
 	var lit_count : int = 0
 	var camera_count : int = 0
+	var turret_count : int = 0
 	if control != null:
 		for index in control.light_count():
 			if control.is_light_on(index):
@@ -177,9 +197,14 @@ func _draw() -> void:
 		for index in control.camera_count():
 			if control.is_camera_on(index):
 				camera_count += 1
-	draw_string(_font, _panel_rect.position + Vector2(310.0, 29.0), "%d open   %d closed   %d lit   %d cams" % [open_count, closed_count, lit_count, camera_count], HORIZONTAL_ALIGNMENT_LEFT, -1, 14, MUTED)
+		for index in control.turret_count():
+			if control.is_turret_on(index):
+				turret_count += 1
+	draw_string(_font, _panel_rect.position + Vector2(410.0, 29.0), "%d open   %d closed   %d lit   %d cams   %d turrets" % [open_count, closed_count, lit_count, camera_count, turret_count], HORIZONTAL_ALIGNMENT_LEFT, -1, 14, MUTED)
 	if control != null and control.power != null:
-		draw_string(_font, _panel_rect.position + Vector2(560.0, 29.0), "from its region: a shut door takes %s pts/s, a light %s, a camera %s" % [str(control.power.door_cost()), str(control.power.light_cost()), str(control.power.camera_cost())], HORIZONTAL_ALIGNMENT_LEFT, -1, 14, MUTED)
+		var costs : String = "pts/s from its region: shut door %s, light %s, camera %s, turret %s" % [str(control.power.door_cost()), str(control.power.light_cost()), str(control.power.camera_cost()), str(control.power.turret_cost())]
+		if _refusal_left <= 0.0: #(under the title, where a refusal shows for a moment)
+			draw_string(_font, _panel_rect.position + Vector2(20.0, 50.0), costs, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, MUTED)
 	if _refusal_left > 0.0:
 		draw_string(_font, _panel_rect.position + Vector2(20.0, 50.0), _refusal, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Palette.ALARM)
 	#close button
@@ -191,8 +216,8 @@ func _draw() -> void:
 	#legend
 	var y : float = _panel_rect.end.y - 18.0
 	var x : float = _panel_rect.position.x + 20.0
-	for entry : Array in [[OPEN_COLOUR, "open"], [CLOSED_COLOUR, "closed"], [LOCKED_COLOUR, "locked"], [Color(LightsLayer.ON_COLOUR, 0.6), "light on"], [CamerasLayer.ON_COLOUR, "camera on"]]:
+	for entry : Array in [[OPEN_COLOUR, "open"], [CLOSED_COLOUR, "closed"], [LOCKED_COLOUR, "locked"], [Color(LightsLayer.ON_COLOUR, 0.6), "light on"], [CamerasLayer.ON_COLOUR, "camera on"], [TurretsLayer.ON_COLOUR, "turret on"], [TurretsLayer.WARMING_COLOUR, "warming up"], [TurretsLayer.DESTROYED_COLOUR, "shot down"]]:
 		draw_rect(Rect2(x, y - 9.0, 12.0, 8.0), entry[0])
 		draw_string(_font, Vector2(x + 18.0, y), entry[1], HORIZONTAL_ALIGNMENT_LEFT, -1, 12, MUTED)
 		x += 86.0
-	draw_string(_font, Vector2(x + 20.0, y), "click a door to open or close it, a room to switch its light, right-click a room for its camera   -   drag to scroll, wheel to zoom   -   E or Esc to leave", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, MUTED)
+	draw_string(_font, Vector2(x + 20.0, y), "click a door or a turret to switch it, a room to switch its light, right-click a room for its camera   -   drag to scroll, wheel to zoom   -   E or Esc to leave", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, MUTED)

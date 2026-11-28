@@ -12,6 +12,8 @@ extends Node
 ##closes again if the lobby refuses. The lobby also checks a door request comes from the player who has a door console (is_occupant, see Level), and lets a
 ##console go when its player dies, leaves or walks off. Offline (the playground) the local peer is the lobby, so the same path runs with no network.
 
+signal beeped(at : Vector2, powered : bool) ## every peer: a console beeped as a change made from it was accepted (heard round the console). powered: the higher beep
+
 const SCREEN_LAYER : int = 20
 const CLAIM_REACH_SLACK : float = 1.5 #the lobby's view of a player can be a few ticks behind, so its reach check is a little looser
 const CHECK_SECONDS : float = 0.5 #how often the lobby looks for a player who is no longer at the console they hold
@@ -73,6 +75,24 @@ func is_occupant(peer_id : int, function : String) -> bool:
 		if _occupants[index] == peer_id and panels[index].function == function:
 			return true
 	return false
+
+
+##Lobby: the console this peer is at beeps, on every peer (it is heard round it, see `beeped`). powered: what was changed now takes power (a higher beep).
+##Nothing if the peer has no console.
+func beep_for(peer_id : int, powered : bool) -> void:
+	if not _active or not _is_lobby():
+		return
+	for index : int in _occupants:
+		if _occupants[index] == peer_id:
+			_beep(index, powered)
+			if not multiplayer.get_peers().is_empty():
+				_beep_remote.rpc(index, powered)
+			return
+
+
+func _beep(index : int, powered : bool) -> void:
+	if index >= 0 and index < panels.size():
+		beeped.emit(panels[index].global_position, powered)
 
 
 ##Asks for the console, as the player at it. Safe to call on any peer; only the lobby decides.
@@ -169,6 +189,12 @@ func _release_request(index : int) -> void:
 func _occupant_changed(index : int, peer_id : int) -> void:
 	if _active:
 		_apply_occupant(index, peer_id)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _beep_remote(index : int, powered : bool) -> void:
+	if _active:
+		_beep(index, powered)
 
 
 @rpc("authority", "call_remote", "reliable")

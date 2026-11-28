@@ -9,7 +9,8 @@ extends PanelContainer
 ##and bright, the other small with a bubble counting the messages not seen there yet. C or a click on a tab switches.
 ##Every message that arrives dings, through a plain (not positional) AudioStreamPlayer: only peers the lobby sent the message to ever play it.
 ##HUD.bind_chat hands it the relay, the local player and the channels; until then (and in a deathmatch or the playground) it stays hidden.
-##After idle_hide_seconds with nothing happening it fades away (and takes no clicks); Enter brings it back, and so does a message arriving.
+##After idle_hide_seconds with nothing happening it fades away (and takes no clicks), all but the line to type in, which always shows "Press Enter to chat";
+##Enter brings it back, and so does a message arriving.
 
 @export_group("Colours")
 @export var guards_colour : Color = Color("#3ddc6a") ## the GUARDS tab
@@ -137,8 +138,18 @@ func set_held_open(value : bool) -> void:
 ## Shows the window (again) and starts the idle time over.
 func wake() -> void:
 	_idle = 0.0
-	modulate.a = 1.0
-	mouse_behavior_recursive = Control.MOUSE_BEHAVIOR_INHERITED
+	_set_faded_alpha(1.0)
+	for part : Control in [_header, _log]:
+		part.mouse_behavior_recursive = Control.MOUSE_BEHAVIOR_INHERITED
+
+
+## Fades all of the window but the line to type in: "Press Enter to chat" stays on the screen, so the chat is always there to be found.
+func _set_faded_alpha(alpha : float) -> void:
+	if not is_node_ready():
+		return
+	self_modulate.a = alpha #(the panel behind, not what is in it)
+	_header.modulate.a = alpha
+	_log.modulate.a = alpha
 
 
 func is_faded() -> bool:
@@ -153,8 +164,9 @@ func _process(delta : float) -> void:
 		return
 	_idle += delta
 	if is_faded():
-		mouse_behavior_recursive = Control.MOUSE_BEHAVIOR_DISABLED #(what is not there takes no clicks)
-		modulate.a = clampf(1.0 - (_idle - idle_hide_seconds) / maxf(fade_seconds, 0.001), 0.0, 1.0)
+		for part : Control in [_header, _log]:
+			part.mouse_behavior_recursive = Control.MOUSE_BEHAVIOR_DISABLED #(what is not there takes no clicks)
+		_set_faded_alpha(clampf(1.0 - (_idle - idle_hide_seconds) / maxf(fade_seconds, 0.001), 0.0, 1.0))
 
 
 func start_typing() -> void:
@@ -205,7 +217,7 @@ func _input(event : InputEvent) -> void:
 		return
 	if button.button_index != MOUSE_BUTTON_LEFT and button.button_index != MOUSE_BUTTON_RIGHT:
 		return
-	var inside : bool = get_global_rect().has_point(button.position) and not is_faded()
+	var inside : bool = (_line.get_global_rect() if is_faded() else get_global_rect()).has_point(button.position) #(faded, only the line to type in is left)
 	if inside:
 		_mouse_held = true
 		_apply_typing()

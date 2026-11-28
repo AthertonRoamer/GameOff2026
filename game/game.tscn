@@ -39,20 +39,21 @@
 [ext_resource type="Script" uid="uid://rirostwtxlhe" path="res://game/match_director/designated_exit_chooser.gd" id="37_exit_chooser"]
 [ext_resource type="PackedScene" path="res://game/phases/spawn_select/spawn_select_phase.tscn" id="38_spawn_select"]
 [ext_resource type="Script" uid="uid://bcubhd84l6ic4" path="res://game/pickups/ammo_placer.gd" id="39_ammo_placer"]
+[ext_resource type="Script" path="res://game/pickups/item_spawner.gd" id="39_item_spawner"]
+[ext_resource type="Script" path="res://game/gadgets/gadget_system.gd" id="39_gadgets"]
 [ext_resource type="Resource" path="res://game/items/ammo/ammo_box.tres" id="40_ammo_box"]
 [ext_resource type="Resource" path="res://game/roles/guard.tres" id="41_guard"]
 [ext_resource type="Resource" path="res://game/roles/shade.tres" id="42_shade"]
 [ext_resource type="Script" uid="uid://1wufpkt65jw4" path="res://game/abilities/ability_control.gd" id="43_abilities"]
-[ext_resource type="PackedScene" path="res://game/debug/debug_role_picker.tscn" id="44_role_picker"]
-[ext_resource type="Script" path="res://game/chat/chat_relay.gd" id="45_chat"]
+[ext_resource type="PackedScene" uid="uid://5pnsc4qw1jhp" path="res://game/debug/debug_role_picker.tscn" id="44_role_picker"]
+[ext_resource type="Script" uid="uid://bpvwa373gbq1b" path="res://game/chat/chat_relay.gd" id="45_chat"]
 [ext_resource type="PackedScene" path="res://game/spectator/spectator.tscn" id="46_spectator"]
-[ext_resource type="Script" path="res://game/ui/map_view/map_intel.gd" id="47_map_intel"]
+[ext_resource type="Script" uid="uid://vg4sni7qige8" path="res://game/ui/map_view/map_intel.gd" id="47_map_intel"]
 
 [node name="Game" type="Node2D" unique_id=2090356720]
 script = ExtResource("1_game")
 guard_roles = Array[ExtResource("11_role")]([ExtResource("41_guard"), ExtResource("42_shade"), ExtResource("13_gunman"), ExtResource("12_medic"), ExtResource("15_scout"), ExtResource("14_engineer")])
 intruder_roles = Array[ExtResource("11_role")]([ExtResource("16_infiltrator")])
-debug_skip_phases = true
 
 [node name="DebugRemover" type="Node" parent="." unique_id=1674820963]
 script = ExtResource("10_debug")
@@ -77,6 +78,8 @@ script = ExtResource("3_unloader")
 
 [node name="GameClock" type="Node" parent="." unique_id=1714341309]
 script = ExtResource("17_clock")
+end_hour = 6
+end_period = 0
 
 [node name="MatchDirector" type="Node" parent="." unique_id=621785788]
 script = ExtResource("18_director")
@@ -98,11 +101,18 @@ script = ExtResource("39_ammo_placer")
 ammo = ExtResource("40_ammo_box")
 pickups = NodePath("../PickupControl")
 
+[node name="ItemSpawner" type="Node" parent="." node_paths=PackedStringArray("pickups")]
+script = ExtResource("39_item_spawner")
+pickups = NodePath("../PickupControl")
+
+[node name="Gadgets" type="Node2D" parent="."]
+script = ExtResource("39_gadgets")
+
 [node name="TargetArtifactChooser" type="Node" parent="." unique_id=1600048755 node_paths=PackedStringArray("placer")]
 script = ExtResource("30_chooser")
 placer = NodePath("../ArtifactPlacer")
 
-[node name="MapIntel" type="Node" parent="."]
+[node name="MapIntel" type="Node" parent="." unique_id=1093027614]
 script = ExtResource("47_map_intel")
 
 [node name="ChatRelay" type="Node" parent="." unique_id=1473920561]
@@ -167,9 +177,9 @@ script = ExtResource("31_commands")
 
 [node name="DebugRolePicker" parent="." unique_id=1829853934 instance=ExtResource("44_role_picker")]
 
+[node name="Spectator" parent="." unique_id=1069869463 instance=ExtResource("46_spectator")]
+
 [connection signal="cease_rpcs_request_received" from="NetworkUnloader" to="." method="_on_network_unloader_cease_rpcs_request_received"]
 [connection signal="finished" from="GameClock" to="MatchDirector" method="on_time_up"]
 [connection signal="match_ended" from="MatchDirector" to="." method="_on_match_ended"]
 [connection signal="return_to_lobby" from="MatchDirector" to="." method="_on_match_director_return_to_lobby"]
-
-[node name="Spectator" parent="." instance=ExtResource("46_spectator")]

@@ -22,7 +22,11 @@ enum Kind { GUARD, INTRUDER }
 @export var run_sound : SoundDef ## a run's footstep when it is not the usual one (null: the usual). Quieter for a role that runs quietly
 @export var can_revive : bool = false ## may bring a fallen player back (see AbilityControl)
 @export var can_vent : bool = false ## may travel through the vents (see AbilityControl)
-@export var battery_count : int = 0 ## batteries to place; the power system is not in yet, so nothing uses it
+@export var can_work_doors : bool = false ## may open and close a door by hand while standing next to it (E), no console needed; closing still needs its region to have the power (see DoorSwitch)
+@export var silent_chat : bool = false ## chat is never said aloud: no voice and no speech bubble over their head (the window still has it)
+@export var medicine_item : Item ## ready to make every medicine_seconds; holding Q then puts it in a free slot (see AbilityControl). None: the role makes none
+@export_range(5.0, 600.0, 1.0, "suffix:s") var medicine_seconds : float = 60.0 ## until the next dose is ready to make
+@export_range(0.1, 10.0, 0.1, "suffix:s") var medicine_make_seconds : float = 2.0 ## how long Q is held to make a dose that is ready
 @export_group("Look")
 @export var skin : String = "guard" ## the folder in game/player/skin that holds this role's sprite sheets (tools/rig/build_roles.ps1 makes them)
 @export var legs_tint : Color = Color.WHITE ## the legs are every role's shared guard legs: a darker uniform (the intruder's) is this multiplied over them

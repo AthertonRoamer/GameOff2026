@@ -100,3 +100,12 @@ func _draw() -> void:
 				draw_label(rect.get_center() + Vector2(0.0, -px(16.0)), "NO POWER", 11, Palette.ALARM, 90.0)
 		draw_rect(rect.grow(px(1.5)), Palette.VOID)
 		draw_rect(rect, colour)
+
+
+func icon_label(world : Vector2) -> String:
+	var door : FacilityDoor = door_at(world)
+	if door == null:
+		return ""
+	if not show_state:
+		return "Door"
+	return "Door: %s" % ["open", "closed", "locked"][door.state]

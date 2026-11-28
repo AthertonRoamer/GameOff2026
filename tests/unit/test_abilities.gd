@@ -45,7 +45,8 @@ func _ready() -> void:
 	#the roles
 	check(GUARD.starting_items.size() == 1 and not GUARD.can_revive and not GUARD.can_vent and not GUARD.silent_walk, "the guard is a pistol and nothing else")
 	check(game.guard_roles.has(GUARD) and game.guard_roles.has(SHADE) and game.guard_roles.has(GUNNER) and game.guard_roles.has(MEDIC) and game.guard_roles.has(VENTRAT) and game.guard_roles.has(TECHNICIAN), "all six guard roles are in the game")
-	check(TECHNICIAN.battery_count == 3, "the technician is set up for three batteries")
+	check(TECHNICIAN.starting_items.any(func(i : Item) -> bool: return i is PortableGeneratorItem), "the technician carries a portable generator")
+	check(MEDIC.medicine_item is Medicine and SHADE.silent_chat and not GUARD.silent_chat, "the medic makes medicine, and the shade chats silently")
 
 	#the shade
 	var shade : Player = make_player(10, SHADE, Vector2(-4000, -4000))

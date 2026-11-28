@@ -35,6 +35,10 @@ var _active_style : StyleBoxFlat
 var _fill_style : StyleBoxFlat #the health bar's fill: the accent, alarm red when low
 var _stamina_fill : StyleBoxFlat #the stamina bar's: pale, alarm red while winded
 var _inventory : Inventory
+var _abilities : AbilityControl #the medic's next dose of medicine (bind_medicine)
+var _medicine_bar : ProgressBar
+var _medicine_label : Label
+var _medicine_fill : StyleBoxFlat
 
 
 func _ready() -> void:
@@ -109,6 +113,7 @@ func _process(_delta : float) -> void:
 	if not is_instance_valid(_player) or _inventory == null:
 		return
 	stamina_bar.value = _player.stamina
+	_show_medicine()
 	_stamina_fill.bg_color = Palette.ALARM if _player.winded else Palette.MUTED
 	var gun : Gun = _inventory.active_item as Gun
 	ammo_label.visible = gun != null
@@ -117,6 +122,49 @@ func _process(_delta : float) -> void:
 		ammo_label.add_theme_color_override("font_color", Palette.ALARM if _inventory.magazine <= 0 else Palette.BACKUP)
 	for i in _slot_counts.size():
 		_slot_counts[i].text = str(_inventory.reserve_now()) if i < _inventory.slots.size() and _inventory.slots[i] is AmmoItem else ""
+
+
+## A medic sees how long until their next dose of medicine: a bar under the stamina that fills up to it, and the seconds left (or, full, that Q held makes it).
+func bind_medicine(abilities : AbilityControl) -> void:
+	_abilities = abilities
+	_medicine_bar = ProgressBar.new()
+	_medicine_bar.name = "MedicineBar"
+	_medicine_bar.show_percentage = false
+	_medicine_bar.max_value = 1.0
+	_medicine_bar.step = 0.0
+	_medicine_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_medicine_bar.position = Vector2(stamina_bar.offset_left, stamina_bar.offset_bottom + 8.0)
+	_medicine_bar.size = Vector2(stamina_bar.offset_right - stamina_bar.offset_left, 8.0)
+	_medicine_fill = (stamina_bar.get_theme_stylebox("fill") as StyleBoxFlat).duplicate() if stamina_bar.get_theme_stylebox("fill") is StyleBoxFlat else StyleBoxFlat.new()
+	_medicine_fill.bg_color = Color("#ff73bf") #the medic's pink
+	_medicine_bar.add_theme_stylebox_override("fill", _medicine_fill)
+	_medicine_bar.visible = false
+	add_child(_medicine_bar)
+	_medicine_label = Label.new()
+	_medicine_label.name = "MedicineLabel"
+	_medicine_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_medicine_label.add_theme_font_size_override("font_size", 11)
+	_medicine_label.add_theme_color_override("font_color", Palette.MUTED)
+	_medicine_label.position = _medicine_bar.position + Vector2(0.0, 10.0)
+	_medicine_label.visible = false
+	add_child(_medicine_label)
+
+
+func _show_medicine() -> void:
+	if _medicine_bar == null:
+		return
+	var shown : bool = _abilities != null and _player.role != null and _player.role.medicine_item != null and _abilities.own_medicine_known
+	_medicine_bar.visible = shown
+	_medicine_label.visible = shown
+	if not shown:
+		return
+	_medicine_bar.value = _abilities.own_medicine_progress()
+	if _abilities.own_medicine_ready:
+		_medicine_label.text = "MEDICINE READY: hold Q to make it" if _inventory == null or _inventory.first_free_slot() >= 0 else "MEDICINE READY: free a slot to make it"
+		_medicine_label.add_theme_color_override("font_color", Palette.BACKUP)
+	else:
+		_medicine_label.text = "NEXT MEDICINE  %ds" % ceili(_abilities.own_medicine_seconds_left())
+		_medicine_label.add_theme_color_override("font_color", Palette.MUTED)
 
 
 func _show_health(health : float) -> void:

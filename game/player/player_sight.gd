@@ -56,6 +56,8 @@ var local_player : Callable = Callable()
 var room_lights : RoomLightShapes
 ## World rectangles of the rooms a camera feed is showing right now (CamerasLayer): everything inside them is seen.
 var watched : Array[Rect2] = []
+## The local player's night vision is working (NightVision sets it: on, and not blinded by a bright light): bodies in the view are seen in the dark, as if lit.
+var night_vision : bool = false
 
 const ROOM_LIGHT_SHADER : Shader = preload("res://game/lights/room_light.gdshader")
 
@@ -123,6 +125,8 @@ func _process(delta : float) -> void:
 		var sees_them : bool = sees_all or is_watched(player.skin.body_position()) #(on camera: seen like a dead player sees them, so the feed shows them)
 		player.flashlight.set_painted(not sees_them) #(a dead local player sees by the scene's own lights: nothing is drawn over the bodies)
 		var lighting : Dictionary = {"lit": true, "tint": Color.WHITE} if sees_them else _lighting_of(me, player)
+		if night_vision: #(the helmet: the dark counts as lit, so anyone in the view is seen)
+			lighting["lit"] = true
 		var target : float = 1.0 if sees_them else _body_seen(me, player, lighting["lit"])
 		var alpha : float = move_toward(_alpha.get(player, target), target, delta / maxf(fade_seconds, 0.001))
 		_alpha[player] = alpha
@@ -159,6 +163,8 @@ func visibility(point : Vector2) -> float:
 		return 1.0
 	var strength : float = view_strength(point)
 	if strength <= 0.0:
+		return 0.0
+	if SmokeCloud.blocks(get_tree(), _apex, point): #a smoke bomb's cloud in the way
 		return 0.0
 	var query : PhysicsRayQueryParameters2D = PhysicsRayQueryParameters2D.create(_apex, point, WALLS)
 	return strength if get_world_2d().direct_space_state.intersect_ray(query).is_empty() else 0.0
@@ -369,13 +375,35 @@ func _cone(point : Vector2, distance : float) -> float:
 	return 1.0 - smoothstep(half, half + deg_to_rad(near_cone_fade_deg), off_axis)
 
 
+## Whether a bright light falls on the local player's eyes (what blinds night vision): they stand in a lit room, or another player's flashlight beam is on them
+## with nothing solid between. Their own flashlight does not count.
+func bright_light_on(me : Player) -> bool:
+	if not is_instance_valid(me):
+		return false
+	var at : Vector2 = me.global_position
+	if room_lights != null and room_lights.light_at(at) > 0.02:
+		return true
+	if not players.is_valid():
+		return false
+	for holder in players.call():
+		if holder == me or not is_instance_valid(holder) or not holder.flashlight.on or not holder.is_alive():
+			continue
+		var origin : Vector2 = holder.flashlight.global_position
+		var offset : Vector2 = at - origin
+		if offset.length() > beam_range or absf(angle_difference(holder.flashlight.global_rotation, offset.angle())) > deg_to_rad(beam_half_angle_deg):
+			continue
+		if get_world_2d().direct_space_state.intersect_ray(PhysicsRayQueryParameters2D.create(origin, at, SightFan.BEAMS)).is_empty():
+			return true
+	return false
+
+
 ## How much of another player's body is seen: very close and unblocked, or inside the view and lit.
 func _body_seen(me : Player, other : Player, lit : bool) -> float:
 	var at : Vector2 = other.skin.body_position() #(a fallen body lies away from where its player stood)
 	var space : PhysicsDirectSpaceState2D = get_world_2d().direct_space_state
 	var near : float = 0.0
 	var distance : float = me.global_position.distance_to(at)
-	if distance <= near_radius and space.intersect_ray(PhysicsRayQueryParameters2D.create(me.global_position, at, WALLS)).is_empty():
+	if distance <= near_radius and space.intersect_ray(PhysicsRayQueryParameters2D.create(me.global_position, at, WALLS)).is_empty() and not SmokeCloud.blocks(get_tree(), me.global_position, at):
 		near = (1.0 - smoothstep(near_radius * 0.6, near_radius, distance)) * _cone(at, distance)
 	var seen_lit : float = visibility(at) if lit else 0.0
 	return maxf(near, seen_lit)

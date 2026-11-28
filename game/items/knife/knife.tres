@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="Knife" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://game/items/knife.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://game/items/knife/knife.svg" id="2_icon"]
+
+[resource]
+script = ExtResource("1_script")
+damage = 26.0
+backstab_multiplier = 2.0
+reach_px = 30.0
+cooldown_ticks = 40
+drawable = true
+item_name = "Knife"
+icon = ExtResource("2_icon")

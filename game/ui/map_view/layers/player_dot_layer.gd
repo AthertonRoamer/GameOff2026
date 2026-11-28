@@ -11,3 +11,7 @@ func _draw() -> void:
 		return
 	draw_circle(tracked.global_position, px(6.0), Color(Palette.BACKUP, 0.3))
 	draw_circle(tracked.global_position, px(3.5), Palette.ITEM)
+
+
+func icon_label(world : Vector2) -> String:
+	return "You" if is_instance_valid(tracked) and tracked.global_position.distance_to(world) <= px(7.0) else ""

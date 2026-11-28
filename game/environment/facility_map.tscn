@@ -63,6 +63,18 @@
 [ext_resource type="PackedScene" path="res://game/furniture/items/workbench_n.tscn" id="furn_workbench_n"]
 [ext_resource type="PackedScene" path="res://game/furniture/items/workbench_w.tscn" id="furn_workbench_w"]
 [ext_resource type="Script" uid="uid://cwn71j7krn0x6" path="res://game/environment/facility_room_rect.gd" id="rect_script"]
+[ext_resource type="PackedScene" path="res://game/turrets/turret.tscn" id="13_turret"]
+[ext_resource type="Script" path="res://game/environment/facility_item_rooms.gd" id="item_rooms_script"]
+[ext_resource type="Script" path="res://game/items/item.gd" id="item_rooms_item"]
+[ext_resource type="Resource" path="res://game/items/medicine/medicine.tres" id="item_rooms_medicine"]
+[ext_resource type="Resource" path="res://game/items/ammo/ammo_box.tres" id="item_rooms_ammo"]
+[ext_resource type="Resource" path="res://game/items/portable_generator/portable_generator.tres" id="item_rooms_generator"]
+[ext_resource type="Resource" path="res://game/items/knife/knife.tres" id="item_rooms_knife"]
+[ext_resource type="Resource" path="res://game/items/smoke_bomb/smoke_bomb.tres" id="item_rooms_smoke"]
+[ext_resource type="Resource" path="res://game/items/tripwire/tripwire.tres" id="item_rooms_tripwire"]
+[ext_resource type="Resource" path="res://game/items/coms_hacker/coms_hacker.tres" id="item_rooms_hacker"]
+[ext_resource type="Resource" path="res://game/items/night_vision/night_vision.tres" id="item_rooms_night_vision"]
+[ext_resource type="Resource" path="res://game/items/radar/radar.tres" id="item_rooms_radar"]
 
 [node name="FacilityMap" type="Node2D" unique_id=577932594]
 texture_filter = 4
@@ -602,6 +614,18 @@ mouse_filter = 2
 script = ExtResource("11_region")
 display_name = "Central"
 colour = Color(0.5100472, 0.3297935, 1, 1)
+
+[node name="ItemRooms" type="Control" parent="."]
+custom_minimum_size = Vector2(220, 44)
+layout_mode = 3
+anchors_preset = 0
+offset_left = 0.0
+offset_top = -88.0
+offset_right = 220.0
+offset_bottom = -44.0
+mouse_filter = 2
+script = ExtResource("item_rooms_script")
+items = Array[ExtResource("item_rooms_item")]([ExtResource("item_rooms_medicine"), ExtResource("item_rooms_ammo"), ExtResource("item_rooms_generator"), ExtResource("item_rooms_knife"), ExtResource("item_rooms_smoke"), ExtResource("item_rooms_tripwire"), ExtResource("item_rooms_hacker"), ExtResource("item_rooms_night_vision"), ExtResource("item_rooms_radar")])
 
 [node name="Doors" type="Node2D" parent="." unique_id=1364101371]
 z_index = 1
@@ -1667,6 +1691,21 @@ scope = 1
 [node name="MainGenerator2" parent="Props" unique_id=1017306230 instance=ExtResource("12_generator")]
 light_mask = 4
 position = Vector2(866, 698)
+
+[node name="TurretRingNorthWest" parent="Props" instance=ExtResource("13_turret")]
+position = Vector2(232, 320)
+facing_degrees = 45.0
+
+[node name="TurretRingSouthEast" parent="Props" instance=ExtResource("13_turret")]
+position = Vector2(1517, 901)
+facing_degrees = 225.0
+
+[node name="TurretVault" parent="Props" instance=ExtResource("13_turret")]
+position = Vector2(340, 720)
+
+[node name="TurretRecords" parent="Props" instance=ExtResource("13_turret")]
+position = Vector2(1672, 958)
+facing_degrees = 160.0
 
 [node name="Actors" type="Node2D" parent="." unique_id=286938923]
 y_sort_enabled = true

@@ -38,7 +38,8 @@ func quiesce() -> void:
 
 ## A shot from origin along direction, at this tick, by this owner. view_lag: ticks the shooter sees others behind the lobby. Returns false for a repeat, or for a
 ## shot this peer only watches (the lobby sends it).
-func fire(owner_node : Node, owner_id : int, origin : Vector2, direction : Vector2, tick : int, damage : float, max_range : float, view_lag : int, color : Color, pellets : int = 1, spread_degrees : float = 0.0) -> bool:
+## melee: a blow, not a shot (the knife): nothing is drawn or heard and no other peer is told, it opens no door, and a hit on someone from behind does backstab_multiplier times the damage.
+func fire(owner_node : Node, owner_id : int, origin : Vector2, direction : Vector2, tick : int, damage : float, max_range : float, view_lag : int, color : Color, pellets : int = 1, spread_degrees : float = 0.0, melee : bool = false, backstab_multiplier : float = 1.0) -> bool:
 	var lobby : bool = _is_lobby()
 	if not _active or direction.is_zero_approx() or not (lobby or owner_id == multiplayer.get_unique_id()):
 		return false
@@ -49,12 +50,14 @@ func fire(owner_node : Node, owner_id : int, origin : Vector2, direction : Vecto
 	var walls : PackedByteArray = PackedByteArray()
 	var hit_damage : float = 0.0
 	for dir : Vector2 in pellet_directions(direction.normalized(), pellets, spread_degrees, hash([owner_id, tick])):
-		var result : Dictionary = _trace(owner_node, owner_id, origin, dir, tick, damage, max_range, view_lag, lobby)
+		var result : Dictionary = _trace(owner_node, owner_id, origin, dir, tick, damage, max_range, view_lag, lobby, melee, backstab_multiplier)
 		ends.append(result["end"])
 		walls.append(1 if result["on_wall"] else 0)
 		hit_damage += result["damage"]
 	if hit_damage > 0.0:
 		_confirm(owner_id, hit_damage) #one marker for a shot, however many pellets struck
+	if melee: #(silent: no tracer, no impact sound, and the other peers are not told, so they see no muzzle flash)
+		return true
 	var wall_sounded : bool = false
 	for i in ends.size():
 		_show(origin, ends[i], color, walls[i] == 1, not wall_sounded, owner_id == multiplayer.get_unique_id())
@@ -85,7 +88,7 @@ static func pellet_directions(dir : Vector2, pellets : int, spread_degrees : flo
 
 ## One ray of a shot: where it ends (a wall, the first player it passes through as this peer sees them, or the end of its reach) and, on the lobby, whether it hit someone
 ## (the damage then goes out as shot_hit). Returns {end, on_wall, damage dealt}.
-func _trace(owner_node : Node, owner_id : int, origin : Vector2, dir : Vector2, tick : int, damage : float, max_range : float, view_lag : int, lobby : bool) -> Dictionary:
+func _trace(owner_node : Node, owner_id : int, origin : Vector2, dir : Vector2, tick : int, damage : float, max_range : float, view_lag : int, lobby : bool, melee : bool = false, backstab_multiplier : float = 1.0) -> Dictionary:
 	var end : Vector2 = origin + dir * max_range
 	var on_wall : bool = false
 	var wall : Dictionary = get_world_2d().direct_space_state.intersect_ray(PhysicsRayQueryParameters2D.create(origin, end, world_collision_mask))
@@ -110,14 +113,65 @@ func _trace(owner_node : Node, owner_id : int, origin : Vector2, dir : Vector2, 
 		if not hit.is_empty():
 			end = hit["position"]
 			on_wall = false
-			dealt = damage
-			shot_hit.emit({"damage": damage, "direction": dir, "owner_id": owner_id}, hit["node"])
+			dealt = damage * (backstab_multiplier if melee and is_from_behind(hit["node"], dir) else 1.0)
+			shot_hit.emit({"damage": dealt, "direction": dir, "owner_id": owner_id}, hit["node"])
 		elif struck != null and on_wall: #no player in the way: the shot strikes the shootable thing it ended on
 			dealt = damage
 			shot_hit.emit({"damage": damage, "direction": dir, "owner_id": owner_id}, struck)
-		elif on_wall and not wall.is_empty() and wall["collider"] is FacilityDoor:
+		elif on_wall and not melee and not wall.is_empty() and wall["collider"] is FacilityDoor:
 			door_shot.emit(wall["collider"])
 	return {"end": end, "on_wall": on_wall, "damage": dealt}
+
+
+const BACKSTAB_COS : float = 0.5 ## a blow lands from behind when it travels within 60 degrees of the way the target faces
+
+
+## Whether a blow going `dir` strikes this target from behind: it travels the way they face (their torso, which turns with their aim), so they did not see it coming.
+static func is_from_behind(target : Node, dir : Vector2) -> bool:
+	if not (target is Player) or (target as Player).skin == null:
+		return false
+	var facing : Vector2 = Vector2.from_angle((target as Player).skin.torso.global_rotation - PI / 2.0)
+	return facing.dot(dir.normalized()) > BACKSTAB_COS
+
+
+## Lobby only: a shot from a machine (a turret, see TurretSystem), not a player. There is no shooter to rewind for, so it is traced against the players where the
+## lobby has them now. It ends on a wall or closed door (a shootable thing there, like a generator, takes the damage), or on the first player it passes through who
+## can be hit and for whom `hittable` (node) -> bool says yes; the others it passes through. Hits go out as shot_hit with owner_id 0, and every peer draws the shot.
+## Returns where it ended.
+func fire_turret(source : CollisionObject2D, origin : Vector2, direction : Vector2, damage : float, max_range : float, color : Color, hittable : Callable = Callable()) -> Vector2:
+	if not _active or not _is_lobby() or direction.is_zero_approx():
+		return origin
+	var dir : Vector2 = direction.normalized()
+	var end : Vector2 = origin + dir * max_range
+	var query : PhysicsRayQueryParameters2D = PhysicsRayQueryParameters2D.create(origin, end, world_collision_mask)
+	if source != null:
+		query.exclude = [source.get_rid()]
+	var wall : Dictionary = get_world_2d().direct_space_state.intersect_ray(query)
+	var on_wall : bool = false
+	var struck : Node = null
+	if not wall.is_empty():
+		end = wall["position"]
+		on_wall = true
+		if wall["collider"] is Node and (wall["collider"] as Node).is_in_group(SHOOTABLE_GROUP):
+			struck = wall["collider"]
+	var victim : Node = null
+	if targets.is_valid():
+		for target in targets.call():
+			if not is_instance_valid(target) or (can_hit.is_valid() and not can_hit.call(target)) or (hittable.is_valid() and not hittable.call(target)):
+				continue
+			var distance : float = LagCompensator.ray_circle_distance(origin, dir, target.global_position, target_radius)
+			if distance >= 0.0 and distance < origin.distance_to(end):
+				end = origin + dir * distance
+				on_wall = false
+				victim = target
+	if victim != null:
+		shot_hit.emit({"damage": damage, "direction": dir, "owner_id": 0}, victim)
+	elif struck != null:
+		shot_hit.emit({"damage": damage, "direction": dir, "owner_id": 0}, struck)
+	_show(origin, end, color, on_wall)
+	if not multiplayer.get_peers().is_empty():
+		_shot_remote.rpc(0, origin, PackedVector2Array([end]), PackedByteArray([1 if on_wall else 0]), color)
+	return end
 
 
 ## Draws one ray of a shot. sound_wall: whether a wall it ends on is heard (a shotgun's pellets strike the wall together: one impact sound, not eight).

@@ -36,6 +36,7 @@ Walking distances (door to door through the rooms): **entrance to extract 117 to
 Other rooms: `*_corridor` the main corridors, `north_armory`, `north_cameras` (camera console), `north_turrets` (turret console), `east_generator` (generator), `east_breakers` (power),
 `west_lights` (lights console), `west_vault`, `west_records`, `south_cafeteria`, the corner blocks' rooms (`nw_*`, `sw_*`, `ne_*`, `se_*`) and so on. Six **artifact spots**
 (`ArtifactLocations`): armory, evidence room, generator hall, cafeteria, vault, records.
+**Turrets** (`Props`, `Turret*`): twelve. One in each relic room (armory, evidence room, generator hall, cafeteria, vault, records), the East Loading Dock, the Central Atrium, and one on each outdoor pad (north, east, south, west) watching the door to its exit. Each stands by a wall clear of furniture and doorways, turned to see as much of its room and its doors as it can. They run on their room's power region.
 
 ## Loading in and out
 A map this size cannot be built whole every time, so it is streamed (`game/environment/map_streamer.gd`, made by the `FacilityMap`; settings under *Streaming* on the `FacilityMap` node):

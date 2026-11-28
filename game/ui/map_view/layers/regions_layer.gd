@@ -12,6 +12,7 @@ const LABEL_RISE_PX : float = 30.0 #the region's tag sits this far (on screen) a
 @export var show_names : bool = true
 @export var power_for_everyone : bool = false ## the door console: whoever is using it sees the power (MapIntel leaves show_power alone)
 @export_range(0.0, 1.0, 0.01) var tint : float = 0.12 ## how strongly the rooms are tinted in their region's colour
+@export var room_labels : bool = false ## hovering a room names it and the power zone its tint shows (a map where nothing else over it says what it is: the spawn map)
 
 var grid : PowerGrid
 var names_on_top : bool = false #a RegionNamesLayer draws the names, over the other icons
@@ -54,7 +55,7 @@ func name_tags(canvas : MapLayer) -> Dictionary:
 		var rect : Rect2 = Rect2(centre - tag / 2.0, tag)
 		var low : Vector2 = view.screen_to_world(Vector2.ONE * 2.0)
 		var high : Vector2 = view.screen_to_world(view.size - Vector2.ONE * 2.0) - tag
-		if Rect2(low, high + tag - low).has_point(map.regions[id]["centre"]) and high.x > low.x and high.y > low.y:
+		if high.x > low.x and high.y > low.y and Rect2(low, high + tag - low).has_point(map.regions[id]["centre"]): #(a view smaller than the tag keeps it where it is)
 			rect.position = rect.position.clamp(low, high) #a zone in view keeps its whole name in view
 		wanted.append([id, rect])
 	wanted.sort_custom(func(a : Array, b : Array) -> bool: return (a[1] as Rect2).position.y < (b[1] as Rect2).position.y)
@@ -90,5 +91,24 @@ func draw_names(canvas : MapLayer) -> void:
 			canvas.draw_label(centre + Vector2(0.0, canvas.px(9.0)), _power_text(id), 12, Palette.ALARM if short else Palette.TEXT, 220.0)
 
 
+func icon_label(world : Vector2) -> String:
+	var map : FacilityMap = facility()
+	if not room_labels or map == null:
+		return ""
+	var room : String = map.room_at(world)
+	if room == "" or not map.rooms.has(room):
+		return ""
+	var room_name : String = String(map.rooms[room]["name"])
+	var region : String = map.region_of_room(room)
+	if region == "" or not map.regions.has(region):
+		return room_name
+	return "%s, in the %s power zone (its tint)" % [room_name, String(map.regions[region]["name"])]
+
+
 func _power_text(id : String) -> String:
 	return "%d / %d pts/s" % [floori(grid.available(id)), roundi(grid.capacity(id))]
+
+
+##Its labels name whole areas (see MapLayer.labels_areas).
+func labels_areas() -> bool:
+	return true

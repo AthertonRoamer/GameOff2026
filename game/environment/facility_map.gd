@@ -80,6 +80,8 @@ var streamer : MapStreamer #paints and erases the tiles near the view, and bring
 @onready var actors : Node2D = $Actors
 var regions_node : Node2D: #optional: a map without it has no regions (everything runs on whole-map power)
 	get: return get_node_or_null("Regions") as Node2D
+var item_rooms_node : FacilityItemRooms: #optional: a map without it has no items lying about (see FacilityItemRooms, ItemSpawner)
+	get: return get_node_or_null("ItemRooms") as FacilityItemRooms
 
 
 func _ready() -> void:
@@ -296,6 +298,109 @@ func _random_room_point() -> Vector2:
 	return Vector2.ZERO
 
 
+##The rooms where an item can be found (FacilityRoom.spawns_items), in scene order (the same on every peer).
+func item_rooms() -> Array[String]:
+	var result : Array[String] = []
+	for id : String in rooms:
+		if rooms[id]["item_chance"] > 0.0:
+			result.append(id)
+	return result
+
+
+##The chance, 0 to 1, that a room has an item lying in it at the start of a match (0 for a room that is not an item room, or that the map does not have).
+## The items that can turn up in a room: its own list, or empty when it has none (the map's list, ItemRooms.items, is used then).
+func item_pool(room_id : String) -> Array:
+	return rooms[room_id]["item_pool"] if rooms.has(room_id) else []
+
+
+func item_chance(room_id : String) -> float:
+	return rooms[room_id]["item_chance"] if rooms.has(room_id) else 0.0
+
+
+const ITEM_WALL_GAP_CELLS : int = 1 ## an item lies this many floor cells in from the wall (its middle is 1.5 cells, 16.5 px, from the wall's face)
+const ITEM_CLEAR_PX : float = 16.0 ## how far an item keeps from furniture
+const ITEM_PROP_CLEAR_PX : float = 40.0 ## from a console, generator or turret (so it is not lost behind one, or in the way of using it)
+const ITEM_MARKER_CLEAR_PX : float = 30.0 ## from a relic or ammo location, a spawn point
+const ITEM_DOOR_DEPTH_CELLS : int = 5 ## not in front of a door: this far into the room from the doorway
+const ITEM_DOOR_SIDE_CELLS : int = 2 ## and this far past each side of it, along the wall
+
+##Where an item can lie in a room, in map space: along the room's walls (the edge of its floor, ITEM_WALL_GAP_CELLS in), never on or touching furniture, a
+##console or another thing on the floor, a vent or a marker, and never in front of a door. In cell order, so the same on every peer. Empty when the room has
+##no such spot (or is not on the map).
+func item_spots(room_id : String) -> PackedVector2Array:
+	var spots : PackedVector2Array = PackedVector2Array()
+	if not rooms.has(room_id):
+		return spots
+	var blocked : Array[Rect2] = [] #map space: in front of each door into this room
+	for door : FacilityDoor in doors_of_room(room_id):
+		var cells : Rect2i = door.cell_rect(self)
+		var zone : Rect2i = cells.grow_individual(ITEM_DOOR_SIDE_CELLS, ITEM_DOOR_DEPTH_CELLS, ITEM_DOOR_SIDE_CELLS, ITEM_DOOR_DEPTH_CELLS) if door.horizontal \
+				else cells.grow_individual(ITEM_DOOR_DEPTH_CELLS, ITEM_DOOR_SIDE_CELLS, ITEM_DOOR_DEPTH_CELLS, ITEM_DOOR_SIDE_CELLS)
+		blocked.append(Rect2(Vector2(zone.position * TILE), Vector2(zone.size * TILE)))
+	for vent : Vector2i in vents: #a 2 x 2 cell grille
+		blocked.append(Rect2(Vector2(vent * TILE), Vector2.ONE * 2.0 * TILE).grow(ITEM_CLEAR_PX))
+	var furniture : Array[PackedVector2Array] = [] #map space
+	var props : PackedVector2Array = PackedVector2Array() #map space: consoles, generators, turrets
+	var markers : PackedVector2Array = PackedVector2Array()
+	var to_map : Transform2D = get_global_transform().affine_inverse()
+	for node : Node in props_node.find_children("*", "", true, false):
+		if node is Furniture:
+			var polygon : PackedVector2Array = (node as Furniture).footprint_polygon()
+			furniture.append(to_map * polygon)
+		elif node is CollisionObject2D: #a console, a generator, a turret
+			props.append(to_map * (node as Node2D).global_position)
+	for marker : Node in find_children("*", "Marker2D", true, false):
+		if marker.get_parent() != vents_node:
+			markers.append(to_map * (marker as Marker2D).global_position)
+	var gap : int = ITEM_WALL_GAP_CELLS
+	var seen : Dictionary = {}
+	for rect : Rect2i in rooms[room_id]["rects"]:
+		for y in range(rect.position.y, rect.end.y):
+			for x in range(rect.position.x, rect.end.x):
+				var cell : Vector2i = Vector2i(x, y)
+				if seen.has(cell):
+					continue
+				seen[cell] = true
+				var by_wall : bool = false
+				for side : Vector2i in [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]:
+					if wall_cells.has(cell + side * (gap + 1)) and _floor_run(cell, side, gap, room_id):
+						by_wall = true
+						break
+				if not by_wall:
+					continue
+				var at : Vector2 = cell_to_world(cell)
+				if _item_spot_clear(at, blocked, furniture, props, markers):
+					spots.append(at)
+	return spots
+
+
+## Whether the `count` cells from `cell` going `side` are floor of this room (so the item is that far in from the wall, not on a doorway).
+func _floor_run(cell : Vector2i, side : Vector2i, count : int, room_id : String) -> bool:
+	for i in range(1, count + 1):
+		if room_of_cell(cell + side * i) != room_id:
+			return false
+	return room_of_cell(cell) == room_id
+
+
+func _item_spot_clear(at : Vector2, blocked : Array[Rect2], furniture : Array[PackedVector2Array], props : PackedVector2Array, markers : PackedVector2Array) -> bool:
+	for zone : Rect2 in blocked:
+		if zone.has_point(at):
+			return false
+	for polygon : PackedVector2Array in furniture:
+		if Geometry2D.is_point_in_polygon(at, polygon):
+			return false
+		for i in polygon.size():
+			if at.distance_to(Geometry2D.get_closest_point_to_segment(at, polygon[i], polygon[(i + 1) % polygon.size()])) < ITEM_CLEAR_PX:
+				return false
+	for point : Vector2 in props:
+		if at.distance_to(point) < ITEM_PROP_CLEAR_PX:
+			return false
+	for point : Vector2 in markers:
+		if at.distance_to(point) < ITEM_MARKER_CLEAR_PX:
+			return false
+	return true
+
+
 ##The rooms players of this kind may start in (SpawnRoomMarker.Kind), in scene order (the same on every peer).
 func spawn_rooms(spawn_kind : int) -> Array[String]:
 	var result : Array[String] = []
@@ -502,7 +607,7 @@ func _collect_rooms() -> void:
 			floor_rects.append(rect)
 			_floor_ids.append(room.room_id())
 		var label : String = room.display_name if room.display_name != "" else room.room_id().capitalize()
-		rooms[room.room_id()] = {"name": label, "kind": room.kind_name(), "function": room.function_name(), "region": String(room.region), "rects": rects, "exterior": false, "spawns": {}}
+		rooms[room.room_id()] = {"name": label, "kind": room.kind_name(), "function": room.function_name(), "region": String(room.region), "rects": rects, "exterior": false, "spawns": {}, "item_chance": room.item_probability(), "item_pool": room.item_pool.filter(func(item : Item) -> bool: return item != null)}
 	_collect_lights()
 	_index_floor()
 	if Engine.is_editor_hint(): #the editor says so on a room that overlaps another
@@ -846,7 +951,7 @@ func _snap_to_grid() -> void:
 func _layout_signature() -> int:
 	var parts : PackedStringArray = []
 	for room : FacilityRoom in room_nodes():
-		parts.append("%s %s %d %d %s" % [room.name, room.position, room.kind, room.function, room.region])
+		parts.append("%s %s %d %d %s %s %d %d" % [room.name, room.position, room.kind, room.function, room.region, room.spawns_items, room.item_chance, room.item_pool.size()])
 		for rect : FacilityRoomRect in room.rects():
 			parts.append("%s %s" % [rect.position, rect.size])
 	for door : FacilityDoor in _door_nodes():

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SmokeBombItem" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://game/items/smoke_bomb_item.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://game/items/smoke_bomb/smoke_bomb.svg" id="2_icon"]
+
+[resource]
+script = ExtResource("1_script")
+radius_px = 120.0
+smoke_seconds = 14.0
+click_use = 3
+throw_range_px = 300.0
+item_name = "Smoke Bomb"
+icon = ExtResource("2_icon")
